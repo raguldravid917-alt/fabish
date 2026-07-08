@@ -1,0 +1,25 @@
+const express = require('express');
+const router = express.Router();
+const authController = require('../controllers/authController');
+const { registerRules, loginRules, updateProfileRules } = require('../validators/authValidator');
+const { authenticate } = require('../middleware/authMiddleware');
+const { authLimiter } = require('../middleware/rateLimiter');
+
+// Public routes
+router.post('/register', authLimiter, registerRules, authController.register);
+router.post('/login', authLimiter, loginRules, authController.login);
+router.post('/refresh', authController.refresh);
+
+// Private routes
+router.post('/logout', authenticate, authController.logout);
+router.get('/me', authenticate, authController.getMe);
+router.route('/profile')
+  .get(authenticate, authController.getProfile)
+  .put(authenticate, updateProfileRules, authController.updateProfile);
+
+// Password recovery public routes
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/reset-password', authController.resetPassword);
+router.post('/reset-password/:token', authController.resetPassword);
+
+module.exports = router;

@@ -1,0 +1,18 @@
+# robots.txt for Fabish Storefront
+
+User-agent: *
+Allow: /
+Allow: /collections
+Allow: /products/
+Allow: /blogs/
+Allow: /pages/
+
+# Exclude private checkout, user account, and admin dashboard routes from indexing
+Disallow: /cart
+Disallow: /checkout
+Disallow: /account/
+Disallow: /admin/
+Disallow: /unauthorized
+
+# Define XML Sitemap URL (aligns with domain name when deployed)
+Sitemap: http://localhost:5173/sitemap.xml

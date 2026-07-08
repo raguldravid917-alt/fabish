@@ -1,0 +1,382 @@
+{%- style -%}
+  .vital-categories-{{ section.id }} {
+    padding-top: {{ section.settings.padding_top_mobile }}px;
+    padding-bottom: {{ section.settings.padding_bottom_mobile }}px;
+    background-color: {{ section.settings.bg_color }};
+  }
+
+  @media screen and (min-width: 768px) {
+    .vital-categories-{{ section.id }} {
+      padding-top: {{ section.settings.padding_top_desktop }}px;
+      padding-bottom: {{ section.settings.padding_bottom_desktop }}px;
+    }
+  }
+
+  .vital-categories-grid-{{ section.id }} {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: {{ section.settings.gap }}px;
+    max-width: {{ section.settings.max_width }}px;
+    margin: 0 auto;
+    padding: 0 16px;
+    box-sizing: border-box;
+  }
+
+  @media screen and (min-width: 768px) {
+    .vital-categories-grid-{{ section.id }} {
+      grid-template-columns: repeat(3, 1fr);
+      padding: 0 24px;
+    }
+  }
+
+  .vital-categories-card-{{ section.id }} {
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+  }
+
+  .vital-categories-card-{{ section.id }} img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.7s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+
+  .vital-categories-card-{{ section.id }}:hover img {
+    transform: scale(1.05);
+  }
+
+  /* Left Tall Banner spacing */
+  .vital-categories-left-{{ section.id }} {
+    height: 450px;
+  }
+
+  @media screen and (min-width: 768px) {
+    .vital-categories-left-{{ section.id }} {
+      grid-row: span 2;
+      height: 100%;
+    }
+  }
+
+  /* Aspect ratio for landscape cards */
+  .vital-categories-aspect-{{ section.id }} {
+    aspect-ratio: 1074 / 838;
+  }
+
+  /* Text Content Card styling */
+  .vital-categories-content-{{ section.id }} {
+    background-color: {{ section.settings.content_bg_color }};
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 40px 24px;
+    height: 280px;
+    box-sizing: border-box;
+  }
+
+  @media screen and (min-width: 768px) {
+    .vital-categories-content-{{ section.id }} {
+      height: 100%;
+      padding: 32px;
+    }
+  }
+
+  .vital-categories-subtitle-{{ section.id }} {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: {{ section.settings.text_color }};
+    margin: 0 0 16px 0;
+    line-height: 1.2;
+  }
+
+  .vital-categories-title-{{ section.id }} {
+    font-family: var(--font-heading-family), serif; /* elegant serif font fallback */
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 1.25;
+    color: {{ section.settings.text_color }};
+    margin: 0;
+    max-width: 280px;
+  }
+
+  @media screen and (min-width: 768px) {
+    .vital-categories-title-{{ section.id }} {
+      font-size: 34px;
+    }
+  }
+
+  @media screen and (min-width: 1024px) {
+    .vital-categories-title-{{ section.id }} {
+      font-size: 40px;
+    }
+  }
+
+  /* Lotion button styling */
+  .vital-categories-button-{{ section.id }} {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #ffffff;
+    color: #212b36;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 0 30px;
+    height: 50px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    transition: background-color 0.3s, color 0.3s;
+    z-index: 10;
+    white-space: nowrap;
+    border: none;
+    cursor: pointer;
+    border-radius: 0px;
+  }
+
+  .vital-categories-button-{{ section.id }}:hover {
+    background-color: #000000;
+    color: #ffffff;
+  }
+{%- endstyle -%}
+
+<div class="vital-categories-{{ section.id }}">
+  <div class="vital-categories-grid-{{ section.id }}">
+    
+    <!-- Left Column: Large Vertical Card -->
+    <div class="vital-categories-card-{{ section.id }} vital-categories-left-{{ section.id }}">
+      {%- if section.settings.image_left != blank -%}
+        {{ section.settings.image_left | image_url: width: 1200 | image_tag: loading: 'lazy', alt: section.settings.image_left.alt | escape }}
+      {%- else -%}
+        {{ 'image' | placeholder_svg_tag: 'placeholder-svg' }}
+      {%- endif -%}
+      {%- if section.settings.button_left_label != blank -%}
+        <a href="{{ section.settings.button_left_link | default: '#' }}" class="vital-categories-button-{{ section.id }}">
+          {{ section.settings.button_left_label | escape }}
+        </a>
+      {%- endif -%}
+    </div>
+
+    <!-- Center Column: Top Content Block -->
+    <div class="vital-categories-content-{{ section.id }}">
+      {%- if section.settings.subtitle != blank -%}
+        <span class="vital-categories-subtitle-{{ section.id }}">{{ section.settings.subtitle | escape }}</span>
+      {%- endif -%}
+      {%- if section.settings.title != blank -%}
+        <h2 class="vital-categories-title-{{ section.id }}">{{ section.settings.title }}</h2>
+      {%- endif -%}
+    </div>
+
+    <!-- Right Column: Top Card with Button -->
+    <div class="vital-categories-card-{{ section.id }} vital-categories-aspect-{{ section.id }}">
+      {%- if section.settings.image_right_top != blank -%}
+        {{ section.settings.image_right_top | image_url: width: 1000 | image_tag: loading: 'lazy', alt: section.settings.image_right_top.alt | escape }}
+      {%- else -%}
+        {{ 'image' | placeholder_svg_tag: 'placeholder-svg' }}
+      {%- endif -%}
+      {%- if section.settings.button_label != blank -%}
+        <a href="{{ section.settings.button_link | default: '#' }}" class="vital-categories-button-{{ section.id }}">
+          {{ section.settings.button_label | escape }}
+        </a>
+      {%- endif -%}
+    </div>
+
+    <!-- Center Column: Bottom Card -->
+    <div class="vital-categories-card-{{ section.id }} vital-categories-aspect-{{ section.id }}">
+      {%- if section.settings.image_center_bottom != blank -%}
+        {{ section.settings.image_center_bottom | image_url: width: 1000 | image_tag: loading: 'lazy', alt: section.settings.image_center_bottom.alt | escape }}
+      {%- else -%}
+        {{ 'image' | placeholder_svg_tag: 'placeholder-svg' }}
+      {%- endif -%}
+      {%- if section.settings.button_center_bottom_label != blank -%}
+        <a href="{{ section.settings.button_center_bottom_link | default: '#' }}" class="vital-categories-button-{{ section.id }}">
+          {{ section.settings.button_center_bottom_label | escape }}
+        </a>
+      {%- endif -%}
+    </div>
+
+    <!-- Right Column: Bottom Card -->
+    <div class="vital-categories-card-{{ section.id }} vital-categories-aspect-{{ section.id }}">
+      {%- if section.settings.image_right_bottom != blank -%}
+        {{ section.settings.image_right_bottom | image_url: width: 1000 | image_tag: loading: 'lazy', alt: section.settings.image_right_bottom.alt | escape }}
+      {%- else -%}
+        {{ 'image' | placeholder_svg_tag: 'placeholder-svg' }}
+      {%- endif -%}
+    </div>
+
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Vital Categories Showcase",
+  "tag": "section",
+  "class": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "subtitle",
+      "label": "Subtitle",
+      "default": "VITAL CATEGORIES"
+    },
+    {
+      "type": "inline_html",
+      "id": "title",
+      "label": "Heading",
+      "default": "Worldwide Fashion Collection"
+    },
+    {
+      "type": "image_picker",
+      "id": "image_left",
+      "label": "Left Tall Banner Image"
+    },
+    {
+      "type": "text",
+      "id": "button_left_label",
+      "label": "Left Button Label",
+      "default": "SERUMS"
+    },
+    {
+      "type": "url",
+      "id": "button_left_link",
+      "label": "Left Button Link"
+    },
+    {
+      "type": "image_picker",
+      "id": "image_center_bottom",
+      "label": "Center Bottom Image"
+    },
+    {
+      "type": "text",
+      "id": "button_center_bottom_label",
+      "label": "Center Bottom Button Label",
+      "default": "FACE CREAM"
+    },
+    {
+      "type": "url",
+      "id": "button_center_bottom_link",
+      "label": "Center Bottom Button Link"
+    },
+    {
+      "type": "image_picker",
+      "id": "image_right_top",
+      "label": "Right Top Image"
+    },
+    {
+      "type": "text",
+      "id": "button_label",
+      "label": "Button Label",
+      "default": "CLEANSE"
+    },
+    {
+      "type": "url",
+      "id": "button_link",
+      "label": "Button Link"
+    },
+    {
+      "type": "image_picker",
+      "id": "image_right_bottom",
+      "label": "Right Bottom Image"
+    },
+    {
+      "type": "header",
+      "content": "Styling Config"
+    },
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Background Color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "content_bg_color",
+      "label": "Text Block Background",
+      "default": "#f5f5f5"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text Color",
+      "default": "#212b36"
+    },
+    {
+      "type": "range",
+      "id": "gap",
+      "min": 12,
+      "max": 48,
+      "step": 4,
+      "unit": "px",
+      "label": "Grid Gap",
+      "default": 24
+    },
+    {
+      "type": "range",
+      "id": "max_width",
+      "min": 1000,
+      "max": 1600,
+      "step": 40,
+      "unit": "px",
+      "label": "Maximum Width",
+      "default": 1280
+    },
+    {
+      "type": "range",
+      "id": "padding_top_desktop",
+      "min": 0,
+      "max": 120,
+      "step": 10,
+      "unit": "px",
+      "label": "Desktop Padding Top",
+      "default": 80
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom_desktop",
+      "min": 0,
+      "max": 120,
+      "step": 10,
+      "unit": "px",
+      "label": "Desktop Padding Bottom",
+      "default": 50
+    },
+    {
+      "type": "range",
+      "id": "padding_top_mobile",
+      "min": 0,
+      "max": 80,
+      "step": 10,
+      "unit": "px",
+      "label": "Mobile Padding Top",
+      "default": 60
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom_mobile",
+      "min": 0,
+      "max": 80,
+      "step": 10,
+      "unit": "px",
+      "label": "Mobile Padding Bottom",
+      "default": 0
+    }
+  ],
+  "presets": [
+    {
+      "name": "Vital Categories Showcase"
+    }
+  ]
+}
+{% endschema %}
