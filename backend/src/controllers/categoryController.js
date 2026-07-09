@@ -9,7 +9,11 @@ class CategoryController {
     try {
       const includeDeleted = req.query.includeDeleted === 'true';
       const categories = await categoryService.getCategories(includeDeleted);
-      res.status(HTTP_STATUS.OK).json(categories);
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        data: categories,
+        message: 'Categories fetched successfully',
+      });
     } catch (error) {
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,

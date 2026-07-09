@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Loader from '../components/ui/Loader';
 import { useParams, Link } from 'react-router-dom';
 import { Star, Heart, ShoppingBag, ArrowLeft, Send, Check } from 'lucide-react';
 import { useCart } from '../hooks/useCart';
@@ -141,11 +142,7 @@ const ProductDetail = () => {
   };
 
   if (loading) {
-    return (
-      <div className="py-20 text-center bg-[#f7f6f0] min-h-screen flex items-center justify-center">
-        <span className="font-heading text-lg font-bold text-brand-muted animate-pulse">Loading Product...</span>
-      </div>
-    );
+    return <Loader fullScreen />;
   }
 
   if (error || !product) {
@@ -286,9 +283,9 @@ const ProductDetail = () => {
               </div>
 
               {/* Quantity Selector & Actions Wrapper */}
-              <div className="flex flex-row items-center gap-4 mt-6">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mt-6">
                 {!isSoldOut && (
-                  <div className="flex items-center border border-[#eae8d8] h-11 select-none bg-[#fcfcfa] w-32 justify-between">
+                  <div className="flex items-center border border-[#eae8d8] h-11 select-none bg-[#fcfcfa] w-full sm:w-32 justify-between flex-shrink-0">
                     <button 
                       type="button"
                       onClick={() => setQuantity(q => Math.max(1, q - 1))} 
@@ -329,7 +326,7 @@ const ProductDetail = () => {
                   
                   <button
                     onClick={() => toggleWishlist(product)}
-                    className={`w-12 h-11 flex items-center justify-center border transition-all cursor-pointer ${
+                    className={`w-12 h-11 flex items-center justify-center border transition-all cursor-pointer flex-shrink-0 ${
                       isWishlisted 
                         ? 'bg-black border-black text-white' 
                         : 'bg-[#fcfcfa] border-[#eae8d8] text-black hover:border-black'
@@ -350,10 +347,10 @@ const ProductDetail = () => {
 
             {/* Specs & Description Tabs */}
             <div className="mt-8">
-              <div className="flex border-b border-[#eae8d8] gap-6 text-xs font-heading font-bold uppercase tracking-widest select-none">
+              <div className="flex border-b border-[#eae8d8] gap-6 text-xs font-heading font-bold uppercase tracking-widest select-none overflow-x-auto whitespace-nowrap no-scrollbar pb-1">
                 <button 
                   onClick={() => setActiveTab('description')}
-                  className={`pb-3 border-b-2 transition-all cursor-pointer ${
+                  className={`pb-3 border-b-2 transition-all cursor-pointer shrink-0 ${
                     activeTab === 'description' ? 'border-[#729855] text-black' : 'border-transparent text-gray-400 hover:text-black'
                   }`}
                 >
@@ -361,7 +358,7 @@ const ProductDetail = () => {
                 </button>
                 <button 
                   onClick={() => setActiveTab('specifications')}
-                  className={`pb-3 border-b-2 transition-all cursor-pointer ${
+                  className={`pb-3 border-b-2 transition-all cursor-pointer shrink-0 ${
                     activeTab === 'specifications' ? 'border-[#729855] text-black' : 'border-transparent text-gray-400 hover:text-black'
                   }`}
                 >
@@ -369,7 +366,7 @@ const ProductDetail = () => {
                 </button>
                 <button 
                   onClick={() => setActiveTab('shipping')}
-                  className={`pb-3 border-b-2 transition-all cursor-pointer ${
+                  className={`pb-3 border-b-2 transition-all cursor-pointer shrink-0 ${
                     activeTab === 'shipping' ? 'border-[#729855] text-black' : 'border-transparent text-gray-400 hover:text-black'
                   }`}
                 >

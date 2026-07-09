@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Loader from '../components/ui/Loader';
 import { Link } from 'react-router-dom'; // Added for Breadcrumbs
 import { Mail, MapPin, Phone, Send } from 'lucide-react';
 import { contactService } from '../api/contactService';
@@ -178,9 +179,9 @@ const Contact = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-[#3B4D1E] text-white hover:bg-black px-14 py-6 font-heading font-bold text-[13px] uppercase tracking-[0.2em] disabled:opacity-50 transition-all inline-block"
+                className="bg-[#3B4D1E] text-white hover:bg-black px-14 py-6 font-heading font-bold text-[13px] uppercase tracking-[0.2em] disabled:opacity-50 transition-all inline-flex items-center justify-center gap-2"
               >
-                {loading ? 'Submitting...' : 'SEND'}
+                {loading ? <Loader size="small" /> : 'SEND'}
               </button>
             </form>
           </div>

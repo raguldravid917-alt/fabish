@@ -57,7 +57,7 @@ const ProductCard = ({ product, onQuickView }) => {
         </Link>
 
         {/* Quick Action Overlay Icons */}
-        <div className="absolute top-[15px] right-[15px] w-[36px] flex flex-col gap-[8px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+        <div className="absolute top-[10px] right-[10px] w-11 lg:w-[36px] flex flex-col gap-[8px] opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300 z-10">
           <button
             onClick={() => {
               if (onQuickView) {
@@ -66,14 +66,14 @@ const ProductCard = ({ product, onQuickView }) => {
                 window.location.href = `/products/${product.slug}`;
               }
             }}
-            className="w-[36px] h-[36px] rounded-full bg-white flex items-center justify-center text-black hover:bg-[#729855] hover:text-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 cursor-pointer border-none"
+            className="w-11 h-11 lg:w-[36px] lg:h-[36px] rounded-full bg-white flex items-center justify-center text-black hover:bg-[#729855] hover:text-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 cursor-pointer border-none"
             title="Quick View"
           >
             <Eye className="w-[16px] h-[16px]" strokeWidth={1.5} />
           </button>
           <button
             onClick={() => toggleWishlist(product)}
-            className={`w-[36px] h-[36px] rounded-full flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 cursor-pointer border-none ${
+            className={`w-11 h-11 lg:w-[36px] lg:h-[36px] rounded-full flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 cursor-pointer border-none ${
               isWishlisted 
                 ? 'bg-black text-white hover:bg-[#729855] hover:text-white' 
                 : 'bg-white text-black hover:bg-[#729855] hover:text-white'
@@ -84,7 +84,7 @@ const ProductCard = ({ product, onQuickView }) => {
           </button>
           <button
             onClick={() => {}}
-            className="w-[36px] h-[36px] rounded-full bg-white flex items-center justify-center text-black hover:bg-[#729855] hover:text-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 cursor-pointer border-none"
+            className="w-11 h-11 lg:w-[36px] lg:h-[36px] rounded-full bg-white flex items-center justify-center text-black hover:bg-[#729855] hover:text-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 cursor-pointer border-none"
             title="Compare"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-[16px] h-[16px]">
@@ -100,7 +100,7 @@ const ProductCard = ({ product, onQuickView }) => {
 
         {/* Add to Cart overlay */}
         {!isSoldOut ? (
-          <div className="absolute bottom-0 left-0 right-0 h-[48px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+          <div className="absolute bottom-0 left-0 right-0 h-[48px] opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300 z-10">
             <button
               onClick={() => addToCart(product, 1)}
               className="w-full h-full bg-[#2f3e10] hover:bg-[#729855] text-white text-center font-heading text-[12px] font-bold tracking-[3px] uppercase cursor-pointer border-none rounded-none transition-colors"
@@ -109,7 +109,7 @@ const ProductCard = ({ product, onQuickView }) => {
             </button>
           </div>
         ) : (
-          <div className="absolute bottom-0 left-0 right-0 h-[48px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+          <div className="absolute bottom-0 left-0 right-0 h-[48px] opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300 z-10">
             <button
               disabled
               className="w-full h-full bg-[#5a5a5a] text-white text-center font-heading text-[12px] font-bold tracking-[3px] uppercase cursor-not-allowed border-none rounded-none"

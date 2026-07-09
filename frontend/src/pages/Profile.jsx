@@ -1,4 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
+import Loader from '../components/ui/Loader';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { 
   ShoppingBag, 
@@ -239,27 +240,29 @@ const Profile = () => {
                   </div>
                 </div>
 
-                {/* Products Table */}
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-brand-border font-heading font-bold text-[10px] uppercase tracking-wider text-brand-muted">
-                      <th className="py-3">Item Description</th>
-                      <th className="py-3 text-center">Qty</th>
-                      <th className="py-3 text-right">Price</th>
-                      <th className="py-3 text-right">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-brand-border/40 font-semibold text-brand-charcoal">
-                    {viewInvoice.orderItems.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-brand-bg-cream/20">
-                        <td className="py-4 font-body">{item.title}</td>
-                        <td className="py-4 text-center font-mono">{item.qty}</td>
-                        <td className="py-4 text-right font-mono">Rs. {item.price.toLocaleString('en-IN')}.00</td>
-                        <td className="py-4 text-right font-mono">Rs. {(item.price * item.qty).toLocaleString('en-IN')}.00</td>
+                {/* Products Table - Responsive scroll wrapper */}
+                <div className="overflow-x-auto w-full border-b border-brand-border/40 pb-2">
+                  <table className="w-full text-left border-collapse text-xs min-w-[450px]">
+                    <thead>
+                      <tr className="border-b border-brand-border font-heading font-bold text-[10px] uppercase tracking-wider text-brand-muted">
+                        <th className="pb-3">Item Description</th>
+                        <th className="pb-3 text-center">Qty</th>
+                        <th className="pb-3 text-right">Price</th>
+                        <th className="pb-3 text-right">Total</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-brand-border/40 font-semibold text-brand-charcoal">
+                      {viewInvoice.orderItems.map((item, idx) => (
+                        <tr key={idx} className="hover:bg-brand-bg-cream/20">
+                          <td className="py-4 font-body">{item.title}</td>
+                          <td className="py-4 text-center font-mono">{item.qty}</td>
+                          <td className="py-4 text-right font-mono">Rs. {item.price.toLocaleString('en-IN')}.00</td>
+                          <td className="py-4 text-right font-mono">Rs. {(item.price * item.qty).toLocaleString('en-IN')}.00</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
                 {/* Calculation Summary */}
                 <div className="flex justify-end pt-4 border-t border-brand-border">
@@ -490,9 +493,7 @@ const Profile = () => {
                 /* Orders List View */
                 <div className="bg-white border border-brand-border p-6 md:p-8">
                   {loadingOrders ? (
-                    <div className="py-20 text-center text-xs font-heading font-semibold text-brand-muted uppercase tracking-wider animate-pulse">
-                      Loading orders history...
-                    </div>
+                    <Loader />
                   ) : orders.length === 0 ? (
                     <div className="py-20 text-center max-w-sm mx-auto space-y-4">
                       <ClipboardList className="w-12 h-12 text-brand-border mx-auto" />
@@ -503,8 +504,9 @@ const Profile = () => {
                       </Link>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse text-xs">
+                    <div>
+                      {/* Desktop Table View */}
+                      <table className="hidden md:table w-full text-left border-collapse text-xs">
                         <thead>
                           <tr className="border-b border-brand-border font-heading font-bold text-[10px] uppercase tracking-wider text-brand-muted">
                             <th className="pb-3">Order Number</th>
@@ -561,6 +563,63 @@ const Profile = () => {
                           ))}
                         </tbody>
                       </table>
+
+                      {/* Mobile Cards View */}
+                      <div className="md:hidden grid grid-cols-1 gap-4">
+                        {orders.map((order) => (
+                          <div key={order._id} className="bg-brand-bg-cream/25 border border-brand-border p-4 space-y-4">
+                            <div className="flex justify-between items-center border-b border-brand-border pb-2">
+                              <span className="font-mono font-bold text-brand-green">#{order.orderNumber}</span>
+                              <span className="text-[11px] text-brand-muted">{new Date(order.createdAt).toLocaleDateString()}</span>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-[10px] font-heading font-bold uppercase tracking-wider text-brand-muted">Items</p>
+                              <p className="text-xs text-brand-charcoal font-medium line-clamp-2">
+                                {order.orderItems.map(item => `${item.title} (${item.qty})`).join(', ')}
+                              </p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <p className="text-[10px] font-heading font-bold uppercase tracking-wider text-brand-muted">Payment</p>
+                                <span className={`inline-block px-2 py-0.5 font-heading text-[9px] font-bold uppercase tracking-wider mt-1 ${
+                                  order.paymentStatus === 'Paid' 
+                                    ? 'bg-green-100 text-brand-green' 
+                                    : (order.paymentStatus === 'Failed' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700')
+                                }`}>
+                                  {order.paymentStatus}
+                                </span>
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-heading font-bold uppercase tracking-wider text-brand-muted">Status</p>
+                                <span className={`inline-block px-2 py-0.5 font-heading text-[9px] font-bold uppercase tracking-wider mt-1 ${
+                                  order.orderStatus === 'Cancelled'
+                                    ? 'bg-red-100 text-red-700'
+                                    : (order.orderStatus === 'Delivered' ? 'bg-green-100 text-brand-green' : 'bg-blue-100 text-blue-700')
+                                }`}>
+                                  {order.orderStatus}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex justify-between items-center pt-2 border-t border-brand-border/40 gap-2">
+                              <span className="font-mono font-bold text-sm">Rs. {order.totalPrice.toLocaleString('en-IN')}.00</span>
+                              <div className="flex gap-2">
+                                <button 
+                                  onClick={() => setSelectedOrder(order)}
+                                  className="border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white px-3 py-1.5 font-heading font-bold text-[9px] uppercase tracking-wider transition-all cursor-pointer bg-white"
+                                >
+                                  Track
+                                </button>
+                                <button 
+                                  onClick={() => setViewInvoice(order)}
+                                  className="bg-brand-charcoal text-white hover:bg-brand-button-hover px-3 py-1.5 font-heading font-bold text-[9px] uppercase tracking-wider transition-all cursor-pointer border-none"
+                                >
+                                  Invoice
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -655,9 +714,9 @@ const Profile = () => {
                 <button
                   type="submit"
                   disabled={submittingSettings}
-                  className="bg-brand-charcoal hover:bg-brand-button-hover text-white px-8 py-4 font-heading font-bold text-xs uppercase tracking-widest disabled:opacity-50 transition-all cursor-pointer border-none"
+                  className="bg-brand-charcoal hover:bg-brand-button-hover text-white px-8 py-3.5 font-heading font-bold text-xs uppercase tracking-widest disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer border-none"
                 >
-                  {submittingSettings ? 'Saving Changes...' : 'Save Settings'}
+                  {submittingSettings ? <Loader size="small" /> : 'Save Settings'}
                 </button>
               </form>
             </div>

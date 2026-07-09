@@ -52,13 +52,9 @@ const AdminLayout = () => {
     }
   }, [user, loading, navigate]);
 
-  // PUTHU LOADER UI: Show custom logo while auth is loading
+  // Show branded full-screen loader while auth state resolves
   if (loading) {
-    return (
-      <div className="w-full h-screen flex items-center justify-center bg-[#fcfcfa]">
-        <Loader size="large" text="Loading Admin..." />
-      </div>
-    );
+    return <Loader fullScreen />;
   }
 
   if (!user || !user.isAdmin) {
@@ -131,7 +127,8 @@ const AdminLayout = () => {
               <span className="serif-title text-lg font-bold text-[#2f3e10] uppercase tracking-wider">Store Operations</span>
               <button
                 onClick={() => setIsSidebarOpen(false)}
-                className="p-1 text-gray-500 hover:text-black bg-transparent border-none cursor-pointer"
+                className="w-11 h-11 flex items-center justify-center text-gray-500 hover:text-black bg-transparent border-none cursor-pointer"
+                aria-label="Close menu"
               >
                 <X className="w-6 h-6" />
               </button>

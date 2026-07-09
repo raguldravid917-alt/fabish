@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../context/ToastContext';
 import AuthCard from '../components/AuthCard';
-import { Loader2 } from 'lucide-react';
+import Loader from '../components/ui/Loader';
 
 const ResetPassword = () => {
   const { token } = useParams();
@@ -103,10 +103,7 @@ const ResetPassword = () => {
             className="w-full bg-[#2f3e10] hover:bg-black text-white py-4 px-6 font-heading font-bold text-xs uppercase tracking-[0.2em] transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer border-none rounded-none shadow-sm"
           >
             {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Updating Password...</span>
-              </>
+              <Loader size="small" />
             ) : (
               'Reset Password'
             )}

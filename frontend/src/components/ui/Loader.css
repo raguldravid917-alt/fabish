@@ -1,0 +1,62 @@
+/* ============================================================
+   Fabish Branded Loader — Loader.css
+   Animation: scale + opacity pulse on logo. No rotation.
+   Background: clean premium white.
+   ============================================================ */
+
+/* Pulse keyframe — scale 1 → 1.08 → 1, opacity 1 → 0.55 → 1 */
+@keyframes fabish-pulse {
+  0%   { transform: scale(1);    opacity: 1;    }
+  50%  { transform: scale(1.08); opacity: 0.55; }
+  100% { transform: scale(1);    opacity: 1;    }
+}
+
+/* ── Wrapper variants ─────────────────────────────────────── */
+
+/* Full-screen fixed overlay — Suspense fallback, layout-level */
+.fabish-loader--fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+}
+
+/* Inline centered block — section/page-level */
+.fabish-loader--inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100vh;
+  background-color: #ffffff;
+}
+
+/* ── Logo sizes ───────────────────────────────────────────── */
+
+.fabish-loader__logo {
+  object-fit: contain;
+  display: block;
+  animation: fabish-pulse 1.2s ease-in-out infinite;
+  /* No rotation, no translate — scale + opacity only */
+}
+
+/* Small — button inline indicator (20px) */
+.fabish-loader__logo--small {
+  width:  20px;
+  height: 20px;
+}
+
+/* Medium — card / section loading (48px) */
+.fabish-loader__logo--medium {
+  width:  48px;
+  height: 48px;
+}
+
+/* Large — full-page / layout loading (96px) */
+.fabish-loader__logo--large {
+  width:  96px;
+  height: 96px;
+}

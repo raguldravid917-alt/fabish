@@ -298,7 +298,7 @@ const Home = () => {
 
       {/* PREMIUM CATEGORY GRID */}
       <section className="w-full bg-white select-none">
-        <div className="max-w-[1280px] mx-auto px-[40px] pt-[60px] pb-[60px]">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-[40px] pt-[60px] pb-[60px]">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-[24px] auto-rows-[300px] md:auto-rows-[320px]">
 
             {/* 1. Serums Image Card */}
@@ -380,15 +380,15 @@ const Home = () => {
 
                       {discount > 0 && <span className="absolute top-3 left-3 bg-[#598e6a] text-white text-[10px] font-bold px-[8px] py-[4px] tracking-widest z-10">-{discount}%</span>}
 
-                      <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-out z-20">
+                      <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 ease-out z-20">
 
                         {/* Quick View */}
                         <button
                           onClick={() => setQuickViewProduct(product)}
-                          className="w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-md transition-all duration-300 hover:scale-105"
+                          className="w-11 h-11 lg:w-9 lg:h-9 rounded-full bg-white flex items-center justify-center shadow-md transition-all duration-300 hover:scale-105 border-none cursor-pointer"
                         >
                           <Eye
-                            size={15}
+                            size={18}
                             strokeWidth={1.8}
                             className="text-black hover:text-[#729855] transition-colors duration-300"
                           />
@@ -397,10 +397,10 @@ const Home = () => {
                         {/* Wishlist */}
                         <button
                           onClick={() => toggleWishlist(product)}
-                          className="w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-md transition-all duration-300 hover:scale-105"
+                          className="w-11 h-11 lg:w-9 lg:h-9 rounded-full bg-white flex items-center justify-center shadow-md transition-all duration-300 hover:scale-105 border-none cursor-pointer"
                         >
                           <Heart
-                            size={15}
+                            size={18}
                             strokeWidth={1.8}
                             className={`transition-colors duration-300 ${isInWishlist(product._id)
                               ? "fill-red-500 text-red-500"
@@ -411,10 +411,10 @@ const Home = () => {
 
                       </div>
 
-                      <div className="absolute bottom-[20px] left-1/2 -translate-x-1/2 w-[85%] max-w-[160px] translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out z-10">
+                      <div className="absolute bottom-[20px] left-1/2 -translate-x-1/2 w-[85%] max-w-[160px] translate-y-0 lg:translate-y-4 lg:group-hover:translate-y-0 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 ease-out z-10">
                         <button
                           onClick={() => addToCart(product)}
-                          className="w-full bg-[#3a4d23] hover:bg-black text-white text-center text-[11px] font-bold tracking-[0.2em] py-[12px] md:py-[14px] uppercase cursor-pointer border-none rounded-none transition-colors duration-300"
+                          className="w-full bg-[#3a4d23] hover:bg-black text-white text-center text-[11px] font-bold tracking-[0.2em] py-[12px] md:py-[14px] uppercase cursor-pointer border-none rounded-none transition-colors duration-300 h-11 flex items-center justify-center"
                         >
                           ADD CART
                         </button>
@@ -448,7 +448,7 @@ const Home = () => {
 
       {/* HAIR SERUM SECTION */}
       <section className="w-full bg-white select-none">
-        <div className="max-w-[1280px] mx-auto px-[40px] pt-[60px] pb-[60px]">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-[40px] pt-[60px] pb-[60px]">
           <div className="flex flex-col lg:flex-row items-stretch gap-[60px]">
             <div className="w-full lg:w-1/2 flex-shrink-0 flex items-center">
               <img src="/assets/homepage/Image-Sectio-3_4bf9d804-e941-478d-98bf-9867ba97363b.png" alt="Deeply Nourishing Hair Serum" className="w-full h-full object-cover" style={{ maxHeight: '520px', objectFit: 'cover' }} />
@@ -493,7 +493,7 @@ const Home = () => {
           loop
           playsInline
         />
-        <div className="absolute inset-0 z-10 w-full max-w-[1280px] mx-auto px-[40px] md:px-[60px] lg:px-[100px] flex items-center justify-between pointer-events-none">
+        <div className="absolute inset-0 z-10 w-full max-w-[1280px] mx-auto px-4 md:px-[60px] lg:px-[100px] flex items-center justify-between pointer-events-none">
           <div className="w-full md:w-[60%] lg:w-[45%] text-left pointer-events-auto">
             <h2 className="font-heading font-medium text-[36px] md:text-[44px] lg:text-[48px] leading-[1.2] text-black mb-[24px]">
               AuraBloom Beauty &amp; Personal Care
@@ -525,7 +525,7 @@ const Home = () => {
 
       {/* TESTIMONIALS SECTION */}
       <section className="w-full bg-white py-[80px] flex flex-col justify-start select-none">
-        <div className="w-full max-w-[1280px] mx-auto px-[40px]">
+        <div className="w-full max-w-[1280px] mx-auto px-4 md:px-[40px]">
           <span className="block font-body font-normal text-[12px] uppercase tracking-[0.2em] text-[#000000] mb-[16px] text-left" style={{ fontFamily: '"Work Sans", sans-serif' }}>
             CUSTOMER REVIEWS
           </span>
@@ -595,7 +595,7 @@ const Home = () => {
       </section>
 
       {/* FROM OUR BLOG SECTION - XEROX COPY FIX */}
-      <section className="max-w-[1280px] mx-auto px-[40px] py-[80px] bg-white">
+      <section className="max-w-[1280px] mx-auto px-4 md:px-[40px] py-[80px] bg-white">
         <h2 className="font-heading font-medium text-[36px] md:text-[42px] lg:text-[48px] text-center mb-[40px]">From Our Blog</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[32px] mb-12">
           {staticBlogs.map((post, index) => (
@@ -628,7 +628,7 @@ const Home = () => {
 
       {/* INSTAGRAM GALLERY / GAP FIXED WITH CORRECT ASPECT HEIGHT */}
       <section className="w-full bg-white pt-[40px] pb-[80px] select-none">
-        <div className="w-full max-w-[1280px] mx-auto px-[40px]">
+        <div className="w-full max-w-[1280px] mx-auto px-4 md:px-[40px]">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-[15px] lg:gap-[30px]">
             {/* Image 1 */}
             <div className="relative aspect-[4/5] overflow-hidden group cursor-pointer bg-[#f6f5ea]">
@@ -683,16 +683,16 @@ const Home = () => {
       {quickViewProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity duration-300 animate-fadeIn">
           <div className="absolute inset-0 cursor-default" onClick={() => setQuickViewProduct(null)} />
-          <div className="bg-white max-w-[800px] w-full shadow-2xl relative flex flex-col md:flex-row overflow-hidden rounded-none z-10 animate-scaleIn border border-[#f7e9e3]">
-            <button onClick={() => setQuickViewProduct(null)} className="absolute top-4 right-4 p-2 text-brand-charcoal hover:text-brand-green transition-colors cursor-pointer border-none bg-transparent" title="Close Quick View"><X className="w-6 h-6" /></button>
+          <div className="bg-white max-w-[800px] w-full shadow-2xl relative flex flex-col md:flex-row max-h-[90vh] md:max-h-[600px] overflow-y-auto md:overflow-visible rounded-none z-10 animate-scaleIn border border-[#f7e9e3]">
+            <button onClick={() => setQuickViewProduct(null)} className="absolute top-3 right-3 w-11 h-11 flex items-center justify-center text-brand-charcoal hover:text-brand-green bg-white/90 rounded-full shadow-md z-20 cursor-pointer border-none" title="Close Quick View"><X className="w-6 h-6" /></button>
             <div className="w-full md:w-1/2 bg-[#f6f5ea] flex items-center justify-center p-8 aspect-square md:aspect-auto">
-              <img src={getLocalImageUrl(quickViewProduct.images?.[0])} alt={quickViewProduct.title} className="max-h-[350px] w-auto object-contain" />
+              <img src={getLocalImageUrl(quickViewProduct.images?.[0])} alt={quickViewProduct.title} className="max-h-[280px] md:max-h-[350px] w-auto object-contain" />
             </div>
-            <div className="w-full md:w-1/2 p-8 flex flex-col justify-center">
+            <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col justify-center">
               <span className="text-[#729855] font-heading text-[10px] font-bold uppercase tracking-widest mb-1.5 block">
                 {typeof quickViewProduct.category === 'object' ? quickViewProduct.category?.name : quickViewProduct.category}
               </span>
-              <h2 className="font-heading text-2xl font-medium text-brand-charcoal mb-3">{quickViewProduct.title}</h2>
+              <h2 className="font-heading text-xl md:text-2xl font-medium text-brand-charcoal mb-3">{quickViewProduct.title}</h2>
               <div className="flex items-center gap-1.5 mb-4">
                 <div className="flex gap-0.5">
                   {[...Array(5)].map((_, i) => (
@@ -705,24 +705,24 @@ const Home = () => {
                 <span className="text-xl font-semibold text-brand-charcoal">Rs. {quickViewProduct.price.toLocaleString('en-IN')}.00 INR</span>
                 {quickViewProduct.comparePrice > quickViewProduct.price && <span className="text-sm line-through text-brand-muted">Rs. {quickViewProduct.comparePrice.toLocaleString('en-IN')}.00 INR</span>}
               </div>
-              <p className="text-sm text-brand-muted leading-relaxed mb-6 line-clamp-4">{quickViewProduct.description}</p>
+              <p className="text-sm text-brand-muted leading-relaxed mb-6 line-clamp-3 md:line-clamp-4">{quickViewProduct.description}</p>
               {quickViewProduct.stock > 0 ? (
                 <div className="space-y-4">
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-wrap items-center gap-4">
                     <span className="text-xs font-heading font-bold uppercase tracking-wider text-brand-charcoal">Quantity:</span>
-                    <div className="flex items-center border border-[#d0d0d0]">
-                      <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="px-3 py-1.5 text-sm bg-transparent border-none hover:bg-gray-100 cursor-pointer font-bold">-</button>
+                    <div className="flex items-center border border-[#d0d0d0] h-11 bg-white">
+                      <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="h-full px-4 text-sm bg-transparent border-none hover:bg-gray-100 cursor-pointer font-bold flex items-center justify-center">-</button>
                       <span className="px-4 text-sm font-semibold select-none">{quantity}</span>
-                      <button onClick={() => setQuantity(q => Math.min(quickViewProduct.stock, q + 1))} className="px-3 py-1.5 text-sm bg-transparent border-none hover:bg-gray-100 cursor-pointer font-bold">+</button>
+                      <button onClick={() => setQuantity(q => Math.min(quickViewProduct.stock, q + 1))} className="h-full px-4 text-sm bg-transparent border-none hover:bg-gray-100 cursor-pointer font-bold flex items-center justify-center">+</button>
                     </div>
                     <span className="text-xs text-brand-green font-semibold">In Stock ({quickViewProduct.stock} left)</span>
                   </div>
-                  <button onClick={() => { addToCart(quickViewProduct, quantity); setQuickViewProduct(null); }} className="w-full bg-[#2f3e10] hover:bg-[#729855] text-white py-4 px-6 font-heading text-xs font-bold tracking-[0.2em] uppercase transition-colors cursor-pointer border-none">Add to Cart</button>
+                  <button onClick={() => { addToCart(quickViewProduct, quantity); setQuickViewProduct(null); }} className="w-full bg-[#2f3e10] hover:bg-[#729855] text-white py-4 px-6 font-heading text-xs font-bold tracking-[0.2em] uppercase transition-colors cursor-pointer border-none h-12 flex items-center justify-center">Add to Cart</button>
                 </div>
               ) : (
                 <div className="space-y-4">
                   <span className="text-sm font-heading font-bold text-red-500 uppercase tracking-wider block">Sold Out</span>
-                  <button disabled className="w-full bg-brand-muted text-white py-4 px-6 font-heading text-xs font-bold tracking-[0.2em] uppercase cursor-not-allowed border-none">Out of Stock</button>
+                  <button disabled className="w-full bg-brand-muted text-white py-4 px-6 font-heading text-xs font-bold tracking-[0.2em] uppercase cursor-not-allowed border-none h-12 flex items-center justify-center">Out of Stock</button>
                 </div>
               )}
             </div>

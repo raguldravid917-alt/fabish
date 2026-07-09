@@ -26,8 +26,8 @@ const logger = {
 // ─── Cookie Config ────────────────────────────────────────────────────────────
 const getCookieOptions = () => ({
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+  secure: process.env.NODE_ENV === 'production',  // Must be true for sameSite: 'none'
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' required for cross-origin (Vercel ↔ Render)
   maxAge: 7 * 24 * 60 * 60 * 1000,
   path: '/',
 });

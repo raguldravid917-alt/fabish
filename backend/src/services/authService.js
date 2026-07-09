@@ -55,6 +55,35 @@ class AuthService {
     };
   }
 
+  async adminLogin(email, password) {
+    const user = await userRepository.findByEmailWithPassword(email);
+    if (!user || !(await user.matchPassword(password))) {
+      throw new Error('Invalid credentials or insufficient privileges');
+    }
+
+    // Only allow Admin role users
+    if (!user.isAdmin && user.role !== 'Admin') {
+      throw new Error('Invalid credentials or insufficient privileges');
+    }
+
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    await userRepository.update(user._id, { refreshToken });
+
+    return {
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isAdmin: user.isAdmin,
+      },
+      accessToken,
+      refreshToken,
+    };
+  }
+
   async refresh(token) {
     if (!token) {
       throw new Error('Refresh token is required');

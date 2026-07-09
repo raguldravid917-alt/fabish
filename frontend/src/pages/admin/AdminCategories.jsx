@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import Loader from '../../components/ui/Loader';
 import { Edit, Trash2, Plus, ArrowLeft, Upload, X, Save, AlertCircle, Eye, EyeOff, ChevronDown, ChevronRight } from 'lucide-react';
 import { categoryService } from '../../api/categoryService';
 import { useToast } from '../../context/ToastContext';
@@ -555,7 +556,7 @@ const AdminCategories = ({ categories = [], onRefresh }) => {
           disabled={loading}
           className="w-full bg-[#2f3e10] hover:bg-black text-white py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer border-none rounded-none shadow-sm flex items-center justify-center gap-1.5"
         >
-          {loading && <Plus className="w-4 h-4 animate-spin" />}
+          {loading && <Loader size="small" />}
           {editingCategory ? 'Save Collection Changes' : 'Publish Collection'}
         </button>
       </form>

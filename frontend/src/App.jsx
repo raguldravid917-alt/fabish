@@ -1,4 +1,5 @@
 import React, { Suspense, lazy } from 'react';
+import Loader from './components/ui/Loader';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 // Context Providers
@@ -37,16 +38,7 @@ const Unauthorized = lazy(() => import('./pages/Unauthorized'));
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'));
 const Profile = lazy(() => import('./pages/Profile'));
 
-/**
- * Loading fallback for Suspense — matches the app's visual style.
- */
-const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-[#f7f6f0]">
-    <span className="font-heading text-lg font-bold text-brand-muted animate-pulse">
-      Loading...
-    </span>
-  </div>
-);
+
 
 function App() {
   return (
@@ -58,7 +50,7 @@ function App() {
           <Router>
             <ScrollToTop />
             <ErrorBoundary>
-              <Suspense fallback={<PageLoader />}>
+              <Suspense fallback={<Loader fullScreen />}>
                   <Routes>
                     {/* Public routes with MainLayout (Header + Footer + AnnouncementBar) */}
                     <Route element={<MainLayout />}>

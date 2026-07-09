@@ -24,13 +24,9 @@ import Loader from '../components/ui/Loader'; // <-- PUTHU LOADER IMPORT
 const AuthLayout = () => {
   const { loading } = useAuth(); // Auth load aagutha nu check panna
 
-  // PUTHU LOADER UI: Auth check aagumbothu loader kaatum
+  // Show branded full-screen loader while auth state resolves
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#f7f6f0] flex items-center justify-center font-body">
-        <Loader size="large" text="Authenticating..." />
-      </div>
-    );
+    return <Loader fullScreen />;
   }
 
   return (

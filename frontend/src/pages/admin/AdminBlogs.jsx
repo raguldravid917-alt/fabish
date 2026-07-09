@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Edit, Trash2, Plus, Calendar, BookOpen, Loader2 } from 'lucide-react';
+import { Edit, Trash2, Plus, Calendar, BookOpen } from 'lucide-react';
+import Loader from '../../components/ui/Loader';
 import { api } from '../../api/client';
 import { useToast } from '../../context/ToastContext';
 import ErrorAlert from '../../components/ui/ErrorAlert';
@@ -143,7 +144,7 @@ const AdminBlogs = () => {
         </div>
 
         {loading ? (
-          <p className="text-gray-400 text-sm italic animate-pulse">Loading articles journal...</p>
+          <Loader />
         ) : (
           <div className="bg-white border border-[#eae8d8] overflow-x-auto shadow-sm">
             <table className="w-full text-left border-collapse text-xs">
@@ -278,7 +279,7 @@ const AdminBlogs = () => {
           disabled={isSubmitLoading}
           className="w-full bg-[#2f3e10] hover:bg-black text-white py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer border-none rounded-none shadow-sm flex items-center justify-center gap-1.5"
         >
-          {isSubmitLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+          {isSubmitLoading ? <Loader size="small" /> : null}
           {editingBlog ? 'Save Article' : 'Publish Article'}
         </button>
       </form>

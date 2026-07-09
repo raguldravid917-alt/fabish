@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback, useRef } from 'react';
-import { Edit, Trash2, Search, ArrowUpDown, ChevronLeft, ChevronRight, Upload, X, ShieldAlert, Loader2, ArrowLeft, ArrowRight, Star, AlertCircle, Eye, EyeOff, Save, Check } from 'lucide-react';
+import { Edit, Trash2, Search, ArrowUpDown, ChevronLeft, ChevronRight, Upload, X, ShieldAlert, ArrowLeft, ArrowRight, Star, AlertCircle, Eye, EyeOff, Save, Check } from 'lucide-react';
+import Loader from '../../components/ui/Loader';
 import { productService } from '../../api/productService';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import ErrorAlert from '../../components/ui/ErrorAlert';
@@ -982,7 +983,7 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
             disabled={loading} 
             className="flex-grow bg-[#2f3e10] hover:bg-black text-white py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer border-none rounded-none shadow-sm flex items-center justify-center gap-1.5"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {loading ? <Loader size="small" /> : <Save className="w-4 h-4" />}
             {editingProduct ? 'Save Product Changes' : 'Publish Product'}
           </button>
           

@@ -24,7 +24,10 @@ export const CartProvider = ({ children }) => {
 
   // Safe fetch helper that respects authorization tokens
   const fetchCart = async () => {
-    const token = localStorage.getItem('token');
+    let token = localStorage.getItem('token');
+    if (token === 'undefined' || token === 'null') {
+      token = null;
+    }
     if (!token) {
       // Guest Mode: Load safe, isolated local guest items
       const localData = localStorage.getItem('guest_cartItems');

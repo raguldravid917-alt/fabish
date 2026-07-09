@@ -28,18 +28,31 @@ const userRoutes = require('./src/routes/userRoutes');
 
 const app = express();
 
+// Trust proxy to ensure correct client IP is identified behind reverse proxies (like Render)
+app.set('trust proxy', 1);
+
 // 1. Security Headers
 app.use(helmet({
   crossOriginResourcePolicy: false, // Allow public loading of local uploads
 }));
 
 // 2. CORS setup
+const allowedOrigins = [
+  process.env.FRONTEND_URL,        // Deployed frontend (Vercel)
+  process.env.CLIENT_URL,          // Legacy alias — keep for backwards compat
+  'http://localhost:5173',          // Local dev
+  'http://localhost:3000',          // Alt local dev port
+].filter(Boolean);                  // Remove undefined/null entries
+
 app.use(cors({
-  // Array-la rendu URLs-aiyum pass pannunga
-  origin: [
-    process.env.CLIENT_URL,
-    'http://localhost:5173'
-  ],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g. curl, mobile apps, Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS: Origin '${origin}' is not allowed`));
+  },
   credentials: true,
 }));
 

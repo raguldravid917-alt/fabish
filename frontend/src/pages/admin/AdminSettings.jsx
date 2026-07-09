@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Loader from '../../components/ui/Loader';
 import { Settings, Save, ShieldAlert, BadgePercent, Truck, Mail } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
@@ -114,7 +115,7 @@ const AdminSettings = () => {
           className="w-full bg-[#2f3e10] hover:bg-black text-white py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer border-none rounded-none shadow-sm flex items-center justify-center gap-1.5"
         >
           <Save className="w-4 h-4" />
-          {loading ? 'Saving Parameters...' : 'Save Parameters'}
+          {loading ? <Loader size="small" /> : 'Save Parameters'}
         </button>
       </form>
     </div>

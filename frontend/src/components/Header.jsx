@@ -90,10 +90,10 @@ const Header = () => {
           }}
         >
           {/* Left: Logo */}
-          <div className="flex items-center gap-1.5 sm:gap-3 h-full">
+          <div className="flex items-center gap-1 sm:gap-2 h-full">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden text-black hover:text-[#729855] mr-1 bg-transparent border-none cursor-pointer"
+              className="lg:hidden text-black hover:text-[#729855] w-11 h-11 flex items-center justify-center bg-transparent border-none cursor-pointer"
               aria-label="Open menu"
             >
               {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -268,7 +268,7 @@ const Header = () => {
           <div className="flex items-center h-full gap-2 min-[375px]:gap-3.5 sm:gap-[20px]" style={{ color: '#000000' }}>
             <button
               onClick={() => setIsSearchOpen(true)}
-              className="w-[23px] h-[23px] flex items-center justify-center hover:text-[#729855] transition-colors bg-transparent border-none cursor-pointer"
+              className="w-11 h-11 flex items-center justify-center hover:text-[#729855] transition-colors bg-transparent border-none cursor-pointer"
               aria-label="Search"
             >
               <Search className="w-[20px] h-[20px]" strokeWidth={1.5} />
@@ -276,7 +276,7 @@ const Header = () => {
             <div className="relative h-full flex items-center" ref={accountDropdownRef}>
               <button
                 onClick={() => setIsAccountOpen(!isAccountOpen)}
-                className="w-[23px] h-[23px] flex items-center justify-center hover:text-[#729855] transition-colors text-black bg-transparent border-none cursor-pointer"
+                className="w-11 h-11 flex items-center justify-center hover:text-[#729855] transition-colors text-black bg-transparent border-none cursor-pointer"
                 aria-label="Account"
                 aria-haspopup="true"
                 aria-expanded={isAccountOpen}
@@ -389,33 +389,37 @@ const Header = () => {
             </div>
             <button
               onClick={() => setIsWishlistOpen(true)}
-              className="w-[23px] h-[23px] flex items-center justify-center hover:text-[#729855] transition-colors relative bg-transparent border-none cursor-pointer"
+              className="w-11 h-11 flex items-center justify-center hover:text-[#729855] transition-colors bg-transparent border-none cursor-pointer"
               aria-label="Wishlist"
             >
-              <Heart className="w-[20px] h-[20px]" strokeWidth={1.5} />
-              {wishlistItems.length > 0 && (
-                <span
-                  className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#729855] text-white flex items-center justify-center"
-                  style={{ fontSize: '9px', fontWeight: 700 }}
-                >
-                  {wishlistItems.length}
-                </span>
-              )}
+              <div className="relative">
+                <Heart className="w-[20px] h-[20px]" strokeWidth={1.5} />
+                {wishlistItems.length > 0 && (
+                  <span
+                    className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#729855] text-white flex items-center justify-center"
+                    style={{ fontSize: '9px', fontWeight: 700 }}
+                  >
+                    {wishlistItems.length}
+                  </span>
+                )}
+              </div>
             </button>
             <button
               onClick={() => setIsCartOpen(true)}
-              className="w-[23px] h-[23px] flex items-center justify-center hover:text-[#729855] transition-colors relative animate-none bg-transparent border-none cursor-pointer"
+              className="w-11 h-11 flex items-center justify-center hover:text-[#729855] transition-colors animate-none bg-transparent border-none cursor-pointer"
               aria-label="Cart"
             >
-              <ShoppingBag className="w-[20px] h-[20px]" strokeWidth={1.5} />
-              {itemsCount > 0 && (
-                <span
-                  className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#729855] text-white flex items-center justify-center"
-                  style={{ fontSize: '9px', fontWeight: 700 }}
-                >
-                  {itemsCount}
-                </span>
-              )}
+              <div className="relative">
+                <ShoppingBag className="w-[20px] h-[20px]" strokeWidth={1.5} />
+                {itemsCount > 0 && (
+                  <span
+                    className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#729855] text-white flex items-center justify-center"
+                    style={{ fontSize: '9px', fontWeight: 700 }}
+                  >
+                    {itemsCount}
+                  </span>
+                )}
+              </div>
             </button>
           </div>
         </div>
@@ -509,10 +513,10 @@ const Header = () => {
                         </h4>
                         <span className="text-[10px] font-heading font-bold uppercase tracking-widest text-brand-muted mb-2 block">{typeof item.category === 'object' ? item.category?.name : item.category}</span>
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center border border-brand-border select-none">
-                            <button onClick={() => updateQty(item._id, item.qty - 1)} className="px-2.5 py-1 text-brand-muted hover:text-brand-charcoal font-semibold">-</button>
+                          <div className="flex items-center border border-brand-border select-none h-11 bg-white">
+                            <button onClick={() => updateQty(item._id, item.qty - 1)} className="h-full px-3.5 text-brand-muted hover:text-brand-charcoal font-semibold flex items-center justify-center cursor-pointer border-none bg-transparent">-</button>
                             <span className="px-3 text-xs font-bold text-brand-charcoal">{item.qty}</span>
-                            <button onClick={() => updateQty(item._id, item.qty + 1)} className="px-2.5 py-1 text-brand-muted hover:text-brand-charcoal font-semibold">+</button>
+                            <button onClick={() => updateQty(item._id, item.qty + 1)} className="h-full px-3.5 text-brand-muted hover:text-brand-charcoal font-semibold flex items-center justify-center cursor-pointer border-none bg-transparent">+</button>
                           </div>
                           <span className="font-heading text-sm font-semibold">Rs. {(item.price * item.qty).toLocaleString('en-IN')}.00</span>
                         </div>
@@ -590,22 +594,24 @@ const Header = () => {
 
       {/* Search Overlay Panel */}
       {isSearchOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-24 px-6">
-          <div className="bg-white w-full max-w-2xl shadow-2xl p-6 relative">
-            <button onClick={() => setIsSearchOpen(false)} className="absolute top-4 right-4 p-1 text-brand-muted hover:text-brand-charcoal">
-              <X className="w-6 h-6" />
-            </button>
-            <h3 className="font-heading text-lg font-semibold text-brand-charcoal mb-4 uppercase tracking-wider">Search Products</h3>
-            <form onSubmit={handleSearchSubmit} className="flex gap-3">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-24 px-4 overflow-x-hidden">
+          <div className="bg-white shadow-2xl p-6 relative" style={{ width: 'min(92vw, 520px)' }}>
+            <div className="flex items-center justify-between mb-4 border-b border-brand-border pb-2">
+              <h3 className="font-heading text-base font-semibold text-brand-charcoal uppercase tracking-wider">Search Products</h3>
+              <button onClick={() => setIsSearchOpen(false)} className="p-1 text-brand-muted hover:text-brand-charcoal bg-transparent border-none cursor-pointer w-10 h-10 flex items-center justify-center" aria-label="Close search">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-3 w-full">
               <input
                 type="text"
                 placeholder="Search for cosmetic items..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-grow border border-brand-border px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
+                className="w-full sm:flex-grow border border-brand-border px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none min-w-0"
                 autoFocus
               />
-              <button type="submit" className="bg-brand-charcoal text-white hover:bg-brand-button-hover px-6 font-heading font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2">
+              <button type="submit" className="bg-brand-charcoal text-white hover:bg-brand-button-hover h-12 sm:h-auto px-6 font-heading font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 shrink-0">
                 Search <ArrowRight className="w-4 h-4" />
               </button>
             </form>

@@ -256,7 +256,7 @@ const AboutUs = () => {
 
       {/* INSTAGRAM GALLERY / GAP FIXED WITH CORRECT ASPECT HEIGHT */}
       <section className="w-full bg-white pt-[40px] pb-[80px] select-none">
-        <div className="w-full max-w-[1280px] mx-auto px-[40px]">
+        <div className="w-full max-w-[1280px] mx-auto px-4 md:px-[40px]">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-[15px] lg:gap-[30px]">
             {/* Image 1 */}
             <div className="relative aspect-[4/5] overflow-hidden group cursor-pointer bg-[#f6f5ea]">

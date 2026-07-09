@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Loader from '../../components/ui/Loader';
 import { Trash2, Star, Eye } from 'lucide-react';
 import { api } from '../../api/client';
 import { useToast } from '../../context/ToastContext';
@@ -51,7 +52,7 @@ const AdminReviews = () => {
       </div>
 
       {loading ? (
-        <p className="text-gray-400 text-sm italic animate-pulse">Loading reviews ledger...</p>
+        <Loader />
       ) : (
         <div className="bg-white border border-[#eae8d8] overflow-x-auto shadow-sm">
           <table className="w-full text-left border-collapse text-xs">

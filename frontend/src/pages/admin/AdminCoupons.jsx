@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Loader from '../../components/ui/Loader';
 import { Plus, Trash2, Tag, Calendar, Percent } from 'lucide-react';
 import { api } from '../../api/client';
 import { useToast } from '../../context/ToastContext';
@@ -93,7 +94,7 @@ const AdminCoupons = () => {
       <div className="lg:col-span-2 space-y-6">
         <h3 className="text-base font-bold text-black uppercase tracking-wider">Active Promotional Coupons</h3>
         {loading ? (
-          <p className="text-gray-400 text-sm italic animate-pulse">Querying coupons ledger...</p>
+          <Loader />
         ) : (
           <div className="bg-white border border-[#eae8d8] overflow-x-auto shadow-sm">
             <table className="w-full text-left border-collapse text-xs">
@@ -189,7 +190,9 @@ const AdminCoupons = () => {
               disabled={isSubmitLoading}
               className="w-full bg-[#2f3e10] text-white hover:bg-black py-3 px-6 font-heading font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 border-none cursor-pointer"
             >
-              Generate Code <Plus className="w-3.5 h-3.5" />
+              {isSubmitLoading ? <Loader size="small" /> : (
+                <>Generate Code <Plus className="w-3.5 h-3.5" /></>
+              )}
             </button>
           </form>
         </div>

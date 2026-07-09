@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthCard from '../components/AuthCard';
 import { useToast } from '../context/ToastContext';
-import { Loader2, MailCheck } from 'lucide-react';
+import { MailCheck } from 'lucide-react';
+import Loader from '../components/ui/Loader';
 
 const EmailVerification = () => {
   const navigate = useNavigate();
@@ -35,10 +36,7 @@ const EmailVerification = () => {
           className="w-full bg-[#2f3e10] hover:bg-black text-white py-4 px-6 font-heading font-bold text-xs uppercase tracking-[0.2em] transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer border-none rounded-none shadow-sm"
         >
           {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Confirming...</span>
-            </>
+              <Loader size="small" />
           ) : (
             'Verify Email Address'
           )}

@@ -9,7 +9,10 @@ export const WishlistProvider = ({ children }) => {
   const prevToken = useRef(localStorage.getItem('token'));
 
   const fetchWishlist = async () => {
-    const token = localStorage.getItem('token');
+    let token = localStorage.getItem('token');
+    if (token === 'undefined' || token === 'null') {
+      token = null;
+    }
     if (!token) {
       const localData = localStorage.getItem('guest_wishlistItems');
       setWishlistItems(localData ? JSON.parse(localData) : []);

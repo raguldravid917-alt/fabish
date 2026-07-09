@@ -11,7 +11,8 @@
  */
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, MailCheck } from 'lucide-react';
+import { MailCheck } from 'lucide-react';
+import Loader from '../components/ui/Loader';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../context/ToastContext';
 
@@ -129,10 +130,7 @@ const ForgotPassword = () => {
                 className="w-full bg-[#3e4e20] hover:bg-black text-white py-4 text-sm font-bold tracking-[0.2em] uppercase transition-colors disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer border-none"
               >
                 {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Sending Link...</span>
-                  </>
+                  <Loader size="small" />
                 ) : (
                   'Send Reset Link'
                 )}

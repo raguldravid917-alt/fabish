@@ -13,13 +13,9 @@ import Loader from '../components/ui/Loader'; // <-- PUTHU LOADER IMPORT
 const MainLayout = () => {
   const { loading } = useAuth(); // Initial auth state loading
 
-  // PUTHU LOADER UI: App first load aagumbothu logo pulse aagi kaatum
+  // Show branded full-screen loader while auth state initialises
   if (loading) {
-    return (
-      <div className="w-full h-screen flex flex-col items-center justify-center bg-[#fcfcfa] font-body">
-        <Loader size="large" text="Welcome to Fabish..." />
-      </div>
-    );
+    return <Loader fullScreen />;
   }
 
   return (

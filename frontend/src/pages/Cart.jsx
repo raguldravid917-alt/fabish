@@ -1,4 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
+import Loader from '../components/ui/Loader';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { ShoppingBag, Trash2, ArrowRight, ArrowLeft, CreditCard, Landmark, Truck } from 'lucide-react';
 import { CartContext } from '../context/CartContext';
@@ -240,10 +241,10 @@ const Cart = () => {
                         </div>
 
                         <div className="flex flex-wrap items-center justify-between mt-auto gap-4">
-                          <div className="flex items-center border border-brand-border font-bold">
-                            <button onClick={() => updateQty(item._id, item.qty - 1)} className="px-3.5 py-1.5 text-brand-muted hover:text-brand-charcoal">-</button>
+                          <div className="flex items-center border border-brand-border font-bold h-11 bg-white">
+                            <button onClick={() => updateQty(item._id, item.qty - 1)} className="h-full px-4 text-brand-muted hover:text-brand-charcoal flex items-center justify-center cursor-pointer border-none bg-transparent">-</button>
                             <span className="px-4 text-sm text-brand-charcoal">{item.qty}</span>
-                            <button onClick={() => updateQty(item._id, item.qty + 1)} className="px-3.5 py-1.5 text-brand-muted hover:text-brand-charcoal">+</button>
+                            <button onClick={() => updateQty(item._id, item.qty + 1)} className="h-full px-4 text-brand-muted hover:text-brand-charcoal flex items-center justify-center cursor-pointer border-none bg-transparent">+</button>
                           </div>
                           <div className="flex flex-col items-end">
                             <span className="text-xs text-brand-muted font-heading">Rs. {item.price.toLocaleString('en-IN')}.00 each</span>
@@ -399,7 +400,7 @@ const Cart = () => {
                         disabled={submitting}
                         className="flex-grow bg-brand-charcoal text-white hover:bg-brand-button-hover py-4 font-heading font-bold text-xs uppercase tracking-widest disabled:opacity-50 transition-all flex items-center justify-center gap-2"
                       >
-                        {submitting ? 'Placing Order...' : 'Pay and Place Order'}
+                        {submitting ? <Loader size="small" /> : 'Pay and Place Order'}
                       </button>
                     </div>
 

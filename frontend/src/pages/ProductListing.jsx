@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useLocation, Link } from 'react-router-dom';
+import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
 import { ChevronDown, ChevronUp, Eye, Heart, Menu } from 'lucide-react';
 import { productService } from '../api/productService';
 import { useCart } from '../hooks/useCart';
@@ -31,7 +31,11 @@ const fetchWithRetry = async (fn, options = {}) => {
 
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
-      return await fn();
+      const res = await fn();
+      if (res && res.success === false) {
+        throw new Error(res.message || 'API responded with success: false');
+      }
+      return res;
     } catch (err) {
       lastError = err;
       const isFinalAttempt = attempt === retries;
@@ -75,6 +79,7 @@ const ensureAbsolutePath = (path) => {
 const ProductListing = () => {
   const { categorySlug } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [activeSort, setActiveSort] = useState("BEST SELLING");
@@ -98,6 +103,7 @@ const ProductListing = () => {
   const [bestSellers, setBestSellers] = useState([]);
   const [bestSellerIndex, setBestSellerIndex] = useState(0);
   const [bestSeller, setBestSeller] = useState(null);
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const [newArrivals, setNewArrivals] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -408,8 +414,8 @@ const ProductListing = () => {
       {/* 2. CATALOG WORKSPACE CONTAINER */}
       <div className="max-w-[1280px] mx-auto px-6 md:px-12 py-[60px] flex flex-col lg:flex-row gap-12 lg:items-stretch items-start relative">
 
-        {/* LEFT COLUMN OUTER WRAPPER - Stretches full-height to match the right column track height perfectly */}
-        <div className="w-full lg:w-[22%] shrink-0 select-none relative pt-6 pb-10 pr-2">
+        {/* LEFT COLUMN OUTER WRAPPER - Stretches full-height to match the right column track height perfectly, hidden on mobile/tablet */}
+        <div className="hidden lg:block lg:w-[22%] shrink-0 select-none relative pt-6 pb-10 pr-2">
 
           {/* INNER STICKY CONTAINER - Sticky aligned at top-6 and h-fit so it slides and ends perfectly in parallel */}
           <div className="lg:sticky lg:top-6 lg:h-fit flex flex-col">
@@ -510,8 +516,14 @@ const ProductListing = () => {
                 <h3 className="text-[22px] font-heading font-semibold text-[#111] mb-6">
                   Best Seller
                 </h3>
-                <Link to={`/products/${currentBestSeller?.slug}`} onClick={() => window.scrollTo(0, 0)} className="block">
-                  <div className="group relative aspect-[3/4] bg-[#f2f3ee] flex items-center justify-center overflow-hidden mb-5 cursor-pointer">
+                 <div 
+                  onClick={() => {
+                    navigate(`/products/${currentBestSeller?.slug}`);
+                    window.scrollTo(0, 0);
+                  }}
+                  className="block cursor-pointer text-center"
+                 >
+                  <div className="group relative aspect-[3/4] bg-[#f2f3ee] flex items-center justify-center overflow-hidden mb-5">
                     <img
                       src={getLocalImageUrl(ensureAbsolutePath(currentBestSeller?.images?.[0] || currentBestSeller?.image))}
                       alt={currentBestSeller?.title || "Best Seller"}
@@ -571,7 +583,7 @@ const ProductListing = () => {
                   <p className="text-[14px] text-[#555] font-body text-center">
                     Rs. {(currentBestSeller?.price ?? 0).toLocaleString('en-IN')}.00 INR
                   </p>
-                </Link>
+                </div>
 
                 {/* Navigation pagination controls below the best seller metadata */}
                 <div className="flex items-center justify-center gap-6 mt-4 text-black">
@@ -636,10 +648,19 @@ const ProductListing = () => {
         <div className="w-full lg:w-[78%] flex flex-col pt-6 pb-10">
 
           {/* Toolbar */}
-          <div className="flex flex-wrap items-center justify-between mb-10 border-b border-[#eae8d8] pb-4">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-10 border-b border-[#eae8d8] pb-4">
             <span className="text-[14px] text-[#333] font-body">
               Showing 1-{filteredProducts.length} of {filteredProducts.length} Results
             </span>
+
+            {/* Mobile filters button */}
+            <button
+              type="button"
+              onClick={() => setIsFilterDrawerOpen(true)}
+              className="lg:hidden h-11 px-6 border border-gray-200 hover:border-black flex items-center justify-center gap-2 font-heading text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer bg-white text-black"
+            >
+              Filters
+            </button>
 
             {/* Grid Layout Toggles */}
             <div className="flex items-center gap-2">
@@ -735,7 +756,7 @@ const ProductListing = () => {
           {/* Product Grid */}
           {loading ? (
             <div className="w-full py-20 flex justify-center">
-              <Loader size="large" text="Loading Collection..." />
+              <Loader size="large" />
             </div>
           ) : filteredProducts.length === 0 ? (
             <div className="w-full text-center py-20 font-body">
@@ -846,6 +867,85 @@ const ProductListing = () => {
 
         </div>
       </div>
+
+      {/* Mobile Filter Drawer Overlay */}
+      {isFilterDrawerOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          <div
+            onClick={() => setIsFilterDrawerOpen(false)}
+            className="fixed inset-0 bg-black/40 transition-opacity"
+          ></div>
+          <div className="relative flex flex-col w-full max-w-xs bg-[#F9F9EB] h-full shadow-2xl p-6 overflow-y-auto z-50">
+            <div className="flex items-center justify-between mb-8 border-b border-[#eae8d8] pb-4">
+              <span className="font-heading text-xl font-bold text-black">Filters</span>
+              <button
+                onClick={() => setIsFilterDrawerOpen(false)}
+                className="w-11 h-11 flex items-center justify-center text-black hover:text-[#729855] bg-transparent border-none cursor-pointer"
+                aria-label="Close filters"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Filter Content */}
+            <div className="flex flex-col">
+              {/* Availability filter */}
+              <div className="border-b border-[#eae8d8] pb-6 mb-6">
+                <h3 className="font-heading font-semibold text-[17px] text-[#111] uppercase tracking-wide mb-4">Availability</h3>
+                <div className="flex flex-col space-y-4 pl-1">
+                  {['In stock', 'Out of stock'].map((option) => (
+                    <label key={option} className="flex items-center gap-3 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={selectedAvailability.includes(option)}
+                        onChange={() => toggleFilter('availability', option)}
+                        className="w-11 h-11 lg:w-[18px] lg:h-[18px] border-gray-300 rounded-none text-black focus:ring-black cursor-pointer"
+                      />
+                      <span className="text-[15px] text-[#444] group-hover:text-black transition-colors">{option}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Skin Type filter */}
+              <div className="border-b border-[#eae8d8] pb-6 mb-6">
+                <h3 className="font-heading font-semibold text-[17px] text-[#111] uppercase tracking-wide mb-4">Skin Type</h3>
+                <div className="flex flex-col space-y-4 pl-1">
+                  {skinTypeOptions.map((type) => (
+                    <label key={type} className="flex items-center gap-3 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={selectedSkinTypes.includes(type)}
+                        onChange={() => toggleFilter('skinType', type)}
+                        className="w-11 h-11 lg:w-[18px] lg:h-[18px] border-gray-300 rounded-none text-black focus:ring-black cursor-pointer"
+                      />
+                      <span className="text-[15px] text-[#444] group-hover:text-black transition-colors">{type}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Unit Count filter */}
+              <div className="border-[#eae8d8] pb-6 mb-6">
+                <h3 className="font-heading font-semibold text-[17px] text-[#111] uppercase tracking-wide mb-4">Unit Count</h3>
+                <div className="flex flex-col space-y-4 pl-1">
+                  {unitCountOptions.map((unit) => (
+                    <label key={unit} className="flex items-center gap-3 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={selectedUnitCounts.includes(unit)}
+                        onChange={() => toggleFilter('unitCount', unit)}
+                        className="w-11 h-11 lg:w-[18px] lg:h-[18px] border-gray-300 rounded-none text-black focus:ring-black cursor-pointer"
+                      />
+                      <span className="text-[15px] text-[#444] group-hover:text-black transition-colors">{unit}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

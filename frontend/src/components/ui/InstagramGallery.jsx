@@ -31,7 +31,7 @@ const InstaOverlay = () => (
  */
 const InstagramGallery = ({
   items = [],
-  containerClass = 'w-full max-w-[1280px] mx-auto px-[40px]',
+  containerClass = 'w-full max-w-[1280px] mx-auto px-4 md:px-[40px]',
   gap = 'gap-[15px] lg:gap-[30px]',
 }) => {
   return (

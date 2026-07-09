@@ -11,7 +11,11 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      if (!token) {
+      const storedToken = localStorage.getItem('token');
+      if (!storedToken || storedToken === 'undefined' || storedToken === 'null') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userInfo');
+        setToken(null);
         setUser(null);
         setLoading(false);
         return;
@@ -22,15 +26,20 @@ export const AuthProvider = ({ children }) => {
         if (res.success && res.data) {
           setUser(res.data);
         } else {
-          // Profile fetch returned non-success — don't delete token.
-          // Could be a transient error, backend restart, etc.
-          // Only explicit logout or genuinely expired JWT should remove token.
-          setUser(null);
+          // Only clear user state on explicit authorization failures (401/403)
+          if (res.status === 401 || res.status === 403) {
+            setUser(null);
+            localStorage.removeItem('token');
+            localStorage.removeItem('userInfo');
+            setToken(null);
+          } else {
+            console.warn('Transient failure fetching user profile:', res.message || res);
+            // Keep current user state to prevent forced logout on rate limiting / server down
+          }
         }
       } catch (err) {
         console.error('Error fetching user profile:', err);
-        // Network/CORS/500 errors must NOT delete the token.
-        setUser(null);
+        // Keep current user state on network/unexpected errors
       } finally {
         setLoading(false);
       }

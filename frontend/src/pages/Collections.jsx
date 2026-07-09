@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Loader from '../components/ui/Loader';
 import { useCategories } from '../context/CategoryContext';
 import { Link } from 'react-router-dom';
 import { getLocalImageUrl } from '../utils/imageMapper';
@@ -58,11 +59,7 @@ const Collections = () => {
   }, []);
 
   if (categoriesLoading || productsLoading) {
-    return (
-      <div className="w-full min-h-[400px] flex items-center justify-center bg-white font-body">
-        <span className="text-gray-400 font-semibold animate-pulse">Loading collections showcase...</span>
-      </div>
-    );
+    return <Loader />;
   }
 
   // Filter dynamic categories

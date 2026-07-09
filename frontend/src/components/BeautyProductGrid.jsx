@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import Loader from './ui/Loader';
 import { Link } from 'react-router-dom';
 import { Eye, Heart } from 'lucide-react';
 import { productService } from '../api/productService';
-import { categoryService } from '../api/categoryService';
+import { useCategories } from '../context/CategoryContext';
 import { useCart } from '../hooks/useCart';
 import { useWishlist } from '../hooks/useWishlist';
 import { getLocalImageUrl } from '../utils/imageMapper';
@@ -30,8 +31,8 @@ const ensureAbsolutePath = (path) => {
 const BeautyProductGrid = ({ setQuickViewProduct }) => {
   const [activeTab, setActiveTab] = useState('All');
   const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { categories, loading: categoriesLoading } = useCategories();
 
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
@@ -40,16 +41,10 @@ const BeautyProductGrid = ({ setQuickViewProduct }) => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [prodRes, catRes] = await Promise.all([
-          productService.getAll({ limit: 12 }),
-          categoryService.getAll()
-        ]);
+        const prodRes = await productService.getAll({ limit: 12 });
 
         if (prodRes.success) {
           setProducts(prodRes.data || []);
-        }
-        if (catRes.success) {
-          setCategories(catRes.data || []);
         }
       } catch (err) {
         console.error('Error fetching BeautyProductGrid data:', err);
@@ -94,10 +89,10 @@ const BeautyProductGrid = ({ setQuickViewProduct }) => {
   // Limit display to 8 products max in home grid
   const displayProducts = filteredProducts.slice(0, 8);
 
-  if (loading) {
+  if (loading || categoriesLoading) {
     return (
-      <div className="w-full text-center py-[40px] bg-white font-body">
-        <span className="text-gray-400 font-semibold animate-pulse">Loading items...</span>
+      <div className="w-full bg-white" style={{ minHeight: '320px' }}>
+        <Loader size="medium" />
       </div>
     );
   }
