@@ -35,8 +35,8 @@ app.use(helmet({
 
 // 2. CORS setup
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173', // Frontend URL
-  credentials: true, // Allow cookie exchanges
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true,
 }));
 
 // 3. Body parsers
