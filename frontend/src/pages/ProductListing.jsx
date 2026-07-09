@@ -5,7 +5,7 @@ import { productService } from '../api/productService';
 import { useCart } from '../hooks/useCart';
 import { useWishlist } from '../hooks/useWishlist';
 import { getLocalImageUrl } from '../utils/imageMapper';
-
+import Loader from '../components/ui/Loader';
 /**
  * Converts a product title into a URL-safe slug.
  */
@@ -542,8 +542,8 @@ const ProductListing = () => {
                           toggleWishlist(currentBestSeller);
                         }}
                         className={`w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-all duration-300 hover:scale-105 border-none cursor-pointer ${currentBestSeller?._id && isInWishlist(currentBestSeller._id)
-                            ? 'bg-black text-white hover:bg-[#729855]'
-                            : 'bg-white text-black hover:bg-[#729855] hover:text-white'
+                          ? 'bg-black text-white hover:bg-[#729855]'
+                          : 'bg-white text-black hover:bg-[#729855] hover:text-white'
                           }`}
                       >
                         <Heart className="w-4 h-4 stroke-[1.8]" fill={currentBestSeller?._id && isInWishlist(currentBestSeller._id) ? 'currentColor' : 'none'} />
@@ -734,8 +734,8 @@ const ProductListing = () => {
 
           {/* Product Grid */}
           {loading ? (
-            <div className="w-full text-center py-20">
-              <span className="font-heading text-lg font-bold text-gray-400 animate-pulse">Loading Collection...</span>
+            <div className="w-full py-20 flex justify-center">
+              <Loader size="large" text="Loading Collection..." />
             </div>
           ) : filteredProducts.length === 0 ? (
             <div className="w-full text-center py-20 font-body">
