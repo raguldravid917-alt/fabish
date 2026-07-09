@@ -1,20 +1,21 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { 
-  LayoutDashboard, 
-  Package, 
-  FolderTree, 
-  ShoppingCart, 
-  Users, 
-  UserCheck, 
-  Ticket, 
-  Star, 
-  BookOpen, 
-  BarChart3, 
-  Settings, 
-  LogOut, 
-  Menu, 
+import Loader from '../components/ui/Loader'; // <-- PUTHU LOADER IMPORT
+import {
+  LayoutDashboard,
+  Package,
+  FolderTree,
+  ShoppingCart,
+  Users,
+  UserCheck,
+  Ticket,
+  Star,
+  BookOpen,
+  BarChart3,
+  Settings,
+  LogOut,
+  Menu,
   X,
   Sparkles,
   MessageSquare
@@ -51,9 +52,13 @@ const AdminLayout = () => {
     }
   }, [user, loading, navigate]);
 
-  // Show nothing while auth is loading — prevents flash redirect
+  // PUTHU LOADER UI: Show custom logo while auth is loading
   if (loading) {
-    return null;
+    return (
+      <div className="w-full h-screen flex items-center justify-center bg-[#fcfcfa]">
+        <Loader size="large" text="Loading Admin..." />
+      </div>
+    );
   }
 
   if (!user || !user.isAdmin) {
@@ -72,11 +77,10 @@ const AdminLayout = () => {
       <Link
         to={link.path}
         onClick={() => setIsSidebarOpen(false)}
-        className={`flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-wider transition-all rounded-none no-underline ${
-          isActive 
-            ? 'bg-[#2f3e10] text-[#F9F9EB]' 
+        className={`flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-wider transition-all rounded-none no-underline ${isActive
+            ? 'bg-[#2f3e10] text-[#F9F9EB]'
             : 'text-gray-600 hover:text-black hover:bg-[#eae8d8]/30'
-        }`}
+          }`}
       >
         <Icon className="w-4 h-4 flex-shrink-0" />
         <span>{link.label}</span>
@@ -118,14 +122,14 @@ const AdminLayout = () => {
       {/* Slide-out Sidebar - Mobile & Tablet */}
       {isSidebarOpen && (
         <div className="fixed inset-0 z-[1100] lg:hidden flex">
-          <div 
-            onClick={() => setIsSidebarOpen(false)} 
+          <div
+            onClick={() => setIsSidebarOpen(false)}
             className="fixed inset-0 bg-black/40 backdrop-blur-sm"
           ></div>
           <aside className="relative flex flex-col w-64 bg-white h-full shadow-2xl p-6 overflow-y-auto animate-slide-in">
             <div className="flex items-center justify-between pb-6 mb-6 border-b border-brand-border">
               <span className="serif-title text-lg font-bold text-[#2f3e10] uppercase tracking-wider">Store Operations</span>
-              <button 
+              <button
                 onClick={() => setIsSidebarOpen(false)}
                 className="p-1 text-gray-500 hover:text-black bg-transparent border-none cursor-pointer"
               >
