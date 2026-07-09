@@ -5,6 +5,7 @@ import { api } from '../../api/client';
 import { useToast } from '../../context/ToastContext';
 import ErrorAlert from '../../components/ui/ErrorAlert';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
+import { getLocalImageUrl } from '../../utils/imageMapper';
 
 const AdminBlogs = () => {
   useDocumentTitle('Admin - Blogs');
@@ -19,6 +20,7 @@ const AdminBlogs = () => {
   const [author, setAuthor] = useState('');
   const [content, setContent] = useState('');
   const [imagePreview, setImagePreview] = useState('');
+  const [imageFile, setImageFile] = useState(null);
   const [tags, setTags] = useState('');
 
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
@@ -48,6 +50,7 @@ const AdminBlogs = () => {
     setAuthor('');
     setContent('');
     setImagePreview('');
+    setImageFile(null);
     setTags('');
     setError('');
   };
@@ -58,6 +61,7 @@ const AdminBlogs = () => {
     setAuthor(blog.author || '');
     setContent(blog.content);
     setImagePreview(blog.image || '');
+    setImageFile(null);
     setTags(blog.tags?.join(', ') || '');
     setView('form');
   };
@@ -80,6 +84,7 @@ const AdminBlogs = () => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
@@ -98,18 +103,23 @@ const AdminBlogs = () => {
     }
 
     setIsSubmitLoading(true);
-    const payload = {
-      title,
-      author: author || 'Admin Staff',
-      content,
-      image: imagePreview || '/assets/Blog03.jpg',
-      tags: tags.split(',').map(t => t.trim()).filter(Boolean)
-    };
+    
+    const formData = new FormData();
+    formData.append('title', title.trim());
+    formData.append('author', author || 'Admin Staff');
+    formData.append('content', content.trim());
+    formData.append('tags', tags);
+
+    if (imageFile) {
+      formData.append('image', imageFile);
+    } else if (imagePreview) {
+      formData.append('image', imagePreview);
+    }
 
     try {
       const res = editingBlog
-        ? await api.put(`/blogs/${editingBlog._id}`, payload)
-        : await api.post('/blogs', payload);
+        ? await api.put(`/blogs/${editingBlog._id}`, formData)
+        : await api.post('/blogs', formData);
       
       setIsSubmitLoading(false);
 
@@ -248,7 +258,11 @@ const AdminBlogs = () => {
               className="w-full border border-[#eae8d8] px-3 py-2 text-xs text-black"
             />
             {imagePreview && (
-              <img src={imagePreview} alt="Preview" className="w-32 h-20 object-cover border border-[#eae8d8] mt-3" />
+              <img 
+                src={imagePreview.startsWith('data:') ? imagePreview : `${getLocalImageUrl(imagePreview)}?t=${editingBlog && editingBlog.updatedAt ? new Date(editingBlog.updatedAt).getTime() : Date.now()}`} 
+                alt="Preview" 
+                className="w-32 h-20 object-cover border border-[#eae8d8] mt-3" 
+              />
             )}
           </div>
           <div>

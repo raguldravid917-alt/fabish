@@ -1,14 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Heart } from 'lucide-react';
+import { api } from '../api/client';
+import Loader from '../components/ui/Loader';
+import { getLocalImageUrl } from '../utils/imageMapper';
 
 const Blog = () => {
+  const [blogs, setBlogs] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const fetchBlogs = async () => {
+    try {
+      const res = await api.get('/blogs');
+      if (res.success) {
+        setBlogs(res.data || []);
+      }
+    } catch (err) {
+      console.error('Error fetching blogs:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBlogs();
+  }, []);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     console.log("Searching for:", searchQuery);
   };
+
+  // Filter blogs based on search query
+  const filteredBlogs = blogs.filter(blog => {
+    const query = searchQuery.toLowerCase();
+    return (
+      blog.title.toLowerCase().includes(query) ||
+      (blog.content && blog.content.toLowerCase().includes(query)) ||
+      (blog.author && blog.author.toLowerCase().includes(query))
+    );
+  });
+
+  // Extract unique tags
+  const allTags = Array.from(
+    new Set(blogs.flatMap(blog => blog.tags || []))
+  ).slice(0, 10);
 
   return (
     <div className="w-full bg-white font-body min-h-screen pb-24">
@@ -35,196 +72,63 @@ const Blog = () => {
 
           {/* LEFT COLUMN: Blog Posts Grid */}
           <div className="lg:col-span-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-12">
-
-              {/* Blog Post 1 */}
-              <div className="flex flex-col">
-                <Link to="/blogs/news/best-cleansers-for-sensitive-skin" className="w-full aspect-[4/3] overflow-hidden bg-gray-100 mb-6 block">
-                  <img
-                    src="/assets/Blog07.jpg"
-                    alt="Best Cleansers For Sensitive Skin"
-                    className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
-                    onError={(e) => { e.target.src = '/assets/Rectangle_342.jpg'; }}
-                  />
-                </Link>
-                <div className="flex items-center gap-3 text-[11px] font-bold text-[#111] tracking-[0.15em] uppercase mb-4">
-                  <span>25 MAR 2024</span>
-                  <span className="text-[#111]">|</span>
-                  <span>3 COMMENTS</span>
-                </div>
-                <Link to="/blogs/news/best-cleansers-for-sensitive-skin" className="group block mb-4">
-                  <h3 className="text-[26px] md:text-[28px] font-heading font-semibold text-[#111] group-hover:text-[#729855] transition-colors duration-300 leading-[1.25]">
-                    Best Cleansers For Sensitive Skin
-                  </h3>
-                </Link>
-                <p className="text-[15px] text-[#444] font-body leading-[1.8] mb-8">
-                  Sit amet justo donec enim diam vulputate ut pharetra sit. Risus sed vulputate odio ut enim blandit. Dictumst vestibulum rhoncus est pellentesque elit. Semper risus...
-                </p>
-                <div>
-                  <Link to="/blogs/news/best-cleansers-for-sensitive-skin" className="inline-block text-[12px] font-bold text-[#111] tracking-[0.15em] uppercase border-b-[2px] border-[#111] pb-1 hover:text-[#729855] hover:border-[#729855] transition-colors duration-300">
-                    READ MORE
-                  </Link>
-                </div>
+            {loading ? (
+              <div className="flex justify-center py-24">
+                <Loader />
               </div>
-
-              {/* Blog Post 2 */}
-              <div className="flex flex-col">
-                <Link to="/blogs/news/how-to-treat-an-infected-pimple" className="w-full aspect-[4/3] overflow-hidden bg-gray-100 mb-6 block">
-                  <img
-                    src="/assets/Rectangle_338.jpg"
-                    alt="How To Treat An Infected Pimple"
-                    className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
-                    onError={(e) => { e.target.src = '/assets/1_3.jpg'; }}
-                  />
-                </Link>
-                <div className="flex items-center gap-3 text-[11px] font-bold text-[#111] tracking-[0.15em] uppercase mb-4">
-                  <span>25 MAR 2024</span>
-                  <span className="text-[#111]">|</span>
-                  <span>1 COMMENT</span>
-                </div>
-                <Link to="/blogs/news/how-to-treat-an-infected-pimple" className="group block mb-4">
-                  <h3 className="text-[26px] md:text-[28px] font-heading font-semibold text-[#111] group-hover:text-[#729855] transition-colors duration-300 leading-[1.25]">
-                    How To Treat An Infected Pimple
-                  </h3>
-                </Link>
-                <p className="text-[15px] text-[#444] font-body leading-[1.8] mb-8">
-                  Laoreet suspendisse interdum consectetur libero id faucibus. Tortor at risus viverra adipiscing at in. Cursus euismod quis viverra nibh cras. Magnis dis parturient montes nascetur...
-                </p>
-                <div>
-                  <Link to="/blogs/news/how-to-treat-an-infected-pimple" className="inline-block text-[12px] font-bold text-[#111] tracking-[0.15em] uppercase border-b-[2px] border-[#111] pb-1 hover:text-[#729855] hover:border-[#729855] transition-colors duration-300">
-                    READ MORE
-                  </Link>
-                </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-12">
+                {filteredBlogs.map((blog) => (
+                  <div key={blog._id} className="flex flex-col animate-fade-in text-left">
+                    <Link to={`/blogs/news/${blog.slug}`} className="w-full aspect-[4/3] overflow-hidden bg-gray-100 mb-6 block">
+                      <img
+                        src={blog.image ? `${getLocalImageUrl(blog.image)}?t=${new Date(blog.updatedAt || blog.createdAt).getTime()}` : '/assets/Blog07.jpg'}
+                        alt={blog.title}
+                        className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+                        onError={(e) => { e.target.src = '/assets/Rectangle_342.jpg'; }}
+                      />
+                    </Link>
+                    <div className="flex items-center gap-3 text-[11px] font-bold text-[#111] tracking-[0.15em] uppercase mb-4">
+                      <span>
+                        {new Date(blog.date || blog.createdAt).toLocaleDateString('en-GB', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric'
+                        }).toUpperCase()}
+                      </span>
+                      <span className="text-[#111]">|</span>
+                      <span>{blog.author || 'Admin'}</span>
+                    </div>
+                    <Link to={`/blogs/news/${blog.slug}`} className="group block mb-4">
+                      <h3 className="text-[26px] md:text-[28px] font-heading font-semibold text-[#111] group-hover:text-[#729855] transition-colors duration-300 leading-[1.25]">
+                        {blog.title}
+                      </h3>
+                    </Link>
+                    <p 
+                      className="text-[15px] text-[#444] font-body leading-[1.8] mb-8"
+                      dangerouslySetInnerHTML={{ 
+                        __html: blog.content 
+                          ? blog.content.replace(/<[^>]*>/g, '').slice(0, 150) + (blog.content.length > 150 ? '...' : '')
+                          : '' 
+                      }} 
+                    />
+                    <div>
+                      <Link to={`/blogs/news/${blog.slug}`} className="inline-block text-[12px] font-bold text-[#111] tracking-[0.15em] uppercase border-b-[2px] border-[#111] pb-1 hover:text-[#729855] hover:border-[#729855] transition-colors duration-300">
+                        READ MORE
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+                {filteredBlogs.length === 0 && (
+                  <div className="col-span-2 text-center py-12 text-gray-400 italic">
+                    No articles found.
+                  </div>
+                )}
               </div>
-
-              {/* Blog Post 3 */}
-              <div className="flex flex-col">
-                <Link to="/blogs/news/best-sunscreens-for-everyday-wear" className="w-full aspect-[4/3] overflow-hidden bg-gray-100 mb-6 block">
-                  <img
-                    src="/assets/Blog08.jpg"
-                    alt="Best Sunscreens For Everyday Wear"
-                    className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
-                    onError={(e) => { e.target.src = '/assets/14.jpg'; }}
-                  />
-                </Link>
-                <div className="flex items-center gap-3 text-[11px] font-bold text-[#111] tracking-[0.15em] uppercase mb-4">
-                  <span>25 MAR 2024</span>
-                  <span className="text-[#111]">|</span>
-                  <span>1 COMMENT</span>
-                </div>
-                <Link to="/blogs/news/best-sunscreens-for-everyday-wear" className="group block mb-4">
-                  <h3 className="text-[26px] md:text-[28px] font-heading font-semibold text-[#111] group-hover:text-[#729855] transition-colors duration-300 leading-[1.25]">
-                    Best Sunscreens For Everyday Wear
-                  </h3>
-                </Link>
-                <p className="text-[15px] text-[#444] font-body leading-[1.8] mb-8">
-                  Erat pellentesque adipiscing commodo elit at. Ut pharetra sit amet aliquam id diam maecenas. Dictum fusce ut placerat orci nulla pellentesque dignissim. Pellentesque diam volutpat...
-                </p>
-                <div>
-                  <Link to="/blogs/news/best-sunscreens-for-everyday-wear" className="inline-block text-[12px] font-bold text-[#111] tracking-[0.15em] uppercase border-b-[2px] border-[#111] pb-1 hover:text-[#729855] hover:border-[#729855] transition-colors duration-300">
-                    READ MORE
-                  </Link>
-                </div>
-              </div>
-
-              {/* Blog Post 4 */}
-              <div className="flex flex-col">
-                <Link to="/blogs/news/the-different-types-of-face-cleansers" className="w-full aspect-[4/3] overflow-hidden bg-gray-100 mb-6 block">
-                  <img
-                    src="/assets/Rectangle_340.jpg"
-                    alt="The Different Types Of Face Cleansers"
-                    className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
-                    onError={(e) => { e.target.src = '/assets/14.jpg'; }}
-                  />
-                </Link>
-                <div className="flex items-center gap-3 text-[11px] font-bold text-[#111] tracking-[0.15em] uppercase mb-4">
-                  <span>25 MAR 2024</span>
-                  <span className="text-[#111]">|</span>
-                  <span>1 COMMENT</span>
-                </div>
-                <Link to="/blogs/news/the-different-types-of-face-cleansers" className="group block mb-4">
-                  <h3 className="text-[26px] md:text-[28px] font-heading font-semibold text-[#111] group-hover:text-[#729855] transition-colors duration-300 leading-[1.25]">
-                    The Different Types Of Face Cleansers
-                  </h3>
-                </Link>
-                <p className="text-[15px] text-[#444] font-body leading-[1.8] mb-8">
-                  Posuere morbi leo urna molestie at elementum eu facilisis sed. Quis commodo odio aenean sed adipiscing. Tincidunt vitae semper quis lectus nulla at. A lacus...
-                </p>
-                <div>
-                  <Link to="/blogs/news/the-different-types-of-face-cleansers" className="inline-block text-[12px] font-bold text-[#111] tracking-[0.15em] uppercase border-b-[2px] border-[#111] pb-1 hover:text-[#729855] hover:border-[#729855] transition-colors duration-300">
-                    READ MORE
-                  </Link>
-                </div>
-              </div>
-
-              {/* Blog Post 5 */}
-              <div className="flex flex-col">
-                <Link to="/blogs/news/how-hormones-affect-your-skin" className="w-full aspect-[4/3] overflow-hidden bg-gray-100 mb-6 block">
-                  <img
-                    src="/assets/Blog09.jpg"
-                    alt="How Hormones Affect Your Skin?"
-                    className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
-                    onError={(e) => { e.target.src = '/assets/14.jpg'; }}
-                  />
-                </Link>
-                <div className="flex items-center gap-3 text-[11px] font-bold text-[#111] tracking-[0.15em] uppercase mb-4">
-                  <span>25 MAR 2024</span>
-                  <span className="text-[#111]">|</span>
-                  <span>1 COMMENT</span>
-                </div>
-                <Link to="/blogs/news/how-hormones-affect-your-skin" className="group block mb-4">
-                  <h3 className="text-[26px] md:text-[28px] font-heading font-semibold text-[#111] group-hover:text-[#729855] transition-colors duration-300 leading-[1.25]">
-                    How Hormones Affect Your Skin?
-                  </h3>
-                </Link>
-                <p className="text-[15px] text-[#444] font-body leading-[1.8] mb-8">
-                  Neque sodales ut etiam sit amet nisl purus in mollis. Lacinia quis vel eros donec ac odio tempor orci. Adipiscing commodo elit at imperdiet dui...
-                </p>
-                <div>
-                  <Link to="/blogs/news/how-hormones-affect-your-skin" className="inline-block text-[12px] font-bold text-[#111] tracking-[0.15em] uppercase border-b-[2px] border-[#111] pb-1 hover:text-[#729855] hover:border-[#729855] transition-colors duration-300">
-                    READ MORE
-                  </Link>
-                </div>
-              </div>
-
-              {/* Blog Post 6 */}
-              <div className="flex flex-col">
-                <Link to="/blogs/news/dermatologist-recommended-skin-care" className="w-full aspect-[4/3] overflow-hidden bg-gray-100 mb-6 block">
-                  <img
-                    src="/assets/Blog10.jpg"
-                    alt="Dermatologist Recommended Skin Care"
-                    className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
-                    onError={(e) => { e.target.src = '/assets/1_2.jpg'; }}
-                  />
-                </Link>
-                <div className="flex items-center gap-3 text-[11px] font-bold text-[#111] tracking-[0.15em] uppercase mb-4">
-                  <span>25 MAR 2024</span>
-                  <span className="text-[#111]">|</span>
-                  <span>2 COMMENTS</span>
-                </div>
-                <Link to="/blogs/news/dermatologist-recommended-skin-care" className="group block mb-4">
-                  <h3 className="text-[26px] md:text-[28px] font-heading font-semibold text-[#111] group-hover:text-[#729855] transition-colors duration-300 leading-[1.25]">
-                    Dermatologist Recommended Skin Care
-                  </h3>
-                </Link>
-                <p className="text-[15px] text-[#444] font-body leading-[1.8] mb-8">
-                  Molestie at elementum eu facilisis sed odio. Enim nulla aliquet porttitor lacus. Id consectetur purus ut faucibus pulvinar elementum. Morbi tristique senectus et netus et....
-                </p>
-                <div>
-                  <Link to="/blogs/news/dermatologist-recommended-skin-care" className="inline-block text-[12px] font-bold text-[#111] tracking-[0.15em] uppercase border-b-[2px] border-[#111] pb-1 hover:text-[#729855] hover:border-[#729855] transition-colors duration-300">
-                    READ MORE
-                  </Link>
-                </div>
-              </div>
-
-            </div>
+            )}
           </div>
 
           {/* RIGHT COLUMN: Sidebar */}
-          {/* STICKY CLASSES ADDED HERE: lg:sticky lg:top-[120px] lg:self-start */}
-          {/* RIGHT COLUMN: Sidebar */}
-          {/* RIGHT COLUMN: Sidebar */}
-          {/* Sticky Fix: 'self-stretch' add panniruken, appo thaan left column height-ku ithuvum stretch aagi sticky work aagum */}
           <div className="lg:col-span-1 flex flex-col self-stretch">
 
             {/* --- NON-STICKY SECTION --- */}
@@ -255,50 +159,41 @@ const Blog = () => {
                 </h3>
 
                 <div className="flex flex-col space-y-6">
-                  {/* Article 1 */}
-                  <Link to="#" className="group flex gap-5 items-center">
-                    <div className="w-[85px] h-[85px] bg-gray-100 flex-shrink-0 overflow-hidden">
-                      <img src="/assets/Blog07.jpg" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Recent 1" onError={(e) => { e.target.style.display = 'none'; }} />
-                    </div>
-                    <div className="flex-grow">
-                      <span className="block text-[10px] font-bold text-[#111] tracking-[0.15em] uppercase mb-1.5">MAR 25</span>
-                      <h4 className="text-[15px] font-heading font-semibold text-[#111] leading-snug group-hover:text-[#729855] transition-colors line-clamp-2">
-                        Best cleansers for sensitive skin
-                      </h4>
-                    </div>
-                  </Link>
-
-                  {/* Article 2 */}
-                  <Link to="#" className="group flex gap-5 items-center">
-                    <div className="w-[85px] h-[85px] bg-gray-100 flex-shrink-0 overflow-hidden">
-                      <img src="/assets/Rectangle_338.jpg" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Recent 2" onError={(e) => { e.target.style.display = 'none'; }} />
-                    </div>
-                    <div className="flex-grow">
-                      <span className="block text-[10px] font-bold text-[#111] tracking-[0.15em] uppercase mb-1.5">MAR 25</span>
-                      <h4 className="text-[15px] font-heading font-semibold text-[#111] leading-snug group-hover:text-[#729855] transition-colors line-clamp-2">
-                        How To Treat An Infected Pimple
-                      </h4>
-                    </div>
-                  </Link>
-
-                  {/* Article 3 */}
-                  <Link to="#" className="group flex gap-5 items-center">
-                    <div className="w-[85px] h-[85px] bg-gray-100 flex-shrink-0 overflow-hidden">
-                      <img src="/assets/Blog08.jpg" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Recent 3" onError={(e) => { e.target.style.display = 'none'; }} />
-                    </div>
-                    <div className="flex-grow">
-                      <span className="block text-[10px] font-bold text-[#111] tracking-[0.15em] uppercase mb-1.5">MAR 25</span>
-                      <h4 className="text-[15px] font-heading font-semibold text-[#111] leading-snug group-hover:text-[#729855] transition-colors line-clamp-2">
-                        Best sunscreens for everyday wear
-                      </h4>
-                    </div>
-                  </Link>
+                  {loading ? (
+                    <div className="text-gray-400 italic text-xs">Loading recent articles...</div>
+                  ) : (
+                    blogs.slice(0, 3).map((blog) => (
+                      <Link key={blog._id} to={`/blogs/news/${blog.slug}`} className="group flex gap-5 items-center text-left">
+                        <div className="w-[85px] h-[85px] bg-gray-100 flex-shrink-0 overflow-hidden">
+                          <img 
+                            src={blog.image ? `${getLocalImageUrl(blog.image)}?t=${new Date(blog.updatedAt || blog.createdAt).getTime()}` : '/assets/Blog07.jpg'} 
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                            alt={blog.title} 
+                            onError={(e) => { e.target.src = '/assets/Rectangle_342.jpg'; }} 
+                          />
+                        </div>
+                        <div className="flex-grow">
+                          <span className="block text-[10px] font-bold text-[#111] tracking-[0.15em] uppercase mb-1.5">
+                            {new Date(blog.date || blog.createdAt).toLocaleDateString('en-GB', {
+                              month: 'short',
+                              day: 'numeric'
+                            }).toUpperCase()}
+                          </span>
+                          <h4 className="text-[15px] font-heading font-semibold text-[#111] leading-snug group-hover:text-[#729855] transition-colors line-clamp-2">
+                            {blog.title}
+                          </h4>
+                        </div>
+                      </Link>
+                    ))
+                  )}
+                  {!loading && blogs.length === 0 && (
+                    <div className="text-gray-400 italic text-xs">No recent articles.</div>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* --- STICKY SECTION (New Arrivals & Tags) --- */}
-            {/* 'top-[100px]' ah 'top-0' nu maathiyachu, so extra white space varathu */}
             <div className="sticky top-0 flex flex-col space-y-12">
 
               {/* New Arrivals */}
@@ -350,15 +245,24 @@ const Blog = () => {
                   Tags
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  <Link to="#" className="text-[11px] font-bold text-[#555] tracking-[0.1em] uppercase px-4 py-2 border border-gray-200 hover:text-white hover:bg-[#729855] hover:border-[#729855] transition-colors">
-                    DARK SPOT
-                  </Link>
-                  <Link to="#" className="text-[11px] font-bold text-[#555] tracking-[0.1em] uppercase px-4 py-2 border border-gray-200 hover:text-white hover:bg-[#729855] hover:border-[#729855] transition-colors">
-                    SKIN
-                  </Link>
-                  <Link to="#" className="text-[11px] font-bold text-[#555] tracking-[0.1em] uppercase px-4 py-2 border border-gray-200 hover:text-white hover:bg-[#729855] hover:border-[#729855] transition-colors">
-                    SUN PROTECTION
-                  </Link>
+                  {allTags.map((tag) => (
+                    <Link key={tag} to="#" className="text-[11px] font-bold text-[#555] tracking-[0.15em] uppercase px-4 py-2 border border-gray-200 hover:text-white hover:bg-[#729855] hover:border-[#729855] transition-colors">
+                      {tag}
+                    </Link>
+                  ))}
+                  {allTags.length === 0 && (
+                    <>
+                      <Link to="#" className="text-[11px] font-bold text-[#555] tracking-[0.15em] uppercase px-4 py-2 border border-gray-200 hover:text-white hover:bg-[#729855] hover:border-[#729855] transition-colors">
+                        DARK SPOT
+                      </Link>
+                      <Link to="#" className="text-[11px] font-bold text-[#555] tracking-[0.15em] uppercase px-4 py-2 border border-gray-200 hover:text-white hover:bg-[#729855] hover:border-[#729855] transition-colors">
+                        SKIN
+                      </Link>
+                      <Link to="#" className="text-[11px] font-bold text-[#555] tracking-[0.15em] uppercase px-4 py-2 border border-gray-200 hover:text-white hover:bg-[#729855] hover:border-[#729855] transition-colors">
+                        SUN PROTECTION
+                      </Link>
+                    </>
+                  )}
                 </div>
               </div>
 

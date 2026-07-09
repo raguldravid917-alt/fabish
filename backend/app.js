@@ -41,6 +41,7 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,        // Deployed frontend (Vercel)
   process.env.CLIENT_URL,          // Legacy alias — keep for backwards compat
   'http://localhost:5173',          // Local dev
+  'http://localhost:5174',          // Local dev alt port
   'http://localhost:3000',          // Alt local dev port
 ].filter(Boolean);                  // Remove undefined/null entries
 
@@ -51,9 +52,12 @@ app.use(cors({
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-    return callback(new Error(`CORS: Origin '${origin}' is not allowed`));
+    // Block CORS without throwing a 500 error on the server
+    return callback(null, false);
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
 }));
 
 // 3. Body parsers

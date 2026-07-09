@@ -8,7 +8,25 @@ class BlogController {
   async getBlogs(req, res, next) {
     try {
       const blogs = await blogService.getBlogs();
-      res.status(HTTP_STATUS.OK).json(blogs); // Match raw list return for frontend compatibility
+      
+      if (!blogs || blogs.length === 0) {
+        return res.status(HTTP_STATUS.OK).json({
+          success: true,
+          data: [],
+        });
+      }
+
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        message: 'Blogs retrieved successfully',
+        data: blogs,
+        blogs: blogs,
+        pagination: {
+          page: 1,
+          pages: 1,
+          total: blogs.length,
+        },
+      });
     } catch (error) {
       next(error);
     }
@@ -35,7 +53,8 @@ class BlogController {
   // @access  Private/Admin
   async createBlog(req, res, next) {
     try {
-      const blog = await blogService.createBlog(req.body);
+      const file = req.file || null;
+      const blog = await blogService.createBlog(req.body, file);
       res.status(HTTP_STATUS.CREATED).json({
         success: true,
         message: 'Blog post created successfully',
@@ -52,7 +71,8 @@ class BlogController {
   // @access  Private/Admin
   async updateBlog(req, res, next) {
     try {
-      const blog = await blogService.updateBlog(req.params.id, req.body);
+      const file = req.file || null;
+      const blog = await blogService.updateBlog(req.params.id, req.body, file);
       res.status(HTTP_STATUS.OK).json({
         success: true,
         message: 'Blog post updated successfully',

@@ -31,9 +31,20 @@ class AuthService {
   }
 
   async login(email, password) {
+    console.log('[AuthDebug] Incoming email:', email);
     const user = await userRepository.findByEmailWithPassword(email);
-    if (!user || !(await user.matchPassword(password))) {
-      throw new Error('Invalid email or password');
+    console.log('[AuthDebug] User found in DB:', user ? 'Yes' : 'No');
+    if (user) {
+      console.log('[AuthDebug] Stored password hash:', user.password);
+    }
+
+    if (!user) {
+      throw new Error('Email does not exist');
+    }
+    const isMatch = await user.matchPassword(password);
+    console.log('[AuthDebug] bcrypt.compare result:', isMatch);
+    if (!isMatch) {
+      throw new Error('Incorrect password');
     }
 
     const accessToken = generateAccessToken(user._id);
@@ -56,9 +67,20 @@ class AuthService {
   }
 
   async adminLogin(email, password) {
+    console.log('[AuthDebug] Incoming email (admin):', email);
     const user = await userRepository.findByEmailWithPassword(email);
-    if (!user || !(await user.matchPassword(password))) {
-      throw new Error('Invalid credentials or insufficient privileges');
+    console.log('[AuthDebug] User found in DB:', user ? 'Yes' : 'No');
+    if (user) {
+      console.log('[AuthDebug] Stored password hash:', user.password);
+    }
+
+    if (!user) {
+      throw new Error('Email does not exist');
+    }
+    const isMatch = await user.matchPassword(password);
+    console.log('[AuthDebug] bcrypt.compare result:', isMatch);
+    if (!isMatch) {
+      throw new Error('Incorrect password');
     }
 
     // Only allow Admin role users
@@ -136,7 +158,9 @@ class AuthService {
       payload.email = updateData.email;
     }
     if (updateData.password) {
-      payload.password = updateData.password;
+      const bcrypt = require('bcryptjs');
+      const salt = await bcrypt.genSalt(10);
+      payload.password = await bcrypt.hash(updateData.password, salt);
     }
 
     const updatedUser = await userRepository.update(userId, payload);

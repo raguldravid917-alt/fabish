@@ -598,16 +598,21 @@ const Home = () => {
       <section className="max-w-[1280px] mx-auto px-4 md:px-[40px] py-[80px] bg-white">
         <h2 className="font-heading font-medium text-[36px] md:text-[42px] lg:text-[48px] text-center mb-[40px]">From Our Blog</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[32px] mb-12">
-          {staticBlogs.map((post, index) => (
-            <div key={index} className="bg-white overflow-hidden flex flex-col text-left">
+          {(blogs.length > 0 ? blogs.slice(0, 3) : staticBlogs).map((post, index) => (
+            <div key={post._id || index} className="bg-white overflow-hidden flex flex-col text-left">
               <div className="w-full aspect-[16/10] overflow-hidden mb-6 bg-[#f6f5ea]">
                 <Link to={`/blogs/news/${post.slug || ''}`}>
-                  <img src={post.image} alt={post.title} className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" />
+                  <img 
+                    src={post.image ? `${getLocalImageUrl(post.image)}?t=${new Date(post.updatedAt || post.createdAt || Date.now()).getTime()}` : getLocalImageUrl(post.image)} 
+                    alt={post.title} 
+                    className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" 
+                    onError={(e) => { e.target.src = '/assets/Blog07.jpg'; }}
+                  />
                 </Link>
               </div>
               <div className="flex flex-col pr-4">
                 <p className="font-body text-[13px] text-black mb-[10px]">
-                  {post.author} &nbsp;|&nbsp; {post.date} &nbsp;|&nbsp; {post.comments}
+                  {post.author || 'Admin'} &nbsp;|&nbsp; {post.createdAt ? new Date(post.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : (post.date || '25 Mar 2024')} &nbsp;|&nbsp; {post.comments || 'General'}
                 </p>
                 <h3 className="font-heading font-semibold text-[22px] leading-[1.3] text-black mb-[20px] line-clamp-2 hover:text-[#729855] transition-colors">
                   <Link to={`/blogs/news/${post.slug || ''}`}>{post.title}</Link>

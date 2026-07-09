@@ -4,6 +4,8 @@ const blogController = require('../controllers/blogController');
 const { authenticate, authorize } = require('../middleware/authMiddleware');
 const { ROLES } = require('../constants');
 
+const upload = require('../middleware/uploadMiddleware');
+
 // Public endpoints
 router.get('/', blogController.getBlogs);
 router.get('/:slug', blogController.getBlogBySlug);
@@ -11,9 +13,9 @@ router.get('/:slug', blogController.getBlogBySlug);
 // Admin-only endpoints
 router.use(authenticate, authorize(ROLES.ADMIN));
 
-router.post('/', blogController.createBlog);
+router.post('/', upload.single('image'), blogController.createBlog);
 router.route('/:id')
-  .put(blogController.updateBlog)
+  .put(upload.single('image'), blogController.updateBlog)
   .delete(blogController.deleteBlog);
 
 module.exports = router;

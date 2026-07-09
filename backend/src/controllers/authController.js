@@ -24,13 +24,18 @@ const logger = {
 };
 
 // ─── Cookie Config ────────────────────────────────────────────────────────────
-const getCookieOptions = () => ({
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',  // Must be true for sameSite: 'none'
-  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' required for cross-origin (Vercel ↔ Render)
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-  path: '/',
-});
+const getCookieOptions = (req) => {
+  const origin = req?.headers?.origin || '';
+  const isLocal = origin.includes('localhost') || origin.includes('127.0.0.1');
+  const isProd = process.env.NODE_ENV === 'production' && !isLocal;
+  return {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: '/',
+  };
+};
 
 // ─── Validators ───────────────────────────────────────────────────────────────
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -80,7 +85,7 @@ class AuthController {
         password
       );
 
-      res.cookie('refreshToken', result.refreshToken, getCookieOptions());
+      res.cookie('refreshToken', result.refreshToken, getCookieOptions(req));
       logger.info(`[AuthController] register: user created — ${email}`);
 
       return ok(res, HTTP_STATUS.CREATED, 'Registration successful', {
@@ -115,7 +120,7 @@ class AuthController {
         password
       );
 
-      res.cookie('refreshToken', result.refreshToken, getCookieOptions());
+      res.cookie('refreshToken', result.refreshToken, getCookieOptions(req));
       logger.info(`[AuthController] login: authenticated — ${email}`);
 
       // ✅ FIX: 200 OK (was 201)
@@ -124,9 +129,15 @@ class AuthController {
         token: result.accessToken,
       });
     } catch (error) {
+      console.error('[AuthController] Login error details:', error);
       logger.warn(`[AuthController] login failed — ${req.body?.email}`);
-      // ✅ Generic message — don't leak "user not found" vs "wrong password"
-      return fail(res, HTTP_STATUS.UNAUTHORIZED, 'Invalid email or password', 'login');
+      if (error.message === 'Email does not exist' || error.message === 'Incorrect password' || error.message === 'Invalid email or password') {
+        return fail(res, HTTP_STATUS.UNAUTHORIZED, 'Invalid email or password', 'login');
+      }
+      return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR || 500).json({
+        success: false,
+        message: error.message || 'Internal server error',
+      });
     }
   }
 
@@ -147,7 +158,7 @@ class AuthController {
         password
       );
 
-      res.cookie('refreshToken', result.refreshToken, getCookieOptions());
+      res.cookie('refreshToken', result.refreshToken, getCookieOptions(req));
       logger.info(`[AuthController] adminLogin: admin authenticated — ${email}`);
 
       return ok(res, HTTP_STATUS.OK, 'Admin login successful', {
@@ -155,8 +166,15 @@ class AuthController {
         token: result.accessToken,
       });
     } catch (error) {
+      console.error('[AuthController] Admin login error details:', error);
       logger.warn(`[AuthController] adminLogin failed — ${req.body?.email}`);
-      return fail(res, HTTP_STATUS.UNAUTHORIZED, 'Invalid credentials or insufficient privileges', 'adminLogin');
+      if (error.message === 'Email does not exist' || error.message === 'Incorrect password' || error.message === 'Invalid credentials or insufficient privileges') {
+        return fail(res, HTTP_STATUS.UNAUTHORIZED, 'Invalid credentials or insufficient privileges', 'adminLogin');
+      }
+      return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR || 500).json({
+        success: false,
+        message: error.message || 'Internal server error',
+      });
     }
   }
 
@@ -174,7 +192,7 @@ class AuthController {
 
       const result = await authService.refresh(refreshToken);
 
-      res.cookie('refreshToken', result.refreshToken, getCookieOptions());
+      res.cookie('refreshToken', result.refreshToken, getCookieOptions(req));
       logger.info(`[AuthController] refresh: token rotated`);
 
       return ok(res, HTTP_STATUS.OK, 'Token refreshed successfully', {
