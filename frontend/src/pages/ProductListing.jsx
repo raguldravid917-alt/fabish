@@ -107,6 +107,18 @@ const ProductListing = () => {
   const [newArrivals, setNewArrivals] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Lock body scroll when mobile filter bottom sheet is open
+  useEffect(() => {
+    if (isFilterDrawerOpen) {
+      document.body.classList.add('body-scroll-lock');
+    } else {
+      document.body.classList.remove('body-scroll-lock');
+    }
+    return () => {
+      document.body.classList.remove('body-scroll-lock');
+    };
+  }, [isFilterDrawerOpen]);
+
   // Filter Selection State
   const [selectedAvailability, setSelectedAvailability] = useState([]);
   const [selectedSkinTypes, setSelectedSkinTypes] = useState([]);
@@ -868,16 +880,16 @@ const ProductListing = () => {
         </div>
       </div>
 
-      {/* Mobile Filter Drawer Overlay */}
+      {/* Mobile Filter Drawer Overlay as a Bottom Sheet */}
       {isFilterDrawerOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex">
+        <div className="fixed inset-0 z-50 lg:hidden flex items-end justify-center">
           <div
             onClick={() => setIsFilterDrawerOpen(false)}
-            className="fixed inset-0 bg-black/40 transition-opacity"
+            className="fixed inset-0 bg-black/45 backdrop-blur-xs transition-opacity"
           ></div>
-          <div className="relative flex flex-col w-full max-w-xs bg-[#F9F9EB] h-full shadow-2xl p-6 overflow-y-auto z-50">
-            <div className="flex items-center justify-between mb-8 border-b border-[#eae8d8] pb-4">
-              <span className="font-heading text-xl font-bold text-black">Filters</span>
+          <div className="relative flex flex-col w-full max-h-[80vh] bg-[#F9F9EB] shadow-2xl rounded-t-2xl p-6 overflow-y-auto z-50 animate-slide-up pb-24">
+            <div className="flex items-center justify-between mb-6 border-b border-[#eae8d8] pb-4 sticky top-0 bg-[#F9F9EB] z-10">
+              <span className="font-heading text-lg font-bold text-black uppercase tracking-wider">Filters</span>
               <button
                 onClick={() => setIsFilterDrawerOpen(false)}
                 className="w-11 h-11 flex items-center justify-center text-black hover:text-[#729855] bg-transparent border-none cursor-pointer"
@@ -888,9 +900,9 @@ const ProductListing = () => {
             </div>
 
             {/* Filter Content */}
-            <div className="flex flex-col">
+            <div className="flex flex-col space-y-6">
               {/* Availability filter */}
-              <div className="border-b border-[#eae8d8] pb-6 mb-6">
+              <div className="border-b border-[#eae8d8] pb-6">
                 <h3 className="font-heading font-semibold text-[17px] text-[#111] uppercase tracking-wide mb-4">Availability</h3>
                 <div className="flex flex-col space-y-4 pl-1">
                   {['In stock', 'Out of stock'].map((option) => (
@@ -908,7 +920,7 @@ const ProductListing = () => {
               </div>
 
               {/* Skin Type filter */}
-              <div className="border-b border-[#eae8d8] pb-6 mb-6">
+              <div className="border-b border-[#eae8d8] pb-6">
                 <h3 className="font-heading font-semibold text-[17px] text-[#111] uppercase tracking-wide mb-4">Skin Type</h3>
                 <div className="flex flex-col space-y-4 pl-1">
                   {skinTypeOptions.map((type) => (
@@ -926,7 +938,7 @@ const ProductListing = () => {
               </div>
 
               {/* Unit Count filter */}
-              <div className="border-[#eae8d8] pb-6 mb-6">
+              <div className="pb-6">
                 <h3 className="font-heading font-semibold text-[17px] text-[#111] uppercase tracking-wide mb-4">Unit Count</h3>
                 <div className="flex flex-col space-y-4 pl-1">
                   {unitCountOptions.map((unit) => (
@@ -942,6 +954,28 @@ const ProductListing = () => {
                   ))}
                 </div>
               </div>
+            </div>
+
+            {/* Sticky bottom Action buttons */}
+            <div className="absolute bottom-0 left-0 right-0 p-4 bg-[#F9F9EB] border-t border-[#eae8d8] z-10 flex gap-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedAvailability([]);
+                  setSelectedSkinTypes([]);
+                  setSelectedUnitCounts([]);
+                }}
+                className="w-1/2 py-3 border border-black hover:bg-black hover:text-white font-heading font-bold text-xs uppercase tracking-widest transition-all bg-transparent text-black cursor-pointer"
+              >
+                Clear All
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsFilterDrawerOpen(false)}
+                className="w-1/2 py-3 bg-[#2f3e10] text-white hover:bg-black font-heading font-bold text-xs uppercase tracking-widest transition-all border-none cursor-pointer"
+              >
+                Apply Filters
+              </button>
             </div>
           </div>
         </div>

@@ -528,24 +528,24 @@ const ProductDetail = () => {
         </div>
         <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
           {!isSoldOut && (
-            <div className="flex items-center border border-[#eae8d8] h-10 select-none bg-[#fcfcfa]">
+            <div className="flex items-center border border-[#eae8d8] h-11 select-none bg-[#fcfcfa]">
               <button 
                 type="button" 
                 onClick={() => setQuantity(q => Math.max(1, q - 1))} 
-                className="px-3 hover:bg-gray-100 h-full flex items-center justify-center font-bold border-none bg-transparent cursor-pointer"
+                className="px-3.5 hover:bg-gray-100 h-full flex items-center justify-center font-bold border-none bg-transparent cursor-pointer"
               >-</button>
               <span className="px-4 text-xs font-bold text-black">{quantity}</span>
               <button 
                 type="button" 
                 onClick={() => setQuantity(q => Math.min(product.stock, q + 1))} 
-                className="px-3 hover:bg-gray-100 h-full flex items-center justify-center font-bold border-none bg-transparent cursor-pointer"
+                className="px-3.5 hover:bg-gray-100 h-full flex items-center justify-center font-bold border-none bg-transparent cursor-pointer"
               >+</button>
             </div>
           )}
           <button
             onClick={handleAddToCart}
             disabled={isSoldOut}
-            className={`h-10 px-6 sm:px-8 flex-grow sm:flex-grow-0 flex items-center justify-center text-white font-heading font-bold text-xs uppercase tracking-widest transition-all border-none cursor-pointer ${
+            className={`h-11 px-6 sm:px-8 flex-grow sm:flex-grow-0 flex items-center justify-center text-white font-heading font-bold text-xs uppercase tracking-widest transition-all border-none cursor-pointer ${
               isSoldOut ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-[#2f3e10] hover:bg-black'
             }`}
           >

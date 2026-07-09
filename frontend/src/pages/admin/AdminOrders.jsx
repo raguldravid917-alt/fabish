@@ -66,8 +66,88 @@ const AdminOrders = ({ orders = [], onRefresh }) => {
         }
       />
 
-      <div className="bg-white border border-[#eae8d8] overflow-x-auto shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-        <table className="w-full text-left border-collapse text-xs">
+      <div className="bg-[#f7f6f0] md:bg-white md:border md:border-[#eae8d8] overflow-x-auto shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+        {/* Mobile Card Grid View */}
+        <div className="md:hidden space-y-4">
+          {paginated.map((order) => {
+            const customerName = order.customerDetails?.name || order.shippingAddress?.name || order.user?.name || 'Guest';
+            const customerEmail = order.customerDetails?.email || order.user?.email;
+            return (
+              <div key={order._id} className="bg-white border border-[#eae8d8] p-5 flex flex-col gap-4 text-xs shadow-xs text-left">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono font-bold text-brand-green text-sm">
+                    {order.orderNumber || `#${order._id.slice(-8).toUpperCase()}`}
+                  </span>
+                  <span className="text-gray-400 font-mono">
+                    {new Date(order.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+
+                <div className="border-t border-[#eae8d8]/50 pt-3 space-y-2">
+                  <div>
+                    <span className="text-gray-400 font-bold uppercase text-[9px] block">Customer</span>
+                    <span className="text-black font-semibold">{customerName}</span>
+                    {customerEmail && <span className="text-gray-400 font-normal block text-[10px]">{customerEmail}</span>}
+                  </div>
+                  <div>
+                    <span className="text-gray-400 font-bold uppercase text-[9px] block">Products</span>
+                    <p className="text-gray-600 font-medium leading-relaxed">
+                      {order.orderItems?.map((item) => `${item.title} (x${item.qty})`).join(', ')}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-gray-400 font-bold uppercase text-[9px] block">Address</span>
+                    <p className="text-gray-500 font-medium leading-relaxed">
+                      {order.shippingAddress ? `${order.shippingAddress.address}, ${order.shippingAddress.city}, ${order.shippingAddress.postalCode}, ${order.shippingAddress.country}` : 'No Address'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 border-t border-b border-[#eae8d8]/50 py-3 text-center text-gray-600 font-semibold select-none">
+                  <div>
+                    <div className="text-[9px] text-gray-400 font-bold uppercase mb-1">Amount</div>
+                    <span className="text-black font-bold font-heading text-sm">{formatPrice(order.totalPrice)}</span>
+                  </div>
+                  <div>
+                    <div className="text-[9px] text-gray-400 font-bold uppercase mb-1">Payment</div>
+                    <Badge variant={(order.paymentStatus === 'Paid' || order.isPaid) ? 'success' : (order.paymentStatus === 'Failed' ? 'danger' : 'warning')}>
+                      {order.paymentStatus || (order.isPaid ? 'Paid' : 'Unpaid')}
+                    </Badge>
+                  </div>
+                  <div>
+                    <div className="text-[9px] text-gray-400 font-bold uppercase mb-1">Status</div>
+                    <Badge variant={order.orderStatus === 'Delivered' ? 'success' : (order.orderStatus === 'Cancelled' ? 'danger' : 'warning')}>
+                      {order.orderStatus || (order.isDelivered ? 'Delivered' : 'Pending')}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2 pt-1 select-none">
+                  <label className="text-[9px] text-gray-400 font-bold uppercase">Update Order Status</label>
+                  <select
+                    value={order.orderStatus || (order.isDelivered ? 'Delivered' : 'Pending')}
+                    onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
+                    className="w-full px-3 py-2.5 border border-[#eae8d8] text-xs font-semibold text-black bg-white focus:outline-none rounded-none cursor-pointer"
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Confirmed">Confirmed</option>
+                    <option value="Packed">Packed</option>
+                    <option value="Shipped">Shipped</option>
+                    <option value="Out For Delivery">Out For Delivery</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                </div>
+              </div>
+            );
+          })}
+          {paginated.length === 0 && (
+            <div className="bg-white border border-[#eae8d8] p-8 text-center italic text-gray-400">No orders match the current filter.</div>
+          )}
+        </div>
+
+        {/* Desktop Table View */}
+        <table className="w-full text-left border-collapse text-xs hidden md:table">
           <thead className="bg-[#eae8d8]/50 border-b border-[#eae8d8] font-heading text-[10px] font-bold uppercase tracking-wider text-black select-none">
             <tr>
               <th className="p-4">Order Number</th>
@@ -132,7 +212,7 @@ const AdminOrders = ({ orders = [], onRefresh }) => {
             ))}
             {paginated.length === 0 && (
               <tr>
-                <td colSpan="7" className="p-12 text-center italic text-gray-400">
+                <td colSpan="9" className="p-12 text-center italic text-gray-400">
                   No orders match the current filter.
                 </td>
               </tr>

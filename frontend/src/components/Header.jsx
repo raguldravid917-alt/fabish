@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, Search, Heart, ShoppingBag, User as UserIcon, Trash2, ArrowRight, Eye } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
@@ -23,6 +23,7 @@ const NavLink = ({ to, label, active }) => (
 
 const Header = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useContext(AuthContext);
   const { cartItems, itemsCount, removeFromCart, updateQty, totalPrice } = useContext(CartContext);
   const { wishlistItems, toggleWishlist } = useContext(WishlistContext);
@@ -37,6 +38,28 @@ const Header = () => {
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const accountDropdownRef = useRef(null);
 
+  // Close all drawers on route change (navigation)
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+    setIsCartOpen(false);
+    setIsWishlistOpen(false);
+    setIsSearchOpen(false);
+    setIsAccountOpen(false);
+  }, [location.pathname]);
+
+  // Lock body scroll when drawers are open
+  useEffect(() => {
+    const isAnyDrawerOpen = isMobileMenuOpen || isCartOpen || isWishlistOpen || isSearchOpen;
+    if (isAnyDrawerOpen) {
+      document.body.classList.add('body-scroll-lock');
+    } else {
+      document.body.classList.remove('body-scroll-lock');
+    }
+    return () => {
+      document.body.classList.remove('body-scroll-lock');
+    };
+  }, [isMobileMenuOpen, isCartOpen, isWishlistOpen, isSearchOpen]);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (accountDropdownRef.current && !accountDropdownRef.current.contains(event.target)) {
@@ -46,6 +69,10 @@ const Header = () => {
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
         setIsAccountOpen(false);
+        setIsMobileMenuOpen(false);
+        setIsCartOpen(false);
+        setIsWishlistOpen(false);
+        setIsSearchOpen(false);
       }
     };
 
@@ -429,7 +456,7 @@ const Header = () => {
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
           <div onClick={() => setIsMobileMenuOpen(false)} className="fixed inset-0 bg-black/40 transition-opacity"></div>
-          <div className="relative flex flex-col w-full max-w-xs bg-white h-full shadow-2xl p-6 overflow-y-auto">
+          <div className="relative flex flex-col w-full max-w-xs bg-white h-full shadow-2xl p-6 overflow-y-auto animate-slide-in">
             <div className="flex items-center justify-between mb-8 border-b border-brand-border pb-4">
               <span className="font-heading text-xl font-bold text-brand-charcoal">Menu</span>
               <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 hover:text-brand-green">
@@ -485,7 +512,7 @@ const Header = () => {
       {isCartOpen && (
         <div className="fixed inset-0 z-50 flex">
           <div onClick={() => setIsCartOpen(false)} className="fixed inset-0 bg-black/40"></div>
-          <div className="relative flex flex-col w-full max-w-md bg-white h-full ml-auto shadow-2xl p-6">
+          <div className="relative flex flex-col w-full max-w-md bg-white h-full ml-auto shadow-2xl p-6 animate-slide-left">
             <div className="flex items-center justify-between border-b border-brand-border pb-4 mb-6">
               <h2 className="font-heading text-lg font-bold text-brand-charcoal">Shopping Cart ({itemsCount})</h2>
               <button onClick={() => setIsCartOpen(false)} className="p-2 hover:text-brand-green">
@@ -552,7 +579,7 @@ const Header = () => {
       {isWishlistOpen && (
         <div className="fixed inset-0 z-50 flex">
           <div onClick={() => setIsWishlistOpen(false)} className="fixed inset-0 bg-black/40"></div>
-          <div className="relative flex flex-col w-full max-w-md bg-white h-full ml-auto shadow-2xl p-6">
+          <div className="relative flex flex-col w-full max-w-md bg-white h-full ml-auto shadow-2xl p-6 animate-slide-left">
             <div className="flex items-center justify-between border-b border-brand-border pb-4 mb-6">
               <h2 className="font-heading text-lg font-bold text-brand-charcoal">My Wishlist ({wishlistItems.length})</h2>
               <button onClick={() => setIsWishlistOpen(false)} className="p-2 hover:text-brand-green">
@@ -594,8 +621,9 @@ const Header = () => {
 
       {/* Search Overlay Panel */}
       {isSearchOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-24 px-4 overflow-x-hidden">
-          <div className="bg-white shadow-2xl p-6 relative" style={{ width: 'min(92vw, 520px)' }}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 px-4 overflow-x-hidden">
+          <div onClick={() => setIsSearchOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm"></div>
+          <div className="bg-white shadow-2xl p-6 relative z-10" style={{ width: 'min(92vw, 520px)' }}>
             <div className="flex items-center justify-between mb-4 border-b border-brand-border pb-2">
               <h3 className="font-heading text-base font-semibold text-brand-charcoal uppercase tracking-wider">Search Products</h3>
               <button onClick={() => setIsSearchOpen(false)} className="p-1 text-brand-muted hover:text-brand-charcoal bg-transparent border-none cursor-pointer w-10 h-10 flex items-center justify-center" aria-label="Close search">

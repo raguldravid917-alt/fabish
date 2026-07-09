@@ -198,7 +198,7 @@ const Cart = () => {
   }
 
   return (
-    <div className="bg-[#f7f6f0] py-12 min-h-screen font-body text-base">
+    <div className="bg-[#f7f6f0] pt-12 pb-28 lg:pb-12 min-h-screen font-body text-base">
       <div className="max-w-[1440px] mx-auto px-6 md:px-12">
         
         <h1 className="serif-title text-3xl md:text-4xl text-brand-charcoal border-b border-brand-border pb-6 mb-10 uppercase tracking-wide">
@@ -266,7 +266,7 @@ const Cart = () => {
                     </div>
                   )}
 
-                  <form onSubmit={handlePlaceOrder} className="space-y-6">
+                  <form id="checkout-form" onSubmit={handlePlaceOrder} className="space-y-6">
                     
                     {/* Shipping Fields */}
                     <div>
@@ -466,6 +466,49 @@ const Cart = () => {
         )}
 
       </div>
+
+      {/* Sticky Bottom Checkout Bar for Mobile (Cart View Only) */}
+      {!isCheckoutMode && cartItems.length > 0 && (
+        <div className="fixed bottom-0 left-0 w-full bg-white border-t border-brand-border shadow-[0_-8px_30px_rgba(0,0,0,0.06)] py-3.5 px-6 z-40 flex items-center justify-between lg:hidden select-none">
+          <div className="flex flex-col text-left">
+            <span className="text-[10px] text-brand-muted uppercase tracking-wider font-heading font-bold">Total Amount</span>
+            <span className="font-sans text-base font-bold text-brand-charcoal">Rs. {totalPrice.toLocaleString('en-IN')}.00</span>
+          </div>
+          <Link
+            to="/cart?checkout=true"
+            className="bg-brand-charcoal hover:bg-brand-button-hover text-white h-11 px-6 font-heading font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 no-underline"
+          >
+            Checkout <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      )}
+
+      {/* Sticky Bottom Pay Bar for Mobile (Checkout View Only) */}
+      {isCheckoutMode && cartItems.length > 0 && (
+        <div className="fixed bottom-0 left-0 w-full bg-white border-t border-brand-border shadow-[0_-8px_30px_rgba(0,0,0,0.06)] py-3.5 px-6 z-40 flex items-center justify-between lg:hidden select-none">
+          <div className="flex flex-col text-left">
+            <span className="text-[10px] text-brand-muted uppercase tracking-wider font-heading font-bold">Order Total</span>
+            <span className="font-sans text-base font-bold text-brand-charcoal">Rs. {totalPrice.toLocaleString('en-IN')}.00</span>
+          </div>
+          {user ? (
+            <button
+              type="submit"
+              form="checkout-form"
+              disabled={submitting}
+              className="bg-[#2f3e10] hover:bg-black text-white h-11 px-6 font-heading font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 border-none cursor-pointer"
+            >
+              {submitting ? 'Processing...' : 'Place Order'}
+            </button>
+          ) : (
+            <Link
+              to="/account/login?redirect=/cart?checkout=true"
+              className="bg-brand-charcoal hover:bg-brand-button-hover text-white h-11 px-6 font-heading font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 no-underline"
+            >
+              Sign In
+            </Link>
+          )}
+        </div>
+      )}
     </div>
   );
 };

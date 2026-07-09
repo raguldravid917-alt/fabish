@@ -42,6 +42,31 @@ const AdminLayout = () => {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  // Lock body scroll when mobile sidebar is open
+  React.useEffect(() => {
+    if (isSidebarOpen) {
+      document.body.classList.add('body-scroll-lock');
+    } else {
+      document.body.classList.remove('body-scroll-lock');
+    }
+    return () => {
+      document.body.classList.remove('body-scroll-lock');
+    };
+  }, [isSidebarOpen]);
+
+  // Listen for Escape key to close mobile sidebar
+  React.useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setIsSidebarOpen(false);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
   // Guard: redirect non-admin users (only after auth state is fully resolved)
   React.useEffect(() => {
     if (loading) return; // Don't redirect while auth state is being resolved

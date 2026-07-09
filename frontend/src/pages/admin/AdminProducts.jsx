@@ -473,8 +473,85 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
         )}
 
         {/* Table List View */}
-        <div className="bg-white border border-[#eae8d8] overflow-x-auto shadow-sm">
-          <table className="w-full text-left border-collapse text-xs">
+        {/* Table List View */}
+        <div className="bg-[#f7f6f0] md:bg-white md:border md:border-[#eae8d8] overflow-x-auto shadow-sm">
+          {/* Mobile Card Grid View */}
+          <div className="md:hidden space-y-4">
+            {paginatedProducts.map((prod) => {
+              const imageSrc = getLocalImageUrl(prod.images?.[0] || prod.image || '/assets/14.jpg');
+              const collectionName = typeof prod.category === 'object' ? prod.category?.name : prod.category;
+
+              return (
+                <div key={prod._id} className="bg-white border border-[#eae8d8] p-5 flex flex-col gap-4 text-xs shadow-xs text-left">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(prod._id)}
+                        onChange={() => handleCheckboxToggle(prod._id)}
+                        className="cursor-pointer accent-[#729855] w-5 h-5"
+                      />
+                      <img
+                        src={imageSrc}
+                        alt=""
+                        className="w-12 h-14 object-cover border border-[#eae8d8] bg-[#fcfcfa] mix-blend-darken"
+                      />
+                      <div>
+                        <h4 className="font-semibold text-black leading-snug text-sm uppercase tracking-wide">{prod.title}</h4>
+                        <span className="text-gray-500 font-semibold capitalize mt-1 block">{collectionName || 'General'}</span>
+                      </div>
+                    </div>
+                    <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                      prod.status === 'Published' 
+                        ? 'bg-green-50 text-[#729855]' 
+                        : prod.status === 'Draft' 
+                        ? 'bg-amber-50 text-amber-700' 
+                        : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      {prod.status || 'Published'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 border-t border-b border-[#eae8d8]/50 py-3 text-center text-gray-600 font-semibold">
+                    <div>
+                      <div className="text-[9px] text-gray-400 font-bold uppercase mb-1">Price</div>
+                      <span className="text-black font-bold font-heading">{formatPrice(prod.price)}</span>
+                    </div>
+                    <div>
+                      <div className="text-[9px] text-gray-400 font-bold uppercase mb-1">Compare</div>
+                      <span className="font-mono text-xs">{prod.comparePrice > 0 ? formatPrice(prod.comparePrice) : '—'}</span>
+                    </div>
+                    <div>
+                      <div className="text-[9px] text-gray-400 font-bold uppercase mb-1">Stock</div>
+                      <span className={prod.stock <= 5 ? 'text-red-600 font-bold bg-red-50 px-1 py-0.5' : ''}>{prod.stock} units</span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleEditClick(prod)}
+                      className="flex-grow py-3 border border-[#eae8d8] text-black hover:bg-black hover:text-white transition-all cursor-pointer bg-[#fcfcfa] font-heading font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-1.5"
+                    >
+                      <Edit className="w-3.5 h-3.5" /> Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(prod._id)}
+                      className="py-3 px-4 border border-red-200 text-red-500 hover:bg-red-500 hover:text-white transition-all cursor-pointer bg-[#fcfcfa] flex items-center justify-center"
+                      aria-label={`Delete ${prod.title}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+            {filteredProducts.length === 0 && (
+              <div className="bg-white border border-[#eae8d8] p-8 text-center italic text-gray-400">No matching products found in the catalog.</div>
+            )}
+          </div>
+
+          {/* Desktop Table View */}
+          <table className="w-full text-left border-collapse text-xs hidden md:table">
             <thead className="bg-[#eae8d8]/50 border-b border-[#eae8d8] font-heading text-[10px] font-bold uppercase tracking-wider text-black select-none">
               <tr>
                 <th className="p-4 w-12 text-center">
@@ -546,6 +623,7 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
                     <td className="p-4">
                       <div className="flex justify-center gap-2">
                         <button
+                          type="button"
                           onClick={() => handleEditClick(prod)}
                           className="p-2 border border-[#eae8d8] text-black hover:bg-black hover:text-white transition-all cursor-pointer bg-[#fcfcfa]"
                           aria-label={`Edit ${prod.title}`}
@@ -553,6 +631,7 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
                           <Edit className="w-3.5 h-3.5" />
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleDelete(prod._id)}
                           className="p-2 border border-red-200 text-red-500 hover:bg-red-500 hover:text-white transition-all cursor-pointer bg-[#fcfcfa]"
                           aria-label={`Delete ${prod.title}`}

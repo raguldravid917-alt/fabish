@@ -254,8 +254,97 @@ const AdminCategories = ({ categories = [], onRefresh }) => {
           </button>
         </div>
 
-        <div className="bg-white border border-[#eae8d8] overflow-x-auto shadow-sm">
-          <table className="w-full text-left border-collapse text-xs">
+        <div className="bg-[#f7f6f0] md:bg-white md:border md:border-[#eae8d8] overflow-x-auto shadow-sm">
+          {/* Mobile Card Grid View */}
+          <div className="md:hidden space-y-4">
+            {flattenHierarchy(buildHierarchy(categories))
+              .filter(cat => isVisible(cat, categories, collapsedCategories))
+              .map((cat) => {
+                const imageSrc = cat.image ? getLocalImageUrl(cat.image) : '';
+                return (
+                  <div key={cat._id} className="bg-white border border-[#eae8d8] p-5 flex flex-col gap-4 text-xs shadow-xs text-left">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {imageSrc ? (
+                          <img
+                            src={imageSrc}
+                            alt=""
+                            className="w-14 h-9 object-cover border border-[#eae8d8] bg-[#fcfcfa]"
+                          />
+                        ) : (
+                          <div className="w-14 h-9 bg-gray-100 flex items-center justify-center text-gray-400 font-mono italic text-[9px] border border-[#eae8d8]">No Image</div>
+                        )}
+                        <div className="text-left">
+                          <div className="flex items-center gap-1.5">
+                            {cat.depth > 0 ? (
+                              <span className="text-gray-400 font-normal font-mono select-none">
+                                {'│ '.repeat(cat.depth - 1)}├──{' '}
+                              </span>
+                            ) : null}
+                            {parentIds.has(cat._id) ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleCollapse(cat._id);
+                                }}
+                                className="p-1 hover:bg-gray-100 rounded text-gray-500 cursor-pointer bg-transparent border-none flex items-center justify-center"
+                              >
+                                {collapsedCategories.has(cat._id) ? (
+                                  <ChevronRight className="w-3.5 h-3.5" />
+                                ) : (
+                                  <ChevronDown className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                            ) : (
+                              <div className="w-3" />
+                            )}
+                            <h4 className="font-semibold text-black leading-snug text-sm">{cat.name}</h4>
+                          </div>
+                          <span className="text-gray-400 font-mono text-[10px] mt-1 block">{cat.slug}</span>
+                        </div>
+                      </div>
+                      <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                        cat.status === 'Published' 
+                          ? 'bg-green-50 text-[#729855]' 
+                          : cat.status === 'Draft' 
+                          ? 'bg-amber-50 text-amber-700' 
+                          : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {cat.status || 'Published'}
+                      </span>
+                    </div>
+
+                    <p className="text-gray-500 font-medium leading-relaxed border-t border-[#eae8d8]/50 pt-2.5">
+                      <span className="text-gray-400 font-bold uppercase text-[9px] block mb-1">Description</span>
+                      {cat.description || 'No description provided.'}
+                    </p>
+
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        onClick={() => handleEditClick(cat)}
+                        className="flex-grow py-3 border border-[#eae8d8] text-black hover:bg-black hover:text-white transition-all cursor-pointer bg-[#fcfcfa] font-heading font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-1.5"
+                      >
+                        <Edit className="w-3.5 h-3.5" /> Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(cat._id)}
+                        className="py-3 px-4 border border-red-200 text-red-500 hover:bg-red-500 hover:text-white transition-all cursor-pointer bg-[#fcfcfa] flex items-center justify-center"
+                        aria-label={`Delete ${cat.name}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            {categories.length === 0 && (
+              <div className="bg-white border border-[#eae8d8] p-8 text-center italic text-gray-400">No categories found in store database.</div>
+            )}
+          </div>
+
+          {/* Desktop Table View */}
+          <table className="w-full text-left border-collapse text-xs hidden md:table">
             <thead className="bg-[#eae8d8]/50 border-b border-[#eae8d8] font-heading text-[10px] font-bold uppercase tracking-wider text-black select-none">
               <tr>
                 <th className="p-4">Collection Banner</th>
@@ -338,6 +427,7 @@ const AdminCategories = ({ categories = [], onRefresh }) => {
                     <td className="p-4">
                       <div className="flex justify-center gap-2">
                         <button
+                          type="button"
                           onClick={() => handleEditClick(cat)}
                           className="p-2 border border-[#eae8d8] text-black hover:bg-black hover:text-white transition-all cursor-pointer bg-[#fcfcfa]"
                           aria-label={`Edit collection ${cat.name}`}
@@ -345,6 +435,7 @@ const AdminCategories = ({ categories = [], onRefresh }) => {
                           <Edit className="w-3.5 h-3.5" />
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleDelete(cat._id)}
                           className="p-2 border border-red-200 text-red-500 hover:bg-red-500 hover:text-white transition-all cursor-pointer bg-[#fcfcfa]"
                           aria-label={`Delete collection ${cat.name}`}
