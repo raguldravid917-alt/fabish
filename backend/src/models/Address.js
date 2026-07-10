@@ -8,12 +8,27 @@ const addressSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    fullName: {
+      type: String,
+      required: [true, 'Please add a full name'],
+      trim: true,
+    },
+    phone: {
+      type: String,
+      required: [true, 'Please add a phone number'],
+      trim: true,
+    },
     addressLine1: {
       type: String,
       required: [true, 'Please add address line 1'],
       trim: true,
     },
     addressLine2: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    landmark: {
       type: String,
       trim: true,
       default: '',
@@ -25,8 +40,8 @@ const addressSchema = new mongoose.Schema(
     },
     state: {
       type: String,
+      required: [true, 'Please add a state'],
       trim: true,
-      default: '',
     },
     postalCode: {
       type: String,
@@ -39,6 +54,11 @@ const addressSchema = new mongoose.Schema(
       trim: true,
       default: 'India',
     },
+    addressType: {
+      type: String,
+      enum: ['Home', 'Office', 'Other'],
+      default: 'Home',
+    },
     isDefault: {
       type: Boolean,
       default: false,
@@ -48,5 +68,8 @@ const addressSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// Add index on user and isDefault to speed up looking up the user's default address
+addressSchema.index({ user: 1, isDefault: -1 });
 
 module.exports = mongoose.model('Address', addressSchema);

@@ -53,7 +53,9 @@ class ProductRepository {
   }
 
   async findAndCount({ filter = {}, sort = {}, page = 1, limit = 12 }) {
-    const skip = (page - 1) * limit;
+    const sanitizedPage = Math.max(1, Math.floor(Number(page)) || 1);
+    const sanitizedLimit = Math.min(100, Math.max(1, Math.floor(Number(limit)) || 12));
+    const skip = (sanitizedPage - 1) * sanitizedLimit;
     
     // Ignore soft deleted items by default in general listing unless requested
     if (!filter.status) {
@@ -65,13 +67,13 @@ class ProductRepository {
       .populate('category')
       .sort(sort)
       .skip(skip)
-      .limit(limit)
+      .limit(sanitizedLimit)
       .lean();
 
     return {
       products,
       total: count,
-      pages: Math.ceil(count / limit),
+      pages: Math.ceil(count / sanitizedLimit),
     };
   }
 }

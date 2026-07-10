@@ -3,12 +3,16 @@ const bcrypt = require('bcryptjs');
 const { ROLES } = require('../constants');
 
 const addressSchema = new mongoose.Schema({
+  fullName: { type: String, required: true },
+  phone: { type: String, required: true },
   addressLine1: { type: String, required: true },
   addressLine2: { type: String, default: '' },
+  landmark: { type: String, default: '' },
   city: { type: String, required: true },
-  state: { type: String, default: '' },
+  state: { type: String, required: true },
   postalCode: { type: String, required: true },
-  country: { type: String, required: true, default: 'United States' },
+  country: { type: String, required: true, default: 'India' },
+  addressType: { type: String, enum: ['Home', 'Office', 'Other'], default: 'Home' },
   isDefault: { type: Boolean, default: false }
 });
 
@@ -33,7 +37,7 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: [true, 'Please add a password'],
-      minlength: [6, 'Password must be at least 6 characters'],
+      minlength: [8, 'Password must be at least 8 characters'],
       select: false,
     },
     role: {

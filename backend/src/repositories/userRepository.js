@@ -34,6 +34,8 @@ class UserRepository {
   }
 
   async delete(id) {
+    const Address = require('../models/Address');
+    await Address.deleteMany({ user: id });
     return await User.findByIdAndDelete(id);
   }
 

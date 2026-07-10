@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { authService } from '../api/authService';
+import { profileService } from '../api/profileService';
 
 export const AuthContext = createContext();
 
@@ -67,7 +68,7 @@ export const AuthProvider = ({ children }) => {
 
         localStorage.setItem('token', actualToken);
         setToken(actualToken);
-        setUser({ _id: data._id, name: data.name, email: data.email, role: data.role, isAdmin: data.isAdmin });
+        setUser(data);
         setLoading(false);
         return { success: true };
       } else {
@@ -92,7 +93,7 @@ export const AuthProvider = ({ children }) => {
         const data = result.data;
         localStorage.setItem('token', data.token);
         setToken(data.token);
-        setUser({ _id: data._id, name: data.name, email: data.email, role: data.role, isAdmin: data.isAdmin });
+        setUser(data);
         setLoading(false);
         return { success: true };
       } else {
@@ -120,16 +121,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const updateProfile = async (name, email, password) => {
+  const updateProfile = async (name, email, phone, password) => {
     setError(null);
     try {
-      const result = await authService.updateProfile({ name, email, password });
+      const result = await authService.updateProfile({ name, email, phone, password });
 
       if (result.success) {
         const data = result.data;
         localStorage.setItem('token', data.token);
         setToken(data.token);
-        setUser({ _id: data._id, name: data.name, email: data.email, role: data.role, isAdmin: data.isAdmin });
+        setUser(data);
         return { success: true };
       } else {
         return { success: false, message: result.message || 'Update failed' };
@@ -155,6 +156,32 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const uploadAvatar = async (file) => {
+    try {
+      const result = await profileService.uploadPhoto(file);
+      if (result.success) {
+        setUser(result.data);
+        return { success: true };
+      }
+      return { success: false, message: result.message || 'Upload failed' };
+    } catch (err) {
+      return { success: false, message: 'Upload failed' };
+    }
+  };
+
+  const removeAvatar = async () => {
+    try {
+      const result = await profileService.removePhoto();
+      if (result.success) {
+        setUser(result.data);
+        return { success: true };
+      }
+      return { success: false, message: result.message || 'Removal failed' };
+    } catch (err) {
+      return { success: false, message: 'Removal failed' };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -168,6 +195,9 @@ export const AuthProvider = ({ children }) => {
         updateProfile,
         forgotPassword,
         resetPassword,
+        uploadAvatar,
+        removeAvatar,
+        setUser,
       }}
     >
       {children}

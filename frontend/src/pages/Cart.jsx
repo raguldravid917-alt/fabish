@@ -1,11 +1,12 @@
 import React, { useContext, useState } from 'react';
 import Loader from '../components/ui/Loader';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Trash2, ArrowRight, ArrowLeft, CreditCard, Landmark, Truck } from 'lucide-react';
+import { ShoppingBag, Trash2, ArrowRight, ArrowLeft, CreditCard, Landmark, Truck, MapPin, Check, Plus } from 'lucide-react';
 import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
 import { getLocalImageUrl } from '../utils/imageMapper';
 import { orderService } from '../api/orderService';
+import { addressService } from '../api/addressService';
 import { useToast } from '../context/ToastContext';
 
 const Cart = () => {
@@ -32,17 +33,107 @@ const Cart = () => {
   } = useContext(CartContext);
 
   // Checkout Form State
+  const [fullName, setFullName] = useState(user?.name || '');
+  const [phone, setPhone] = useState(user?.phone || '');
   const [address, setAddress] = useState('');
+  const [addressLine2, setAddressLine2] = useState('');
+  const [landmark, setLandmark] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [postalCode, setPostalCode] = useState('');
   const [country, setCountry] = useState('India');
+  const [addressType, setAddressType] = useState('Home');
   const [paymentMethod, setPaymentMethod] = useState('Card');
+
+  // Address Book Integration States
+  const [saveAddress, setSaveAddress] = useState(true);
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState('');
 
   // Status state
   const [submitting, setSubmitting] = useState(false);
   const [orderCreated, setOrderCreated] = useState(null);
   const [error, setError] = useState('');
+
+  // Fetch saved addresses if logged in and in checkout mode
+  React.useEffect(() => {
+    const fetchCheckoutAddresses = async () => {
+      if (!user || !isCheckoutMode) return;
+      try {
+        const res = await addressService.getAddresses();
+        if (res.success && res.data) {
+          const addrs = res.data;
+          setSavedAddresses(addrs);
+          
+          // Auto select default address
+          const defaultAddr = addrs.find(a => a.isDefault);
+          if (defaultAddr) {
+            setSelectedAddressId(defaultAddr._id);
+            setFullName(defaultAddr.fullName || user.name || '');
+            setPhone(defaultAddr.phone || user.phone || '');
+            setAddress(defaultAddr.addressLine1 || '');
+            setAddressLine2(defaultAddr.addressLine2 || '');
+            setLandmark(defaultAddr.landmark || '');
+            setCity(defaultAddr.city || '');
+            setState(defaultAddr.state || '');
+            setPostalCode(defaultAddr.postalCode || '');
+            setCountry(defaultAddr.country || 'India');
+            setAddressType(defaultAddr.addressType || 'Home');
+          } else if (addrs.length > 0) {
+            setSelectedAddressId(addrs[0]._id);
+            setFullName(addrs[0].fullName || user.name || '');
+            setPhone(addrs[0].phone || user.phone || '');
+            setAddress(addrs[0].addressLine1 || '');
+            setAddressLine2(addrs[0].addressLine2 || '');
+            setLandmark(addrs[0].landmark || '');
+            setCity(addrs[0].city || '');
+            setState(addrs[0].state || '');
+            setPostalCode(addrs[0].postalCode || '');
+            setCountry(addrs[0].country || 'India');
+            setAddressType(addrs[0].addressType || 'Home');
+          } else {
+            setSelectedAddressId('new');
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load checkout addresses:', err);
+      }
+    };
+
+    fetchCheckoutAddresses();
+  }, [user, isCheckoutMode]);
+
+  const handleAddressSelectChange = (e) => {
+    const addrId = e.target.value;
+    setSelectedAddressId(addrId);
+
+    if (addrId === 'new') {
+      setFullName(user?.name || '');
+      setPhone(user?.phone || '');
+      setAddress('');
+      setAddressLine2('');
+      setLandmark('');
+      setCity('');
+      setState('');
+      setPostalCode('');
+      setCountry('India');
+      setAddressType('Home');
+    } else {
+      const selected = savedAddresses.find(a => a._id === addrId);
+      if (selected) {
+        setFullName(selected.fullName || user?.name || '');
+        setPhone(selected.phone || user?.phone || '');
+        setAddress(selected.addressLine1 || '');
+        setAddressLine2(selected.addressLine2 || '');
+        setLandmark(selected.landmark || '');
+        setCity(selected.city || '');
+        setState(selected.state || '');
+        setPostalCode(selected.postalCode || '');
+        setCountry(selected.country || 'India');
+        setAddressType(selected.addressType || 'Home');
+      }
+    }
+  };
 
   // Coupon UI states
   const [couponInput, setCouponInput] = useState('');
@@ -76,8 +167,33 @@ const Cart = () => {
       return;
     }
 
-    if (!address.trim() || !city.trim() || !postalCode.trim() || !country.trim()) {
-      setError('Please fill out all shipping address fields.');
+    if (!fullName.trim()) {
+      setError('Please enter recipient full name.');
+      return;
+    }
+
+    if (!phone.trim() || !phone.trim().match(/^\+?[0-9\s-]{10,15}$/)) {
+      setError('Please enter a valid 10-to-15 digit phone number.');
+      return;
+    }
+
+    if (!address.trim()) {
+      setError('Please fill out the shipping address field.');
+      return;
+    }
+
+    if (!city.trim()) {
+      setError('Please fill out the city field.');
+      return;
+    }
+
+    if (!state.trim()) {
+      setError('Please select or enter the state.');
+      return;
+    }
+
+    if (!postalCode.trim() || !postalCode.trim().match(/^[a-zA-Z0-9\s-]{3,10}$/)) {
+      setError('Please enter a valid PIN / Postal code (3-10 characters).');
       return;
     }
 
@@ -92,17 +208,24 @@ const Cart = () => {
           product: item._id,
         })),
         shippingAddress: {
-          address,
-          city,
-          state,
-          postalCode,
-          country,
+          fullName: fullName.trim(),
+          phone: phone.trim(),
+          address: address.trim(),
+          addressLine1: address.trim(),
+          addressLine2: addressLine2.trim(),
+          landmark: landmark.trim(),
+          city: city.trim(),
+          state: state.trim(),
+          postalCode: postalCode.trim(),
+          country: country.trim(),
+          addressType: addressType,
         },
         paymentMethod,
         itemsPrice,
         shippingPrice,
         totalPrice,
         couponCode: appliedCoupon ? appliedCoupon.code : undefined,
+        saveAddress: saveAddress,
       };
 
       if (paymentMethod === 'Card') {
@@ -295,17 +418,86 @@ const Cart = () => {
 
                   <form id="checkout-form" onSubmit={handlePlaceOrder} className="space-y-6">
 
+                    {/* Saved Address Selection Dropdown */}
+                    {savedAddresses.length > 0 && (
+                      <div className="bg-[#eae8d8]/30 border border-brand-border p-4 mb-4 space-y-2">
+                        <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted block">
+                          Select from Saved Addresses
+                        </label>
+                        <select
+                          value={selectedAddressId}
+                          onChange={handleAddressSelectChange}
+                          className="w-full border border-brand-border px-3 py-2.5 font-body text-sm text-[#222] bg-white focus:outline-none focus:border-brand-green rounded-none"
+                        >
+                          {savedAddresses.map((addr) => (
+                            <option key={addr._id} value={addr._id}>
+                              [{addr.addressType || 'Home'}] {addr.fullName} — {addr.addressLine1}, {addr.city} {addr.isDefault ? '(Default)' : ''}
+                            </option>
+                          ))}
+                          <option value="new">+ Ship to a new address</option>
+                        </select>
+                      </div>
+                    )}
+
                     {/* Shipping Fields */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-2 block">Recipient Full Name</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Jane Doe"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          className="w-full border border-brand-border px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-2 block">Contact Phone Number</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="9876543210"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          className="w-full border border-brand-border px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
+                        />
+                      </div>
+                    </div>
+
                     <div>
-                      <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-2 block">Address</label>
+                      <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-2 block">Address Line 1</label>
                       <input
                         type="text"
                         required
-                        placeholder="123 Leafy Lane"
+                        placeholder="123 Leafy Lane, Flat/House No"
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
                         className="w-full border border-brand-border px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
                       />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-2 block">Address Line 2 (optional)</label>
+                        <input
+                          type="text"
+                          placeholder="Apartment, Colony, Area"
+                          value={addressLine2}
+                          onChange={(e) => setAddressLine2(e.target.value)}
+                          className="w-full border border-brand-border px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-2 block">Landmark (optional)</label>
+                        <input
+                          type="text"
+                          placeholder="Near Rose Pharmacy"
+                          value={landmark}
+                          onChange={(e) => setLandmark(e.target.value)}
+                          className="w-full border border-brand-border px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
+                        />
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -374,7 +566,7 @@ const Cart = () => {
                         <input
                           type="text"
                           required
-                          placeholder="600 001"
+                          placeholder="600001"
                           value={postalCode}
                           onChange={(e) => setPostalCode(e.target.value)}
                           className="w-full border border-brand-border px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
@@ -390,6 +582,32 @@ const Cart = () => {
                           onChange={(e) => setCountry(e.target.value)}
                           className="w-full border border-brand-border px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
                         />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end pb-2">
+                      <div>
+                        <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-2 block">Address Slot Type</label>
+                        <select
+                          value={addressType}
+                          onChange={(e) => setAddressType(e.target.value)}
+                          className="w-full border border-brand-border px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none bg-white"
+                        >
+                          <option value="Home">Home</option>
+                          <option value="Office">Office</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                      <div className="pb-3 select-none">
+                        <label className="flex items-center gap-2 cursor-pointer font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted">
+                          <input
+                            type="checkbox"
+                            checked={saveAddress}
+                            onChange={(e) => setSaveAddress(e.target.checked)}
+                            className="border-brand-border text-brand-green focus:ring-brand-green w-4 h-4 rounded-none"
+                          />
+                          <span>Save Address to Address Book</span>
+                        </label>
                       </div>
                     </div>
 

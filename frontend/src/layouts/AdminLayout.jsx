@@ -190,11 +190,20 @@ const AdminLayout = () => {
             >
               <Menu className="w-5 h-5" />
             </button>
-            <div className="hidden md:block">
-              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Admin Panel</span>
-              <h2 className="text-sm font-semibold text-black uppercase tracking-wider mt-0.5 select-none">
-                Hello, {user.name}
-              </h2>
+            <div className="hidden md:flex items-center gap-3">
+              {user.avatar && (
+                <img
+                  src={user.avatar.startsWith('http') ? user.avatar : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${user.avatar}`}
+                  alt={user.name}
+                  className="w-10 h-10 rounded-full object-cover border border-[#eae8d8]"
+                />
+              )}
+              <div>
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Admin Panel</span>
+                <h2 className="text-sm font-semibold text-black uppercase tracking-wider mt-0.5 select-none">
+                  Hello, {user.name}
+                </h2>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-4 select-none">

@@ -89,6 +89,30 @@ class AddressController {
       next(error);
     }
   }
+
+  // @desc    Set default user address
+  // @route   PATCH /api/addresses/default or PATCH /api/addresses/:id/default
+  // @access  Private
+  async setDefaultAddress(req, res, next) {
+    try {
+      const addressId = req.body.addressId || req.params.id;
+      if (!addressId) {
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'Address ID is required',
+        });
+      }
+      const address = await addressService.setDefaultAddress(addressId, req.user._id);
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        message: 'Address set as default successfully',
+        data: address,
+      });
+    } catch (error) {
+      res.status(HTTP_STATUS.BAD_REQUEST);
+      next(error);
+    }
+  }
 }
 
 module.exports = new AddressController();

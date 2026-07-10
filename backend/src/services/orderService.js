@@ -362,6 +362,7 @@ class OrderService {
     };
 
     const order = await orderRepository.create(dbPayload);
+    await this.syncAddressToBook(userId, orderData);
 
     // Increment coupon used count if coupon was applied
     if (couponCode) {
@@ -442,6 +443,7 @@ class OrderService {
     };
 
     const order = await orderRepository.create(payload);
+    await this.syncAddressToBook(userId, orderData);
 
     // Increment coupon used count if coupon was applied
     if (couponCode) {
@@ -605,6 +607,50 @@ class OrderService {
       totalUsers: users.length,
       totalContacts: contacts.length,
     };
+  }
+
+  async syncAddressToBook(userId, orderData) {
+    try {
+      if (orderData.saveAddress === false) {
+        return; // User explicitly unchecked it
+      }
+
+      const addressData = {
+        fullName: orderData.shippingAddress.fullName || orderData.shippingAddress.name || '',
+        phone: orderData.shippingAddress.phone || '',
+        addressLine1: orderData.shippingAddress.addressLine1 || orderData.shippingAddress.address || '',
+        addressLine2: orderData.shippingAddress.addressLine2 || '',
+        landmark: orderData.shippingAddress.landmark || '',
+        city: orderData.shippingAddress.city || '',
+        state: orderData.shippingAddress.state || '',
+        postalCode: orderData.shippingAddress.postalCode || '',
+        country: orderData.shippingAddress.country || 'India',
+        addressType: orderData.shippingAddress.addressType || 'Home',
+        isDefault: false,
+      };
+
+      // Fallback name if missing
+      if (!addressData.fullName) {
+        const user = await User.findById(userId);
+        addressData.fullName = user ? user.name : 'Customer';
+      }
+
+      // Fallback phone if missing
+      if (!addressData.phone) {
+        const user = await User.findById(userId);
+        addressData.phone = user ? (user.phone || '0000000000') : '0000000000';
+      }
+
+      // Check if addressLine1, city, state, postalCode are empty
+      if (!addressData.addressLine1 || !addressData.city || !addressData.postalCode) {
+        return; // Incomplete address
+      }
+
+      const addressService = require('./addressService');
+      await addressService.createAddress(userId, addressData);
+    } catch (err) {
+      console.error('[ORDER_SERVICE] Address sync failed:', err.message);
+    }
   }
 }
 

@@ -32,6 +32,14 @@ class AddressService {
     }
     return await addressRepository.delete(id);
   }
+
+  async setDefaultAddress(id, userId) {
+    const address = await addressRepository.findById(id);
+    if (!address || address.user.toString() !== userId.toString()) {
+      throw new Error('Address not found or unauthorized');
+    }
+    return await addressRepository.setDefault(id, userId);
+  }
 }
 
 module.exports = new AddressService();

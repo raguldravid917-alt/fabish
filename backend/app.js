@@ -25,6 +25,7 @@ const couponRoutes = require('./src/routes/couponRoutes');
 const blogRoutes = require('./src/routes/blogRoutes');
 const contactRoutes = require('./src/routes/contactRoutes');
 const userRoutes = require('./src/routes/userRoutes');
+const profileRoutes = require('./src/routes/profileRoutes');
 
 const app = express();
 
@@ -86,6 +87,8 @@ if (process.env.NODE_ENV === 'production') {
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // 9. API route mappings
+app.use('/api/profile', profileRoutes);
+app.use('/api/auth/profile', profileRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/products', productRoutes);

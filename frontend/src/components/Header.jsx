@@ -308,7 +308,15 @@ const Header = () => {
                 aria-haspopup="true"
                 aria-expanded={isAccountOpen}
               >
-                <UserIcon className="w-[20px] h-[20px]" strokeWidth={1.5} />
+                {user?.avatar ? (
+                  <img
+                    src={user.avatar.startsWith('http') ? user.avatar : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${user.avatar}`}
+                    alt={user.name}
+                    className="w-6 h-6 rounded-full object-cover border border-brand-border"
+                  />
+                ) : (
+                  <UserIcon className="w-[20px] h-[20px]" strokeWidth={1.5} />
+                )}
               </button>
               <div
                 className={`absolute right-0 top-[50px] w-48 bg-[#F9F9EB] border border-[#eae8d8] shadow-[0_10px_30px_rgba(0,0,0,0.06)] py-2 z-50 transition-all duration-300 transform origin-top-right ${isAccountOpen
@@ -346,9 +354,18 @@ const Header = () => {
                   </>
                 ) : (
                   <>
-                    <div className="px-4 py-1.5 border-b border-[#eae8d8] mb-1 select-none text-left">
-                      <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-0.5">Welcome,</p>
-                      <p className="text-[13px] text-black font-semibold truncate leading-tight">{user.name}</p>
+                    <div className="px-4 py-1.5 border-b border-[#eae8d8] mb-1 select-none text-left flex items-center gap-2">
+                      {user.avatar && (
+                        <img
+                          src={user.avatar.startsWith('http') ? user.avatar : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${user.avatar}`}
+                          alt={user.name}
+                          className="w-8 h-8 rounded-full object-cover border border-brand-border"
+                        />
+                      )}
+                      <div>
+                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-0.5">Welcome,</p>
+                        <p className="text-[13px] text-black font-semibold truncate leading-tight">{user.name}</p>
+                      </div>
                     </div>
                     {user.isAdmin && (
                       <Link
