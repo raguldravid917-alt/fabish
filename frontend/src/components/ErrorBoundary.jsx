@@ -16,8 +16,20 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    // In production, you'd send this to an error reporting service
     console.error('ErrorBoundary caught:', error, errorInfo);
+    fetch('http://localhost:5000/api/log-error', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: error?.message || String(error),
+        stack: error?.stack || '',
+        componentStack: errorInfo?.componentStack || '',
+        url: window.location.href,
+        userAgent: navigator.userAgent,
+      }),
+    }).catch(err => console.error('Failed to log error to backend:', err));
   }
 
   render() {

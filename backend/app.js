@@ -42,6 +42,7 @@ const allowedOrigins = [
   process.env.CLIENT_URL,          // Legacy alias — keep for backwards compat
   'http://localhost:5173',          // Local dev
   'http://localhost:5174',          // Local dev alt port
+  'http://localhost:4173',          // Local preview
   'http://localhost:3000',          // Alt local dev port
 ].filter(Boolean);                  // Remove undefined/null entries
 
@@ -98,6 +99,13 @@ app.use('/api/coupons', couponRoutes);
 app.use('/api/blogs', blogRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/users', userRoutes);
+
+app.post('/api/log-error', (req, res) => {
+  console.log('--- CLIENT ERROR BOUNDARY CAUGHT ---');
+  console.log(JSON.stringify(req.body, null, 2));
+  console.log('------------------------------------');
+  res.sendStatus(200);
+});
 
 // Root endpoint
 app.get('/', (req, res) => {
