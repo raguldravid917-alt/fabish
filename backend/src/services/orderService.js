@@ -40,6 +40,16 @@ const generateOrderNumber = () => {
   return `FAB-${Date.now().toString().slice(-6)}-${randStr}`;
 };
 
+// Helper: Generate a unique random alphanumeric tracking number
+const generateTrackingNumber = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let randStr = '';
+  for (let i = 0; i < 10; i++) {
+    randStr += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `TRK-${Date.now().toString().slice(-4)}-${randStr}`;
+};
+
 /**
  * Generate a unique sequential invoice number in the format FAB-YYYY-XXXXXX
  * Uses atomic findOneAndUpdate to ensure no duplicate invoice numbers
@@ -326,10 +336,22 @@ class OrderService {
     // 4. Generate invoice number
     const invoiceNumber = await generateInvoiceNumber();
 
+    const trackingNumber = generateTrackingNumber();
+    const estimatedDelivery = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
+    const trackingHistory = [
+      { status: 'Order Placed', timestamp: new Date(), details: 'Your order has been placed successfully.' },
+      { status: 'Payment Confirmed', timestamp: new Date(), details: 'Payment confirmed via Razorpay.' },
+      { status: 'Processing', timestamp: new Date(), details: 'Your order is being processed.' }
+    ];
+
     // 5. Save the completed Paid Order
     const dbPayload = {
       orderNumber: generateOrderNumber(),
       invoiceNumber,
+      trackingNumber,
+      courierName: 'Fabish Express',
+      estimatedDelivery,
+      trackingHistory,
       user: userId,
       customerDetails: {
         name: userDetails.name,
@@ -411,10 +433,20 @@ class OrderService {
     // 4. Generate invoice number
     const invoiceNumber = await generateInvoiceNumber();
 
+    const trackingNumber = generateTrackingNumber();
+    const estimatedDelivery = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
+    const trackingHistory = [
+      { status: 'Order Placed', timestamp: new Date(), details: 'Your order has been placed successfully. Awaiting confirmation.' }
+    ];
+
     // 5. Setup payload for COD
     const payload = {
       orderNumber: generateOrderNumber(),
       invoiceNumber,
+      trackingNumber,
+      courierName: 'Fabish Express',
+      estimatedDelivery,
+      trackingHistory,
       user: userId,
       customerDetails: {
         name: user.name,
@@ -494,12 +526,30 @@ class OrderService {
       invoiceNumber = await generateInvoiceNumber();
     }
 
+    const trackingHistory = order.trackingHistory || [];
+    const now = new Date();
+    if (!trackingHistory.some(h => h.status === 'Payment Confirmed')) {
+      trackingHistory.push({
+        status: 'Payment Confirmed',
+        timestamp: now,
+        details: 'Payment received successfully.'
+      });
+    }
+    if (!trackingHistory.some(h => h.status === 'Processing')) {
+      trackingHistory.push({
+        status: 'Processing',
+        timestamp: now,
+        details: 'Your order is being processed.'
+      });
+    }
+
     const payload = {
       isPaid: true,
       paidAt: Date.now(),
       paymentStatus: 'Paid',
       orderStatus: 'Confirmed',
       invoiceNumber,
+      trackingHistory,
       paymentResult: {
         id: paymentResult.id || `PAY_${Date.now()}`,
         status: paymentResult.status || 'COMPLETED',
@@ -526,8 +576,42 @@ class OrderService {
       throw new Error('Invalid order status');
     }
 
+    const trackingHistory = order.trackingHistory || [];
+    const now = new Date();
+
+    const addStage = (label, details) => {
+      if (!trackingHistory.some(h => h.status === label)) {
+        trackingHistory.push({ status: label, timestamp: now, details });
+      }
+    };
+
+    if (['Confirmed', 'Packed', 'Shipped', 'Out For Delivery', 'Delivered'].includes(status)) {
+      const confirmLabel = order.paymentMethod === 'COD' ? 'COD Confirmed' : 'Payment Confirmed';
+      const confirmDesc = order.paymentMethod === 'COD' ? 'COD order confirmed.' : 'Payment confirmed.';
+      
+      addStage('Order Placed', 'Your order was registered.');
+      addStage(confirmLabel, confirmDesc);
+      addStage('Processing', 'Your order is being processed.');
+      
+      if (['Packed', 'Shipped', 'Out For Delivery', 'Delivered'].includes(status)) {
+        addStage('Packed', 'Your order has been packed and is ready to ship.');
+      }
+      if (['Shipped', 'Out For Delivery', 'Delivered'].includes(status)) {
+        addStage('Shipped', 'Your order has been shipped and is in transit.');
+      }
+      if (['Out For Delivery', 'Delivered'].includes(status)) {
+        addStage('Out For Delivery', 'Your order is out for delivery.');
+      }
+      if (status === 'Delivered') {
+        addStage('Delivered', 'Your order has been delivered successfully.');
+      }
+    } else if (status === 'Cancelled') {
+      addStage('Cancelled', 'This order has been cancelled.');
+    }
+
     const payload = {
       orderStatus: status,
+      trackingHistory,
     };
 
     // Keep legacy fields in sync
@@ -651,6 +735,32 @@ class OrderService {
     } catch (err) {
       console.error('[ORDER_SERVICE] Address sync failed:', err.message);
     }
+  }
+
+  async getTrackingInfo(trackingNumberOrOrderNumber) {
+    const order = await Order.findOne({
+      $or: [
+        { trackingNumber: trackingNumberOrOrderNumber },
+        { orderNumber: trackingNumberOrOrderNumber }
+      ]
+    }).populate('user', 'name email').lean();
+
+    if (!order) {
+      throw new Error('Order not found for the provided tracking number or order number');
+    }
+
+    return {
+      orderNumber: order.orderNumber,
+      trackingNumber: order.trackingNumber,
+      orderStatus: order.orderStatus,
+      paymentStatus: order.paymentStatus,
+      paymentMethod: order.paymentMethod,
+      shippingAddress: order.shippingAddress,
+      courierName: order.courierName || 'Fabish Express',
+      estimatedDelivery: order.estimatedDelivery,
+      trackingHistory: order.trackingHistory || [],
+      createdAt: order.createdAt,
+    };
   }
 }
 

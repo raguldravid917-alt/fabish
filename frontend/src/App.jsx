@@ -37,6 +37,7 @@ const EmailVerification = lazy(() => import('./pages/EmailVerification'));
 const Unauthorized = lazy(() => import('./pages/Unauthorized'));
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'));
 const Profile = lazy(() => import('./pages/Profile'));
+const OrderTracking = lazy(() => import('./pages/OrderTracking'));
 
 
 
@@ -64,6 +65,7 @@ function App() {
                       <Route path="/blogs/news" element={<Blog />} />
                       <Route path="/cart" element={<Cart />} />
                       <Route path="/account/profile" element={<Profile />} />
+                      <Route path="/orders/track" element={<OrderTracking />} />
                       <Route path="/unauthorized" element={<Unauthorized />} />
                     </Route>
 

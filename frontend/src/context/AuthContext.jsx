@@ -68,9 +68,9 @@ export const AuthProvider = ({ children }) => {
 
         localStorage.setItem('token', actualToken);
         setToken(actualToken);
-        setUser(data);
+        setUser(data.user || data);
         setLoading(false);
-        return { success: true };
+        return { success: true, user: data.user || data };
       } else {
         setError(result.message || 'Login failed');
         setLoading(false);
@@ -93,9 +93,9 @@ export const AuthProvider = ({ children }) => {
         const data = result.data;
         localStorage.setItem('token', data.token);
         setToken(data.token);
-        setUser(data);
+        setUser(data.user || data);
         setLoading(false);
-        return { success: true };
+        return { success: true, user: data.user || data };
       } else {
         setError(result.message || 'Registration failed');
         setLoading(false);
@@ -128,10 +128,14 @@ export const AuthProvider = ({ children }) => {
 
       if (result.success) {
         const data = result.data;
-        localStorage.setItem('token', data.token);
-        setToken(data.token);
-        setUser(data);
-        return { success: true };
+        const actualUser = data.user || data;
+        const actualToken = data.token || result.token || data.accessToken || result.accessToken;
+        if (actualToken) {
+          localStorage.setItem('token', actualToken);
+          setToken(actualToken);
+        }
+        setUser(actualUser);
+        return { success: true, user: actualUser };
       } else {
         return { success: false, message: result.message || 'Update failed' };
       }
@@ -160,7 +164,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const result = await profileService.uploadPhoto(file);
       if (result.success) {
-        setUser(result.data);
+        setUser(result.data.user || result.data);
         return { success: true };
       }
       return { success: false, message: result.message || 'Upload failed' };
@@ -173,7 +177,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const result = await profileService.removePhoto();
       if (result.success) {
-        setUser(result.data);
+        setUser(result.data.user || result.data);
         return { success: true };
       }
       return { success: false, message: result.message || 'Removal failed' };

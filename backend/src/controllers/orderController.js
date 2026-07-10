@@ -197,6 +197,22 @@ class OrderController {
       next(error);
     }
   }
+
+  // @desc    Get order tracking info
+  // @route   GET /api/orders/track/:idOrNumber
+  // @access  Public
+  async getTrackingInfo(req, res, next) {
+    try {
+      const trackingData = await orderService.getTrackingInfo(req.params.idOrNumber);
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        data: trackingData,
+      });
+    } catch (error) {
+      res.status(HTTP_STATUS.NOT_FOUND);
+      next(error);
+    }
+  }
 }
 
 module.exports = new OrderController();

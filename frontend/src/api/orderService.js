@@ -72,4 +72,12 @@ export const orderService = {
    */
   markDelivered: (id) =>
     api.put(ENDPOINTS.ORDER_DELIVER(id), null, { auth: true }),
+
+  /**
+   * Get tracking information by tracking number or order number.
+   * @param {string} trackingNumberOrOrderNumber
+   * @returns {Promise<{ success, data, message }>}
+   */
+  getTracking: (trackingNumberOrOrderNumber) =>
+    api.get(`${ENDPOINTS.ORDERS}/track/${trackingNumberOrOrderNumber}`, { auth: false }),
 };

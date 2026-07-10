@@ -9,7 +9,7 @@
  * - Added order status column with color-coded labels
  */
 import React, { useState } from 'react';
-import { Check, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, FileText, X } from 'lucide-react';
 import { orderService } from '../../api/orderService';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { useToast } from '../../context/ToastContext';
@@ -26,6 +26,7 @@ const AdminOrders = ({ orders = [], onRefresh }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [filterStatus, setFilterStatus] = useState('all');
   const [invoiceOrder, setInvoiceOrder] = useState(null);
+  const [selectedOrderDetail, setSelectedOrderDetail] = useState(null);
 
   const handleStatusUpdate = async (id, status) => {
     const result = await orderService.updateStatus(id, status);
@@ -81,7 +82,10 @@ const AdminOrders = ({ orders = [], onRefresh }) => {
             return (
               <div key={order._id} className="bg-white border border-[#eae8d8] p-5 flex flex-col gap-4 text-xs shadow-xs text-left">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono font-bold text-brand-green text-sm">
+                  <span 
+                    onClick={() => setSelectedOrderDetail(order)}
+                    className="font-mono font-bold text-brand-green text-sm cursor-pointer hover:underline"
+                  >
                     {order.orderNumber || `#${order._id.slice(-8).toUpperCase()}`}
                   </span>
                   <span className="text-gray-400 font-mono">
@@ -97,7 +101,7 @@ const AdminOrders = ({ orders = [], onRefresh }) => {
                   </div>
                   <div>
                     <span className="text-gray-400 font-bold uppercase text-[9px] block">Products</span>
-                    <p className="text-gray-600 font-medium leading-relaxed">
+                    <p className="text-gray-600 font-medium leading-relaxed font-semibold">
                       {order.orderItems?.map((item) => `${item.title} (x${item.qty})`).join(', ')}
                     </p>
                   </div>
@@ -143,12 +147,20 @@ const AdminOrders = ({ orders = [], onRefresh }) => {
                     <option value="Delivered">Delivered</option>
                     <option value="Cancelled">Cancelled</option>
                   </select>
-                  <button
-                    onClick={() => setInvoiceOrder(order)}
-                    className="flex items-center justify-center gap-2 px-3 py-2 border border-[#729855] text-[#729855] hover:bg-[#729855] hover:text-white text-[10px] font-heading font-bold uppercase tracking-wider transition-all cursor-pointer rounded-none bg-transparent"
-                  >
-                    <FileText className="w-3.5 h-3.5" /> View GST Invoice
-                  </button>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <button
+                      onClick={() => setSelectedOrderDetail(order)}
+                      className="flex items-center justify-center gap-2 px-3 py-2 border border-black text-black hover:bg-black hover:text-white text-[10px] font-heading font-bold uppercase tracking-wider transition-all cursor-pointer rounded-none bg-transparent"
+                    >
+                      View Details
+                    </button>
+                    <button
+                      onClick={() => setInvoiceOrder(order)}
+                      className="flex items-center justify-center gap-2 px-3 py-2 border border-[#729855] text-[#729855] hover:bg-[#729855] hover:text-white text-[10px] font-heading font-bold uppercase tracking-wider transition-all cursor-pointer rounded-none bg-transparent"
+                    >
+                      <FileText className="w-3.5 h-3.5" /> GST Invoice
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -176,7 +188,10 @@ const AdminOrders = ({ orders = [], onRefresh }) => {
           <tbody className="divide-y divide-[#eae8d8]/40">
             {paginated.map((order) => (
               <tr key={order._id} className="hover:bg-[#eae8d8]/20 transition-colors text-xs font-semibold">
-                <td className="p-4 font-mono font-bold text-brand-green">
+                <td 
+                  onClick={() => setSelectedOrderDetail(order)}
+                  className="p-4 font-mono font-bold text-brand-green cursor-pointer hover:underline"
+                >
                   {order.orderNumber || `#${order._id.slice(-8).toUpperCase()}`}
                 </td>
                 <td className="p-4 text-black font-semibold">
@@ -263,6 +278,212 @@ const AdminOrders = ({ orders = [], onRefresh }) => {
             >
               <ChevronRight className="w-4 h-4" />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Selected Order Detail Drawer */}
+      {selectedOrderDetail && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-end font-sans text-xs select-none">
+          <div className="bg-white w-full max-w-xl h-full shadow-2xl flex flex-col p-6 overflow-y-auto border-l border-[#eae8d8] animate-in slide-in-from-right text-left">
+            {/* Header */}
+            <div className="flex justify-between items-center border-b border-[#eae8d8] pb-4 mb-6">
+              <div>
+                <h2 className="font-heading text-lg font-bold text-black uppercase tracking-wider">
+                  Order Details
+                </h2>
+                <p className="text-gray-400 font-mono text-[10px] mt-0.5">
+                  ID: {selectedOrderDetail._id}
+                </p>
+              </div>
+              <button 
+                onClick={() => setSelectedOrderDetail(null)}
+                className="w-8 h-8 flex items-center justify-center border border-[#eae8d8] hover:border-black text-gray-500 hover:text-black cursor-pointer bg-transparent"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-6 flex-grow">
+              {/* Order Numbers & Badges */}
+              <div className="bg-[#f7f6f0] p-4 border border-[#eae8d8] flex justify-between items-center">
+                <div>
+                  <div className="text-[9px] text-gray-400 font-bold uppercase">Order Number</div>
+                  <div className="font-mono font-bold text-sm text-brand-green mt-0.5">
+                    {selectedOrderDetail.orderNumber || `#${selectedOrderDetail._id.slice(-8).toUpperCase()}`}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Badge variant={(selectedOrderDetail.paymentStatus === 'Paid' || selectedOrderDetail.isPaid) ? 'success' : (selectedOrderDetail.paymentStatus === 'Failed' ? 'danger' : 'warning')}>
+                    {selectedOrderDetail.paymentStatus || (selectedOrderDetail.isPaid ? 'Paid' : 'Unpaid')}
+                  </Badge>
+                  <Badge variant={selectedOrderDetail.orderStatus === 'Delivered' ? 'success' : (selectedOrderDetail.orderStatus === 'Cancelled' ? 'danger' : 'warning')}>
+                    {selectedOrderDetail.orderStatus || (selectedOrderDetail.isDelivered ? 'Delivered' : 'Pending')}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Customer Info */}
+              <div>
+                <h3 className="text-[10px] text-gray-400 font-bold uppercase tracking-wider border-b border-[#eae8d8] pb-1 mb-2">
+                  Customer Information
+                </h3>
+                <div className="space-y-1 text-xs">
+                  <div><span className="font-semibold text-gray-600">Name:</span> <span className="text-black font-semibold">{selectedOrderDetail.customerDetails?.name || selectedOrderDetail.shippingAddress?.name || selectedOrderDetail.user?.name || 'Guest'}</span></div>
+                  <div><span className="font-semibold text-gray-600">Email:</span> <span className="text-black">{selectedOrderDetail.customerDetails?.email || selectedOrderDetail.user?.email || 'N/A'}</span></div>
+                  <div><span className="font-semibold text-gray-600">Phone:</span> <span className="text-black">{selectedOrderDetail.customerDetails?.phone || 'N/A'}</span></div>
+                </div>
+              </div>
+
+              {/* Addresses */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-[10px] text-gray-400 font-bold uppercase tracking-wider border-b border-[#eae8d8] pb-1 mb-2">
+                    Shipping Address
+                  </h3>
+                  <div className="text-xs text-gray-600 leading-relaxed">
+                    <p className="font-bold text-black mb-0.5">{selectedOrderDetail.shippingAddress?.name || selectedOrderDetail.customerDetails?.name}</p>
+                    <p className="m-0">{selectedOrderDetail.shippingAddress?.address}</p>
+                    <p className="m-0">{selectedOrderDetail.shippingAddress?.city}{selectedOrderDetail.shippingAddress?.state ? `, ${selectedOrderDetail.shippingAddress.state}` : ''} — {selectedOrderDetail.shippingAddress?.postalCode}</p>
+                    <p className="m-0">{selectedOrderDetail.shippingAddress?.country || 'India'}</p>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-[10px] text-gray-400 font-bold uppercase tracking-wider border-b border-[#eae8d8] pb-1 mb-2">
+                    Billing Address
+                  </h3>
+                  <div className="text-xs text-gray-600 leading-relaxed">
+                    <p className="font-bold text-black mb-0.5">{selectedOrderDetail.shippingAddress?.name || selectedOrderDetail.customerDetails?.name}</p>
+                    <p className="m-0">{selectedOrderDetail.shippingAddress?.address}</p>
+                    <p className="m-0">{selectedOrderDetail.shippingAddress?.city}{selectedOrderDetail.shippingAddress?.state ? `, ${selectedOrderDetail.shippingAddress.state}` : ''} — {selectedOrderDetail.shippingAddress?.postalCode}</p>
+                    <p className="m-0">{selectedOrderDetail.shippingAddress?.country || 'India'}</p>
+                    <p className="text-[10px] text-gray-400 mt-1 italic">(Same as Shipping Address)</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Products list */}
+              <div>
+                <h3 className="text-[10px] text-gray-400 font-bold uppercase tracking-wider border-b border-[#eae8d8] pb-1 mb-3">
+                  Ordered Products
+                </h3>
+                <div className="space-y-3">
+                  {(selectedOrderDetail.orderItems || []).map((item, idx) => (
+                    <div key={idx} className="flex gap-3 items-start border-b border-[#eae8d8]/50 pb-3">
+                      {item.image && (
+                        <img 
+                          src={item.image.startsWith('http') ? item.image : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${item.image}`}
+                          alt={item.title} 
+                          className="w-12 h-12 object-cover border border-[#eae8d8] shrink-0" 
+                        />
+                      )}
+                      <div className="flex-grow min-w-0">
+                        <div className="font-semibold text-black text-xs truncate">{item.title}</div>
+                        <div className="text-[10px] text-gray-400 font-mono mt-0.5">SKU: {item.sku || 'N/A'}</div>
+                        <div className="text-[10px] text-gray-500 mt-0.5">Qty: {item.qty} × {formatPrice(item.price)}</div>
+                      </div>
+                      <div className="font-bold text-black font-mono text-xs">
+                        {formatPrice(item.price * item.qty)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Payment Details */}
+              <div>
+                <h3 className="text-[10px] text-gray-400 font-bold uppercase tracking-wider border-b border-[#eae8d8] pb-1 mb-2">
+                  Payment & Invoice
+                </h3>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div><span className="font-semibold text-gray-600">Method:</span> <span className="text-black font-semibold">{selectedOrderDetail.paymentMethod}</span></div>
+                  <div><span className="font-semibold text-gray-600">Status:</span> <span className="text-black">{selectedOrderDetail.paymentStatus}</span></div>
+                  <div className="col-span-2 truncate"><span className="font-semibold text-gray-600">Transaction ID:</span> <span className="text-black font-mono text-[11px]">{selectedOrderDetail.paymentResult?.id || 'N/A'}</span></div>
+                  <div className="col-span-2 flex items-center gap-2 mt-2">
+                    <span className="font-semibold text-gray-600">Invoice:</span> 
+                    <span className="font-bold text-brand-green font-mono">{selectedOrderDetail.invoiceNumber || 'Awaiting'}</span>
+                    <button 
+                      onClick={() => {
+                        setInvoiceOrder(selectedOrderDetail);
+                      }}
+                      className="px-2 py-0.5 border border-[#729855] text-[#729855] hover:bg-[#729855] hover:text-white text-[9px] font-heading font-bold uppercase tracking-wider transition-all cursor-pointer bg-transparent"
+                    >
+                      Open Invoice
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Totals Summary */}
+              <div>
+                <h3 className="text-[10px] text-gray-400 font-bold uppercase tracking-wider border-b border-[#eae8d8] pb-1 mb-2">
+                  Financial Summary
+                </h3>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between text-gray-600">
+                    <span>Subtotal (incl. GST)</span>
+                    <span className="font-mono">{formatPrice(selectedOrderDetail.itemsPrice)}</span>
+                  </div>
+                  {selectedOrderDetail.discountAmount > 0 && (
+                    <div className="flex justify-between text-[#15803d]">
+                      <span>Discount {selectedOrderDetail.couponCode ? `(${selectedOrderDetail.couponCode})` : ''}</span>
+                      <span className="font-mono">- {formatPrice(selectedOrderDetail.discountAmount)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-gray-600">
+                    <span>GST ({selectedOrderDetail.gstDetails?.gstRate || 18}%)</span>
+                    <span className="font-mono">{formatPrice(selectedOrderDetail.gstDetails?.totalGst || 0)}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-600">
+                    <span>Shipping Charges</span>
+                    <span className="font-mono">{selectedOrderDetail.shippingPrice === 0 ? 'FREE' : formatPrice(selectedOrderDetail.shippingPrice)}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-[#eae8d8] pt-2 mt-1 font-bold text-black">
+                    <span className="text-sm">GRAND TOTAL</span>
+                    <span className="text-base text-brand-green font-mono">{formatPrice(selectedOrderDetail.totalPrice)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Shipment Timeline & Tracking */}
+              <div>
+                <h3 className="text-[10px] text-gray-400 font-bold uppercase tracking-wider border-b border-[#eae8d8] pb-1 mb-3">
+                  Shipment & Tracking
+                </h3>
+                <div className="grid grid-cols-2 gap-2 text-xs mb-4">
+                  <div><span className="font-semibold text-gray-600">Courier Name:</span> <span className="text-black">{selectedOrderDetail.courierName || 'Fabish Express'}</span></div>
+                  <div><span className="font-semibold text-gray-600">Tracking ID:</span> <span className="text-black font-mono">{selectedOrderDetail.trackingNumber || 'Awaiting'}</span></div>
+                </div>
+                
+                {/* Timeline */}
+                <div className="relative pl-4 ml-1.5 border-l border-[#eae8d8] space-y-4">
+                  {(selectedOrderDetail.trackingHistory || []).map((history, hIdx) => (
+                    <div key={hIdx} className="relative">
+                      {/* Timeline node dot */}
+                      <span className="absolute -left-[20.5px] top-1 w-3 h-3 rounded-full bg-[#729855] border-2 border-white"></span>
+                      <div className="flex justify-between items-start">
+                        <span className="font-bold text-black uppercase text-[10px] tracking-wide">{history.status}</span>
+                        <span className="text-[9px] text-gray-400 font-mono">
+                          {new Date(history.timestamp).toLocaleString('en-IN', {
+                            day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-gray-500 mt-0.5 m-0 leading-relaxed">{history.details}</p>
+                    </div>
+                  ))}
+                  {(selectedOrderDetail.trackingHistory || []).length === 0 && (
+                    <p className="text-gray-400 italic text-xs">No shipment tracking history recorded yet.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Metadata Dates */}
+              <div className="border-t border-[#eae8d8] pt-4 text-[10px] text-gray-400 font-mono space-y-1">
+                <div>Created At: {new Date(selectedOrderDetail.createdAt).toLocaleString()}</div>
+                <div>Updated At: {new Date(selectedOrderDetail.updatedAt).toLocaleString()}</div>
+              </div>
+            </div>
           </div>
         </div>
       )}

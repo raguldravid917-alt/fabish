@@ -334,7 +334,12 @@ const Cart = () => {
             <div><span className="text-brand-muted">Ship to:</span> {orderCreated.shippingAddress?.address}, {orderCreated.shippingAddress?.city}</div>
           </div>
 
-          <div className="flex gap-4 justify-center">
+          <div className="flex flex-wrap gap-4 justify-center">
+            {orderCreated.trackingNumber && (
+              <Link to={`/orders/track?number=${orderCreated.trackingNumber}`} className="bg-[#2f3e10] hover:bg-black text-white px-6 py-4 font-heading font-bold text-xs uppercase tracking-widest transition-all inline-block">
+                Track Order
+              </Link>
+            )}
             <Link to="/account/profile?tab=orders" className="bg-[#729855] hover:bg-[#5a7d41] text-white px-6 py-4 font-heading font-bold text-xs uppercase tracking-widest transition-all inline-block">
               View My Orders
             </Link>

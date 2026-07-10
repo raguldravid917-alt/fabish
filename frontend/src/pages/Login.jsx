@@ -22,7 +22,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../context/ToastContext';
 
 const Login = () => {
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -37,6 +37,12 @@ const Login = () => {
   const params = new URLSearchParams(location.search);
   const redirect = params.get('redirect') || '/';
 
+  React.useEffect(() => {
+    if (user) {
+      navigate('/', { replace: true });
+    }
+  }, [user, navigate]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -47,7 +53,7 @@ const Login = () => {
       setLoading(false);
       if (result?.success !== false) {
         showToast('Welcome back!', 'success');
-        navigate(redirect, { replace: true });
+        navigate('/', { replace: true });
       } else {
         const msg = result?.message || 'Invalid email or password.';
         setError(msg);

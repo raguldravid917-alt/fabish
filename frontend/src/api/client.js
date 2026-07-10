@@ -47,7 +47,7 @@ const isProtectedEndpoint = (url) => {
   }
 
   // Bypass authentication check for public coupon endpoints
-  if (cleanUrl === '/coupons/public' || cleanUrl === '/coupons/apply') {
+  if (cleanUrl === '/coupons/public' || cleanUrl === '/coupons/apply' || cleanUrl.startsWith('/orders/track/')) {
     return false;
   }
 

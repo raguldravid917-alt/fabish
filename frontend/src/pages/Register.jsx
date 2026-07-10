@@ -31,9 +31,15 @@ const getPasswordStrength = (pwd) => {
 };
 
 const Register = () => {
-  const { register } = useAuth();
+  const { register, user } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (user) {
+      navigate('/', { replace: true });
+    }
+  }, [user, navigate]);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

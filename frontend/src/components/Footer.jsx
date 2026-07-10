@@ -174,7 +174,7 @@ const Footer = () => {
               </h3>
               <nav className="flex flex-col gap-[14px]">
                 <Link to="#" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Shipping & Return</Link>
-                <Link to="#" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Track Order</Link>
+                <Link to="/orders/track" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Track Order</Link>
                 <Link to="#" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>History</Link>
                 <Link to="#" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Promotion</Link>
                 <Link to="#" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Privacy Policy</Link>

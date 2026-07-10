@@ -5,6 +5,9 @@ const { createOrderRules } = require('../validators/orderValidator');
 const { authenticate, authorize } = require('../middleware/authMiddleware');
 const { ROLES } = require('../constants');
 
+// Public tracking route
+router.get('/track/:idOrNumber', orderController.getTrackingInfo);
+
 // Apply authentication to all order routes
 router.use(authenticate);
 

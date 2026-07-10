@@ -139,6 +139,26 @@ const orderSchema = new mongoose.Schema(
       sellerState: { type: String, default: 'Tamil Nadu' },
       buyerState: { type: String, default: '' },
     },
+    trackingNumber: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
+    courierName: {
+      type: String,
+      default: 'Fabish Express',
+    },
+    estimatedDelivery: {
+      type: Date,
+    },
+    trackingHistory: [
+      {
+        status: { type: String, required: true },
+        timestamp: { type: Date, default: Date.now },
+        details: { type: String, default: '' },
+      }
+    ],
   },
   {
     timestamps: true,

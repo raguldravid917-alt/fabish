@@ -302,11 +302,11 @@ const Header = () => {
             </button>
             <div className="relative h-full flex items-center" ref={accountDropdownRef}>
               <button
-                onClick={() => setIsAccountOpen(!isAccountOpen)}
+                onClick={() => {
+                  setIsAccountOpen(!isAccountOpen);
+                }}
                 className="w-11 h-11 flex items-center justify-center hover:text-[#729855] transition-colors text-black bg-transparent border-none cursor-pointer"
                 aria-label="Account"
-                aria-haspopup="true"
-                aria-expanded={isAccountOpen}
               >
                 {user?.avatar ? (
                   <img
@@ -367,63 +367,117 @@ const Header = () => {
                         <p className="text-[13px] text-black font-semibold truncate leading-tight">{user.name}</p>
                       </div>
                     </div>
-                    {user.isAdmin && (
-                      <Link
-                        to="/admin/dashboard"
-                        onClick={() => setIsAccountOpen(false)}
-                        className="block px-4 py-2 text-[14px] text-[#729855] font-bold hover:bg-[#eae8d8]/30 transition-colors text-left"
-                        style={{ textDecoration: 'none' }}
-                      >
-                        Admin Dashboard
-                      </Link>
+                    {user.isAdmin || user.role === 'Admin' ? (
+                      // Admin Dropdown Items
+                      <>
+                        {/* Shopping Section */}
+                        <Link
+                          to="/account/profile"
+                          onClick={() => setIsAccountOpen(false)}
+                          className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium"
+                          style={{ textDecoration: 'none' }}
+                        >
+                          My Account
+                        </Link>
+                        <Link
+                          to="/account/profile?tab=orders"
+                          onClick={() => setIsAccountOpen(false)}
+                          className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium"
+                          style={{ textDecoration: 'none' }}
+                        >
+                          Orders
+                        </Link>
+                        <button
+                          onClick={() => {
+                            setIsAccountOpen(false);
+                            setIsWishlistOpen(true);
+                          }}
+                          className="w-full text-left block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors bg-transparent border-none cursor-pointer font-medium font-body"
+                        >
+                          Wishlist
+                        </button>
+                        <Link
+                          to="/cart"
+                          onClick={() => setIsAccountOpen(false)}
+                          className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium"
+                          style={{ textDecoration: 'none' }}
+                        >
+                          Cart
+                        </Link>
+                        <Link
+                          to="/account/profile?tab=settings"
+                          onClick={() => setIsAccountOpen(false)}
+                          className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium"
+                          style={{ textDecoration: 'none' }}
+                        >
+                          Settings
+                        </Link>
+
+                        {/* Divider */}
+                        <div className="border-t border-[#eae8d8] my-1" />
+
+                        {/* Admin Section */}
+                        <Link
+                          to="/admin/dashboard"
+                          onClick={() => setIsAccountOpen(false)}
+                          className="block px-4 py-2 text-[14px] text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-bold"
+                          style={{ textDecoration: 'none' }}
+                        >
+                          Admin Dashboard
+                        </Link>
+                      </>
+                    ) : (
+                      // Customer Dropdown Items
+                      <>
+                        <Link
+                          to="/account/profile"
+                          onClick={() => setIsAccountOpen(false)}
+                          className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium"
+                          style={{ textDecoration: 'none' }}
+                        >
+                          My Account
+                        </Link>
+                        <Link
+                          to="/account/profile?tab=orders"
+                          onClick={() => setIsAccountOpen(false)}
+                          className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium"
+                          style={{ textDecoration: 'none' }}
+                        >
+                          Orders
+                        </Link>
+                        <button
+                          onClick={() => {
+                            setIsAccountOpen(false);
+                            setIsWishlistOpen(true);
+                          }}
+                          className="w-full text-left block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors bg-transparent border-none cursor-pointer font-medium"
+                        >
+                          Wishlist
+                        </button>
+                        <Link
+                          to="/cart"
+                          onClick={() => setIsAccountOpen(false)}
+                          className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium"
+                          style={{ textDecoration: 'none' }}
+                        >
+                          Cart
+                        </Link>
+                        <Link
+                          to="/account/profile?tab=settings"
+                          onClick={() => setIsAccountOpen(false)}
+                          className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium"
+                          style={{ textDecoration: 'none' }}
+                        >
+                          Settings
+                        </Link>
+                      </>
                     )}
-                    <Link
-                      to="/account/profile"
-                      onClick={() => setIsAccountOpen(false)}
-                      className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left"
-                      style={{ textDecoration: 'none' }}
-                    >
-                      My Profile
-                    </Link>
-                    <Link
-                      to="/account/profile?tab=orders"
-                      onClick={() => setIsAccountOpen(false)}
-                      className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left"
-                      style={{ textDecoration: 'none' }}
-                    >
-                      My Orders
-                    </Link>
-                    <button
-                      onClick={() => {
-                        setIsAccountOpen(false);
-                        setIsWishlistOpen(true);
-                      }}
-                      className="w-full text-left block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors bg-transparent border-none cursor-pointer"
-                    >
-                      Wishlist
-                    </button>
-                    <Link
-                      to="/account/profile?tab=addresses"
-                      onClick={() => setIsAccountOpen(false)}
-                      className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left"
-                      style={{ textDecoration: 'none' }}
-                    >
-                      Addresses
-                    </Link>
-                    <Link
-                      to="/account/profile?tab=settings"
-                      onClick={() => setIsAccountOpen(false)}
-                      className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left"
-                      style={{ textDecoration: 'none' }}
-                    >
-                      Settings
-                    </Link>
                     <button
                       onClick={() => {
                         setIsAccountOpen(false);
                         handleLogout();
                       }}
-                      className="w-full text-left block px-4 py-2 text-[14px] text-red-600 hover:text-red-800 hover:bg-[#eae8d8]/30 transition-colors bg-transparent border-none cursor-pointer border-t border-[#eae8d8] mt-1"
+                      className="w-full text-left block px-4 py-2 text-[14px] text-red-600 hover:text-red-800 hover:bg-[#eae8d8]/30 transition-colors bg-transparent border-none cursor-pointer border-t border-[#eae8d8] mt-1 font-medium"
                     >
                       Logout
                     </button>
@@ -432,7 +486,13 @@ const Header = () => {
               </div>
             </div>
             <button
-              onClick={() => setIsWishlistOpen(true)}
+              onClick={() => {
+                if (!user) {
+                  navigate('/account/profile?tab=wishlist');
+                } else {
+                  setIsWishlistOpen(true);
+                }
+              }}
               className="w-11 h-11 flex items-center justify-center hover:text-[#729855] transition-colors bg-transparent border-none cursor-pointer"
               aria-label="Wishlist"
             >

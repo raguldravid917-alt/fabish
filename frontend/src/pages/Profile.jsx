@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import Loader from '../components/ui/Loader';
-import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { useSearchParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   ShoppingBag, 
   User, 
@@ -67,6 +67,7 @@ const AnimatedCounter = ({ value }) => {
 
 const Profile = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout, updateProfile, uploadAvatar, removeAvatar } = useContext(AuthContext);
   const { addToCart } = useContext(CartContext);
   const { wishlistItems, toggleWishlist } = useContext(WishlistContext);
@@ -112,11 +113,11 @@ const Profile = () => {
 
   useEffect(() => {
     if (!user) {
-      navigate('/account/login?redirect=/account/profile');
+      navigate(`/account/login?redirect=${encodeURIComponent(location.pathname + location.search)}`);
     } else {
       fetchAddresses();
     }
-  }, [user, navigate]);
+  }, [user, navigate, location]);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -465,7 +466,7 @@ const Profile = () => {
         <div className="flex border-b border-brand-border mb-10 overflow-x-auto no-scrollbar no-print gap-1 select-none">
           <button 
             onClick={() => setSearchParams({ tab: 'dashboard' })}
-            className={`py-4 px-6 font-heading font-bold text-[11px] uppercase tracking-[0.2em] border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${
+            className={`py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${
               activeTab === 'dashboard' ? 'border-[#729855] text-brand-charcoal' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
             }`}
           >
@@ -473,7 +474,7 @@ const Profile = () => {
           </button>
           <button 
             onClick={() => { setSearchParams({ tab: 'orders' }); setSelectedOrder(null); }}
-            className={`py-4 px-6 font-heading font-bold text-[11px] uppercase tracking-[0.2em] border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${
+            className={`py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${
               activeTab === 'orders' ? 'border-[#729855] text-brand-charcoal' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
             }`}
           >
@@ -481,7 +482,7 @@ const Profile = () => {
           </button>
           <button 
             onClick={() => setSearchParams({ tab: 'addresses' })}
-            className={`py-4 px-6 font-heading font-bold text-[11px] uppercase tracking-[0.2em] border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${
+            className={`py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${
               activeTab === 'addresses' ? 'border-[#729855] text-brand-charcoal' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
             }`}
           >
@@ -489,7 +490,7 @@ const Profile = () => {
           </button>
           <button 
             onClick={() => setSearchParams({ tab: 'wishlist' })}
-            className={`py-4 px-6 font-heading font-bold text-[11px] uppercase tracking-[0.2em] border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${
+            className={`py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${
               activeTab === 'wishlist' ? 'border-[#729855] text-brand-charcoal' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
             }`}
           >
@@ -497,7 +498,7 @@ const Profile = () => {
           </button>
           <button 
             onClick={() => setSearchParams({ tab: 'settings' })}
-            className={`py-4 px-6 font-heading font-bold text-[11px] uppercase tracking-[0.2em] border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${
+            className={`py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${
               activeTab === 'settings' ? 'border-[#729855] text-brand-charcoal' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
             }`}
           >
@@ -530,14 +531,14 @@ const Profile = () => {
                   </div>
 
                   <div className="space-y-2 z-10 text-left">
-                    <span className="block font-heading text-[9px] font-bold uppercase tracking-[0.3em] text-[#729855]">Member Space</span>
-                    <h2 className="serif-title text-3xl text-brand-charcoal font-normal">Welcome back, {user.name}</h2>
-                    <p className="text-[12px] font-body text-brand-muted max-w-md leading-relaxed mt-1">
+                    <span className="block font-heading text-xs font-bold uppercase tracking-[0.25em] text-[#729855]">Member Space</span>
+                    <h2 className="font-heading font-semibold text-2xl text-brand-charcoal mt-1">Welcome back, {user.name}</h2>
+                    <p className="text-sm font-body text-brand-muted max-w-md leading-relaxed mt-2">
                       Manage your orders, saved delivery coordinates, rewards tier details, and edit your profile settings.
                     </p>
                     
                     {/* Quick Actions */}
-                    <div className="flex flex-wrap gap-4 pt-3 text-[10px] font-heading font-bold uppercase tracking-[0.2em]">
+                    <div className="flex flex-wrap gap-4 pt-3 text-xs font-heading font-bold uppercase tracking-widest">
                       <Link to="/collections/all" className="text-brand-charcoal hover:text-[#729855] underline underline-offset-4 decoration-1 transition-colors">
                         Shop New Arrivals
                       </Link>
@@ -554,11 +555,11 @@ const Profile = () => {
 
                   <div className="flex gap-6 items-center shrink-0 border border-brand-border bg-white p-5 rounded-none z-10 w-full md:w-auto">
                     <div className="text-left space-y-1">
-                      <span className="block font-heading text-[9px] font-bold uppercase tracking-[0.2em] text-brand-muted">Member Tier</span>
-                      <span className="serif-title text-base text-brand-charcoal flex items-center gap-1.5 font-normal">
+                      <span className="block font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Member Tier</span>
+                      <span className="font-heading text-base text-brand-charcoal flex items-center gap-1.5 font-semibold mt-1">
                         <Award className="w-4 h-4 text-[#729855]" /> Fabish Gold Circle
                       </span>
-                      <span className="block text-[10px] font-semibold text-brand-muted font-body">Joined {user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', {month: 'short', year: 'numeric'}) : 'Recently'}</span>
+                      <span className="block text-xs font-medium text-brand-muted font-body mt-1">Joined {user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', {month: 'short', year: 'numeric'}) : 'Recently'}</span>
                     </div>
                   </div>
                 </div>
@@ -573,10 +574,10 @@ const Profile = () => {
                     className="bg-white border border-brand-border p-5 rounded-none flex flex-col justify-between cursor-pointer group transition-colors select-none text-left"
                   >
                     <div className="flex justify-between items-start mb-4">
-                      <span className="font-heading text-[9px] font-bold uppercase tracking-[0.2em] text-brand-muted group-hover:text-brand-charcoal transition-colors">Orders Placed</span>
+                      <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted group-hover:text-brand-charcoal transition-colors">Orders Placed</span>
                       <ShoppingBag className="w-4 h-4 text-[#729855] group-hover:scale-110 transition-transform duration-300" />
                     </div>
-                    <span className="serif-title text-3xl text-brand-charcoal font-normal">
+                    <span className="font-heading text-3xl text-brand-charcoal font-semibold">
                       <AnimatedCounter value={orders.length} />
                     </span>
                   </motion.div>
@@ -588,10 +589,10 @@ const Profile = () => {
                     className="bg-white border border-brand-border p-5 rounded-none flex flex-col justify-between cursor-pointer group transition-colors select-none text-left"
                   >
                     <div className="flex justify-between items-start mb-4">
-                      <span className="font-heading text-[9px] font-bold uppercase tracking-[0.2em] text-brand-muted group-hover:text-brand-charcoal transition-colors">Addresses</span>
+                      <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted group-hover:text-brand-charcoal transition-colors">Addresses</span>
                       <MapPin className="w-4 h-4 text-[#729855] group-hover:scale-110 transition-transform duration-300" />
                     </div>
-                    <span className="serif-title text-3xl text-brand-charcoal font-normal">
+                    <span className="font-heading text-3xl text-brand-charcoal font-semibold">
                       <AnimatedCounter value={addresses.length} />
                     </span>
                   </motion.div>
@@ -603,10 +604,10 @@ const Profile = () => {
                     className="bg-white border border-brand-border p-5 rounded-none flex flex-col justify-between cursor-pointer group transition-colors select-none text-left"
                   >
                     <div className="flex justify-between items-start mb-4">
-                      <span className="font-heading text-[9px] font-bold uppercase tracking-[0.2em] text-brand-muted group-hover:text-brand-charcoal transition-colors">Wishlist Items</span>
+                      <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted group-hover:text-brand-charcoal transition-colors">Wishlist Items</span>
                       <Heart className="w-4 h-4 text-[#729855] group-hover:scale-110 transition-transform duration-300" />
                     </div>
-                    <span className="serif-title text-3xl text-brand-charcoal font-normal">
+                    <span className="font-heading text-3xl text-brand-charcoal font-semibold">
                       <AnimatedCounter value={wishlistItems.length} />
                     </span>
                   </motion.div>
@@ -617,10 +618,10 @@ const Profile = () => {
                     className="bg-white border border-brand-border p-5 rounded-none flex flex-col justify-between group transition-colors select-none text-left"
                   >
                     <div className="flex justify-between items-start mb-4">
-                      <span className="font-heading text-[9px] font-bold uppercase tracking-[0.2em] text-brand-muted">Reward Points</span>
+                      <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Reward Points</span>
                       <Award className="w-4 h-4 text-[#729855] group-hover:scale-110 transition-transform duration-300" />
                     </div>
-                    <span className="serif-title text-3xl text-brand-charcoal font-normal">
+                    <span className="font-heading text-3xl text-brand-charcoal font-semibold">
                       <AnimatedCounter value={120} />
                     </span>
                   </motion.div>
@@ -631,10 +632,10 @@ const Profile = () => {
                     className="bg-white border border-brand-border p-5 rounded-none flex flex-col justify-between group transition-colors select-none text-left"
                   >
                     <div className="flex justify-between items-start mb-4">
-                      <span className="font-heading text-[9px] font-bold uppercase tracking-[0.2em] text-brand-muted">Active Coupons</span>
+                      <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Active Coupons</span>
                       <Tag className="w-4 h-4 text-[#729855] group-hover:scale-110 transition-transform duration-300" />
                     </div>
-                    <span className="serif-title text-3xl text-brand-charcoal font-normal">
+                    <span className="font-heading text-3xl text-brand-charcoal font-semibold">
                       <AnimatedCounter value={3} />
                     </span>
                   </motion.div>
@@ -650,8 +651,8 @@ const Profile = () => {
                     {/* Recent Orders section */}
                     <div className="bg-white border border-brand-border p-6 rounded-none space-y-6">
                       <div className="flex justify-between items-center border-b border-brand-border pb-3">
-                        <span className="font-heading text-[10px] font-bold uppercase tracking-[0.25em] text-brand-charcoal">Recent Transactions</span>
-                        <button onClick={() => setSearchParams({ tab: 'orders' })} className="text-[#729855] hover:text-[#2f3e10] font-heading font-bold text-[9px] uppercase tracking-widest bg-transparent border-none cursor-pointer p-0">
+                        <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal">Recent Transactions</span>
+                        <button onClick={() => setSearchParams({ tab: 'orders' })} className="text-[#729855] hover:text-[#2f3e10] font-heading font-bold text-xs uppercase tracking-widest bg-transparent border-none cursor-pointer p-0">
                           View All Orders
                         </button>
                       </div>
@@ -661,9 +662,9 @@ const Profile = () => {
                       ) : orders.length === 0 ? (
                         <div className="py-12 text-center max-w-sm mx-auto space-y-4">
                           <ClipboardList className="w-10 h-10 text-brand-border mx-auto" />
-                          <h4 className="serif-title text-base text-brand-charcoal font-normal">Your order history is empty</h4>
-                          <p className="text-brand-muted text-xs leading-relaxed">No orders registered yet. Browse our collections to find your organic skincare routine.</p>
-                          <Link to="/collections/all" className="inline-flex items-center justify-center bg-brand-charcoal hover:bg-[#729855] text-white font-heading text-[10px] font-bold tracking-widest uppercase transition-all px-6 py-2.5 rounded-none">
+                          <h4 className="font-heading text-base text-brand-charcoal font-semibold">Your order history is empty</h4>
+                          <p className="text-brand-muted text-sm leading-relaxed font-body">No orders registered yet. Browse our collections to find your organic skincare routine.</p>
+                          <Link to="/collections/all" className="inline-flex items-center justify-center bg-brand-charcoal hover:bg-[#729855] text-white font-heading text-xs font-bold tracking-widest uppercase transition-all px-6 py-2.5 rounded-none">
                             Browse Shop
                           </Link>
                         </div>
@@ -673,15 +674,15 @@ const Profile = () => {
                             <div key={order._id} className="border border-brand-border p-4 rounded-none space-y-4 text-left">
                               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-brand-border/40 pb-3">
                                 <div>
-                                  <span className="font-heading text-[8px] font-bold uppercase tracking-widest text-[#729855]">Order ID</span>
+                                  <span className="font-heading text-xs font-bold uppercase tracking-widest text-[#729855]">Order ID</span>
                                   <p className="font-mono font-bold text-xs text-brand-charcoal leading-snug">#{order.orderNumber}</p>
-                                  <span className="text-[10px] text-brand-muted font-body mt-0.5 block">{new Date(order.createdAt).toLocaleDateString()}</span>
+                                  <span className="text-xs text-brand-muted font-body mt-0.5 block">{new Date(order.createdAt).toLocaleDateString()}</span>
                                 </div>
                                 <div className="flex gap-2">
-                                  <span className={`inline-block px-1.5 py-0.5 font-heading text-[8px] font-bold uppercase tracking-widest ${
+                                  <span className={`inline-block px-2 py-0.5 font-heading text-xs font-bold uppercase tracking-widest ${
                                     order.paymentStatus === 'Paid' ? 'bg-green-50 border border-green-200 text-brand-green' : 'bg-yellow-50 border border-yellow-200 text-yellow-700'
                                   }`}>{order.paymentStatus}</span>
-                                  <span className={`inline-block px-1.5 py-0.5 font-heading text-[8px] font-bold uppercase tracking-widest ${
+                                  <span className={`inline-block px-2 py-0.5 font-heading text-xs font-bold uppercase tracking-widest ${
                                     order.orderStatus === 'Delivered' ? 'bg-green-50 border border-green-200 text-brand-green' : 'bg-blue-50 border border-blue-200 text-blue-700'
                                   }`}>{order.orderStatus}</span>
                                 </div>
@@ -699,26 +700,26 @@ const Profile = () => {
                                   ))}
                                   <div className="ml-1 text-xs">
                                     <p className="font-bold text-brand-charcoal">{order.orderItems.length} {order.orderItems.length === 1 ? 'Product' : 'Products'}</p>
-                                    <p className="text-[10px] text-brand-muted truncate max-w-[200px]">
+                                    <p className="text-xs text-brand-muted truncate max-w-[200px]">
                                       {order.orderItems.map(item => item.title).join(', ')}
                                     </p>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
                                   <div className="text-left sm:text-right mr-2">
-                                    <span className="block font-heading text-[8px] font-bold uppercase tracking-widest text-brand-muted">Total Price</span>
+                                    <span className="block font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Total Price</span>
                                     <span className="font-heading font-bold text-xs text-brand-charcoal">Rs. {order.totalPrice.toLocaleString('en-IN')}.00</span>
                                   </div>
                                   <div className="flex gap-2">
                                     <button
                                       onClick={() => { setSelectedOrder(order); setSearchParams({ tab: 'orders' }); }}
-                                      className="border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white px-3 py-1.5 font-heading font-bold text-[9px] uppercase tracking-widest transition-all cursor-pointer bg-transparent rounded-none"
+                                      className="border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white px-4 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer bg-transparent rounded-none"
                                     >
                                       Details
                                     </button>
                                     <button
                                       onClick={() => handleBuyAgain(order)}
-                                      className="bg-brand-charcoal text-white hover:bg-[#729855] px-3 py-1.5 font-heading font-bold text-[9px] uppercase tracking-widest transition-all cursor-pointer border-none rounded-none"
+                                      className="bg-brand-charcoal text-white hover:bg-[#729855] px-4 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer border-none rounded-none"
                                     >
                                       Re-order
                                     </button>
@@ -735,10 +736,10 @@ const Profile = () => {
                     <div className="bg-[#faf9f5] border border-brand-border p-6 rounded-none space-y-5 text-left">
                       <div className="flex justify-between items-start">
                         <div>
-                          <span className="font-heading text-[9px] font-bold uppercase tracking-[0.25em] text-[#729855] block mb-1">Rewards Progress</span>
-                          <h4 className="serif-title text-xl text-brand-charcoal font-normal">Fabish Gold Level milestone</h4>
+                          <span className="font-heading text-xs font-bold uppercase tracking-widest text-[#729855] block mb-1">Rewards Progress</span>
+                          <h4 className="font-heading text-xl text-brand-charcoal font-semibold">Fabish Gold Level milestone</h4>
                         </div>
-                        <span className="serif-title text-2xl text-[#729855] font-normal">120 <span className="text-[10px] font-heading font-bold uppercase tracking-wider text-brand-muted">pts</span></span>
+                        <span className="font-heading text-2xl text-[#729855] font-bold">120 <span className="text-xs font-heading font-bold uppercase tracking-widest text-brand-muted">pts</span></span>
                       </div>
 
                       {/* Progress bar */}
@@ -746,15 +747,15 @@ const Profile = () => {
                         <div className="w-full bg-brand-border/60 h-1.5 rounded-none overflow-hidden">
                           <div className="bg-[#729855] h-full" style={{ width: '80%' }}></div>
                         </div>
-                        <div className="flex justify-between text-[10px] text-brand-muted font-semibold">
+                        <div className="flex justify-between text-xs text-brand-muted font-semibold">
                           <span>120 points earned</span>
                           <span>30 points to next discount tier (150 pts)</span>
                         </div>
                       </div>
 
                       <div className="pt-4 border-t border-brand-border/40 space-y-2 text-xs">
-                        <span className="block font-heading text-[8px] font-bold uppercase tracking-widest text-brand-muted">Unlocked Perks</span>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 font-semibold text-brand-charcoal text-[11px]">
+                        <span className="block font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Unlocked Perks</span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 font-semibold text-brand-charcoal text-xs">
                           <div className="flex items-center gap-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#729855]"></span>
                             <span>Free shipping on all order invoices</span>
@@ -775,8 +776,8 @@ const Profile = () => {
                     {/* Default Address preview card */}
                     <div className="bg-white border border-brand-border p-6 rounded-none space-y-4 text-left">
                       <div className="flex justify-between items-center border-b border-brand-border pb-3">
-                        <span className="font-heading text-[10px] font-bold uppercase tracking-[0.25em] text-brand-charcoal">Delivery Coordinates</span>
-                        <button onClick={() => setSearchParams({ tab: 'addresses' })} className="text-[#729855] hover:text-[#2f3e10] font-heading font-bold text-[9px] uppercase tracking-widest bg-transparent border-none cursor-pointer p-0">
+                        <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal">Delivery Coordinates</span>
+                        <button onClick={() => setSearchParams({ tab: 'addresses' })} className="text-[#729855] hover:text-[#2f3e10] font-heading font-bold text-xs uppercase tracking-widest bg-transparent border-none cursor-pointer p-0">
                           Manage
                         </button>
                       </div>
@@ -797,12 +798,12 @@ const Profile = () => {
                               <>
                                 <div className="flex justify-between items-center">
                                   <p className="font-bold text-sm font-heading">{def.fullName}</p>
-                                  <span className="font-heading text-[8px] font-bold uppercase tracking-widest bg-[#faf9f5] border border-brand-border text-brand-charcoal px-2 py-0.5">
+                                  <span className="font-heading text-xs font-bold uppercase tracking-widest bg-[#faf9f5] border border-brand-border text-brand-charcoal px-2 py-0.5">
                                     {def.addressType || 'Home'}
                                   </span>
                                 </div>
-                                <p className="text-brand-muted font-mono">{def.phone}</p>
-                                <p className="text-brand-charcoal/80 font-normal leading-relaxed">
+                                <p className="text-brand-muted font-mono text-sm">{def.phone}</p>
+                                <p className="text-brand-charcoal/80 font-normal text-sm leading-relaxed">
                                   {def.addressLine1}
                                   {def.addressLine2 && `, ${def.addressLine2}`}
                                   <span className="block mt-0.5 font-semibold text-brand-charcoal">{def.city}, {def.state} — {def.postalCode}</span>
@@ -816,16 +817,16 @@ const Profile = () => {
 
                     {/* Coupons Available Card */}
                     <div className="bg-white border border-brand-border p-6 rounded-none space-y-4 text-left">
-                      <span className="font-heading text-[10px] font-bold uppercase tracking-[0.25em] text-brand-charcoal block border-b border-brand-border pb-3">Available Promos</span>
+                      <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal block border-b border-brand-border pb-3">Available Promos</span>
                       
                       <div className="space-y-3.5">
                         
                         {/* Coupon 1: WELCOME10 */}
                         <div className="border border-dashed border-brand-border p-3 flex justify-between items-center rounded-none bg-[#faf9f5]/40 hover:bg-[#faf9f5]/80 transition-colors">
                           <div className="text-left">
-                            <span className="font-heading text-[8px] font-bold uppercase tracking-widest bg-green-50 text-brand-green px-1.5 py-0.5 border border-green-200">10% OFF</span>
+                            <span className="font-heading text-xs font-bold uppercase tracking-widest bg-green-50 text-brand-green px-1.5 py-0.5 border border-green-200">10% OFF</span>
                             <p className="font-mono font-bold text-xs text-brand-charcoal mt-1">WELCOME10</p>
-                            <span className="text-[9px] text-brand-muted font-semibold block">Expires in 30 days</span>
+                            <span className="text-xs text-brand-muted font-semibold block mt-1">Expires in 30 days</span>
                           </div>
                           <button
                             onClick={() => handleCopyCoupon('WELCOME10')}
@@ -839,9 +840,9 @@ const Profile = () => {
                         {/* Coupon 2: FABISH20 */}
                         <div className="border border-dashed border-brand-border p-3 flex justify-between items-center rounded-none bg-[#faf9f5]/40 hover:bg-[#faf9f5]/80 transition-colors">
                           <div className="text-left">
-                            <span className="font-heading text-[8px] font-bold uppercase tracking-widest bg-green-50 text-brand-green px-1.5 py-0.5 border border-green-200">20% OFF</span>
+                            <span className="font-heading text-xs font-bold uppercase tracking-widest bg-green-50 text-brand-green px-1.5 py-0.5 border border-green-200">20% OFF</span>
                             <p className="font-mono font-bold text-xs text-brand-charcoal mt-1">FABISH20</p>
-                            <span className="text-[9px] text-brand-muted font-semibold block">Expires in 15 days</span>
+                            <span className="text-xs text-brand-muted font-semibold block mt-1">Expires in 15 days</span>
                           </div>
                           <button
                             onClick={() => handleCopyCoupon('FABISH20')}
@@ -855,9 +856,9 @@ const Profile = () => {
                         {/* Coupon 3: FREESHIP */}
                         <div className="border border-dashed border-brand-border p-3 flex justify-between items-center rounded-none bg-[#faf9f5]/40 hover:bg-[#faf9f5]/80 transition-colors">
                           <div className="text-left">
-                            <span className="font-heading text-[8px] font-bold uppercase tracking-widest bg-green-50 text-brand-green px-1.5 py-0.5 border border-green-200">FREE SHIP</span>
+                            <span className="font-heading text-xs font-bold uppercase tracking-widest bg-green-50 text-brand-green px-1.5 py-0.5 border border-green-200">FREE SHIP</span>
                             <p className="font-mono font-bold text-xs text-brand-charcoal mt-1">FREESHIP</p>
-                            <span className="text-[9px] text-brand-muted font-semibold block">Member Exclusive</span>
+                            <span className="text-xs text-brand-muted font-semibold block mt-1">Member Exclusive</span>
                           </div>
                           <button
                             onClick={() => handleCopyCoupon('FREESHIP')}
@@ -877,13 +878,13 @@ const Profile = () => {
 
                 {/* Full Width Card: Recent Activity */}
                 <div className="bg-white border border-brand-border p-6 rounded-none text-left space-y-5">
-                  <span className="font-heading text-[10px] font-bold uppercase tracking-[0.25em] text-brand-charcoal block border-b border-brand-border pb-3">Recent Account Activity</span>
+                  <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal block border-b border-brand-border pb-3">Recent Account Activity</span>
                   
-                  <div className="relative border-l border-brand-border pl-5 space-y-4 text-xs font-semibold text-brand-charcoal">
+                  <div className="relative border-l border-brand-border pl-5 space-y-4 text-sm font-semibold text-brand-charcoal">
                     <div className="relative">
                       <div className="absolute -left-[25px] top-1 w-2 h-2 rounded-full bg-[#729855] border-2 border-white"></div>
                       <div>
-                        <span className="text-[9px] text-brand-muted font-bold font-heading uppercase tracking-wider block">TODAY</span>
+                        <span className="text-xs text-brand-muted font-bold font-heading uppercase tracking-widest block">TODAY</span>
                         <p className="text-brand-charcoal mt-0.5 font-body font-normal">Accessed client dashboard portal session</p>
                       </div>
                     </div>
@@ -892,7 +893,7 @@ const Profile = () => {
                       <div className="relative">
                         <div className="absolute -left-[25px] top-1 w-2 h-2 rounded-full bg-[#729855] border-2 border-white"></div>
                         <div>
-                          <span className="text-[9px] text-brand-muted font-bold font-heading uppercase tracking-wider block">TRANSACTION HISTORY</span>
+                          <span className="text-xs text-brand-muted font-bold font-heading uppercase tracking-widest block">TRANSACTION HISTORY</span>
                           <p className="text-brand-charcoal mt-0.5 font-body font-normal">
                             Successfully placed order <span className="font-mono font-bold text-brand-green">#{orders[0].orderNumber}</span> worth Rs. {orders[0].totalPrice.toLocaleString('en-IN')}.00
                           </p>
@@ -904,7 +905,7 @@ const Profile = () => {
                       <div className="relative">
                         <div className="absolute -left-[25px] top-1 w-2 h-2 rounded-full bg-[#729855] border-2 border-white"></div>
                         <div>
-                          <span className="text-[9px] text-brand-muted font-bold font-heading uppercase tracking-wider block">SHIPPING COORDINATES</span>
+                          <span className="text-xs text-brand-muted font-bold font-heading uppercase tracking-widest block">SHIPPING COORDINATES</span>
                           <p className="text-brand-charcoal mt-0.5 font-body font-normal">Modified customer Address Book profiles</p>
                         </div>
                       </div>
@@ -913,7 +914,7 @@ const Profile = () => {
                     <div className="relative">
                       <div className="absolute -left-[25px] top-1 w-2 h-2 rounded-full bg-[#729855] border-2 border-white"></div>
                       <div>
-                        <span className="text-[9px] text-brand-muted font-bold font-heading uppercase tracking-wider block">REGISTRATION</span>
+                        <span className="text-xs text-brand-muted font-bold font-heading uppercase tracking-widest block">REGISTRATION</span>
                         <p className="text-brand-charcoal mt-0.5 font-body font-normal">Joined the Fabish store member circle</p>
                       </div>
                     </div>
@@ -939,15 +940,15 @@ const Profile = () => {
                     {/* Back to List */}
                     <button 
                       onClick={() => setSelectedOrder(null)}
-                      className="inline-flex items-center gap-2 border border-brand-charcoal hover:bg-brand-charcoal hover:text-white px-4 py-2 font-heading font-bold text-[10px] uppercase tracking-widest transition-all cursor-pointer bg-transparent rounded-none"
+                      className="inline-flex items-center gap-2 border border-brand-charcoal hover:bg-brand-charcoal hover:text-white px-4 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer bg-transparent rounded-none"
                     >
                       <ArrowLeft className="w-3.5 h-3.5" /> Back to Orders
                     </button>
 
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-brand-border pb-4 gap-4">
                       <div>
-                        <h2 className="serif-title text-2xl text-brand-charcoal leading-snug font-normal">Order Number: #{selectedOrder.orderNumber}</h2>
-                        <p className="text-brand-muted text-xs font-semibold font-heading uppercase tracking-wider mt-1">Placed on: {new Date(selectedOrder.createdAt).toLocaleDateString()}</p>
+                        <h2 className="font-heading text-2xl text-brand-charcoal leading-snug font-semibold">Order Number: #{selectedOrder.orderNumber}</h2>
+                        <p className="text-brand-muted text-xs font-semibold font-heading uppercase tracking-widest mt-1">Placed on: {new Date(selectedOrder.createdAt).toLocaleDateString()}</p>
                       </div>
                       <button
                         onClick={() => setViewInvoice(selectedOrder)}
@@ -959,9 +960,19 @@ const Profile = () => {
 
                     {/* Order tracking timeline */}
                     <div className="p-6 bg-brand-bg-cream/45 border border-brand-border rounded-none">
-                      <h3 className="font-heading text-xs font-bold uppercase tracking-widest mb-6 text-brand-charcoal flex items-center gap-2">
-                        <Truck className="w-4 h-4 text-[#729855]" /> Delivery Tracking
-                      </h3>
+                      <div className="flex justify-between items-center mb-6">
+                        <h3 className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal flex items-center gap-2 mb-0">
+                          <Truck className="w-4 h-4 text-[#729855]" /> Delivery Tracking
+                        </h3>
+                        {selectedOrder.trackingNumber && (
+                          <Link
+                            to={`/orders/track?number=${selectedOrder.trackingNumber}`}
+                            className="text-[#729855] hover:text-[#2f3e10] font-heading font-bold text-xs uppercase tracking-widest no-underline"
+                          >
+                            Track Live Shipment →
+                          </Link>
+                        )}
+                      </div>
                       
                       {selectedOrder.orderStatus === 'Cancelled' ? (
                         <div className="bg-red-50 border border-red-200 text-red-700 p-4 font-semibold text-xs font-heading uppercase tracking-wider text-center rounded-none">
@@ -979,7 +990,7 @@ const Profile = () => {
                             {getTimelineStages(selectedOrder).map((stage, idx) => (
                               <div key={idx} className="flex md:flex-col items-start md:items-center text-left md:text-center relative z-10 gap-4 md:gap-2">
                                 {/* Dot */}
-                                <div className={`w-5 h-5 rounded-full flex items-center justify-center border-2 font-bold font-mono text-[10px] shrink-0 ${
+                                <div className={`w-5 h-5 rounded-full flex items-center justify-center border-2 font-bold font-mono text-xs shrink-0 ${
                                   stage.done 
                                     ? 'bg-[#729855] border-[#729855] text-white' 
                                     : 'bg-white border-brand-border text-brand-muted'
@@ -988,10 +999,10 @@ const Profile = () => {
                                 </div>
                                 {/* Label Content */}
                                 <div>
-                                  <h4 className={`font-heading text-[10px] font-bold uppercase tracking-wider leading-snug ${stage.done ? 'text-brand-charcoal' : 'text-brand-muted'}`}>
+                                  <h4 className={`font-heading text-xs font-bold uppercase tracking-widest leading-snug ${stage.done ? 'text-brand-charcoal' : 'text-brand-muted'}`}>
                                     {stage.label}
                                   </h4>
-                                  <p className="text-[10px] text-brand-muted leading-tight mt-1 max-w-[120px] mx-auto hidden md:block font-medium">
+                                  <p className="text-xs text-brand-muted leading-tight mt-1 max-w-[120px] mx-auto hidden md:block font-medium">
                                     {stage.desc}
                                   </p>
                                 </div>
@@ -1018,11 +1029,11 @@ const Profile = () => {
                               <div className="flex-grow flex flex-col justify-between">
                                 <div>
                                   <h4 className="font-heading font-bold text-sm text-brand-charcoal leading-snug">{item.title}</h4>
-                                  <span className="text-[10px] font-mono text-brand-muted mt-1 block">Qty: {item.qty}</span>
+                                  <span className="text-xs font-mono text-brand-muted mt-1 block">Qty: {item.qty}</span>
                                 </div>
                                 <span className="font-heading font-semibold text-xs text-brand-charcoal">Rs. {item.price.toLocaleString('en-IN')}.00 each</span>
                               </div>
-                              <div className="text-right self-center font-heading font-bold text-sm">
+                              <div className="text-right self-center font-heading font-bold text-base">
                                 Rs. {(item.price * item.qty).toLocaleString('en-IN')}.00
                               </div>
                             </div>
@@ -1033,7 +1044,7 @@ const Profile = () => {
                       {/* Right side: Shipping/summary info */}
                       <div className="bg-brand-bg-cream/40 border border-brand-border p-6 space-y-6 self-start rounded-none">
                         <div>
-                          <h4 className="font-heading text-[10px] font-bold uppercase tracking-widest text-brand-muted mb-2">Shipping Coordinate</h4>
+                          <h4 className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted mb-2">Shipping Coordinate</h4>
                           <p className="text-xs font-semibold leading-relaxed">
                             {selectedOrder.customerDetails?.name || selectedOrder.user?.name}<br />
                             {selectedOrder.shippingAddress.address}<br />
@@ -1045,8 +1056,8 @@ const Profile = () => {
                         <hr className="border-brand-border" />
 
                         <div>
-                          <h4 className="font-heading text-[10px] font-bold uppercase tracking-widest text-brand-muted mb-3">Invoice Details</h4>
-                          <div className="space-y-2 text-xs font-semibold text-brand-muted font-heading">
+                          <h4 className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted mb-3">Invoice Details</h4>
+                          <div className="space-y-2 text-sm font-semibold text-brand-muted font-heading">
                             <div className="flex justify-between">
                               <span>Items Subtotal</span>
                               <span className="text-brand-charcoal">Rs. {selectedOrder.itemsPrice.toLocaleString('en-IN')}.00</span>
@@ -1060,7 +1071,7 @@ const Profile = () => {
                             <hr className="border-brand-border" />
                             <div className="flex justify-between text-brand-charcoal font-bold">
                               <span>Total Price</span>
-                              <span className="text-sm text-[#729855]">Rs. {selectedOrder.totalPrice.toLocaleString('en-IN')}.00</span>
+                              <span className="text-base text-[#729855]">Rs. {selectedOrder.totalPrice.toLocaleString('en-IN')}.00</span>
                             </div>
                           </div>
                         </div>
@@ -1079,7 +1090,7 @@ const Profile = () => {
                     ) : orders.length === 0 ? (
                       <div className="py-20 text-center max-w-sm mx-auto space-y-4">
                         <ClipboardList className="w-12 h-12 text-brand-border mx-auto" />
-                        <h3 className="serif-title text-xl text-brand-charcoal font-normal">No Orders Found</h3>
+                        <h3 className="font-heading text-xl text-brand-charcoal font-semibold">No Orders Found</h3>
                         <p className="text-brand-muted text-xs leading-relaxed font-body">You haven't placed any orders yet. Visit our collections to get started!</p>
                         <Link to="/collections/all" className="bg-brand-charcoal hover:bg-[#729855] text-white px-6 py-3 font-heading font-bold text-xs uppercase tracking-widest transition-all inline-block rounded-none">
                           Browse Products
@@ -1095,17 +1106,17 @@ const Profile = () => {
                           >
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-brand-border/40 pb-4">
                               <div>
-                                <span className="font-heading text-[8px] font-bold uppercase tracking-[0.2em] text-[#729855]">Order Reference</span>
+                                <span className="font-heading text-xs font-bold uppercase tracking-widest text-[#729855]">Order Reference</span>
                                 <h4 className="font-mono font-bold text-sm text-brand-charcoal">#{order.orderNumber}</h4>
-                                <span className="text-[10px] text-brand-muted font-body mt-0.5 block flex items-center gap-1.5">
+                                <span className="text-xs text-brand-muted font-body mt-0.5 block flex items-center gap-1.5">
                                   <Calendar className="w-3.5 h-3.5" /> Placed on {new Date(order.createdAt).toLocaleDateString()}
                                 </span>
                               </div>
                               <div className="flex gap-2">
-                                <span className={`inline-block px-2 py-0.5 font-heading text-[8px] font-bold uppercase tracking-widest ${
+                                <span className={`inline-block px-2 py-0.5 font-heading text-xs font-bold uppercase tracking-widest ${
                                   order.paymentStatus === 'Paid' ? 'bg-green-50 border border-green-200 text-brand-green' : 'bg-yellow-50 border border-yellow-200 text-yellow-700'
                                 }`}>{order.paymentStatus}</span>
-                                <span className={`inline-block px-2 py-0.5 font-heading text-[8px] font-bold uppercase tracking-widest ${
+                                <span className={`inline-block px-2 py-0.5 font-heading text-xs font-bold uppercase tracking-widest ${
                                   order.orderStatus === 'Delivered' ? 'bg-green-50 border border-green-200 text-brand-green' : 'bg-blue-50 border border-blue-200 text-blue-700'
                                 }`}>{order.orderStatus}</span>
                               </div>
@@ -1126,7 +1137,7 @@ const Profile = () => {
                                   <p className="text-xs font-bold text-brand-charcoal leading-snug">
                                     {order.orderItems.length} {order.orderItems.length === 1 ? 'Product' : 'Products'}
                                   </p>
-                                  <p className="text-[10px] text-brand-muted truncate max-w-[280px]">
+                                  <p className="text-xs text-brand-muted truncate max-w-[280px]">
                                     {order.orderItems.map(item => item.title).join(', ')}
                                   </p>
                                 </div>
@@ -1134,19 +1145,19 @@ const Profile = () => {
 
                               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
                                 <div className="text-left md:text-right shrink-0 md:mr-4">
-                                  <span className="block font-heading text-[8px] font-bold uppercase tracking-[0.2em] text-brand-muted">Total Paid</span>
+                                  <span className="block font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Total Paid</span>
                                   <span className="font-heading font-bold text-sm text-brand-charcoal">Rs. {order.totalPrice.toLocaleString('en-IN')}.00</span>
                                 </div>
                                 <div className="flex gap-2">
                                   <button
                                     onClick={() => setSelectedOrder(order)}
-                                    className="border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white px-4 py-2 font-heading font-bold text-[9px] uppercase tracking-widest transition-all cursor-pointer bg-transparent rounded-none flex-1 sm:flex-none text-center"
+                                    className="border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white px-4 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer bg-transparent rounded-none flex-1 sm:flex-none text-center"
                                   >
                                     Details
                                   </button>
                                   <button
                                     onClick={() => handleBuyAgain(order)}
-                                    className="bg-brand-charcoal text-white hover:bg-[#729855] px-4 py-2 font-heading font-bold text-[9px] uppercase tracking-widest transition-all cursor-pointer border-none rounded-none flex-1 sm:flex-none text-center"
+                                    className="bg-brand-charcoal text-white hover:bg-[#729855] px-4 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer border-none rounded-none flex-1 sm:flex-none text-center"
                                   >
                                     Buy Again
                                   </button>
@@ -1176,7 +1187,7 @@ const Profile = () => {
                   <h3 className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal">Your Saved Delivery Addresses</h3>
                   <button
                     onClick={handleOpenAddModal}
-                    className="bg-brand-charcoal text-white hover:bg-[#729855] px-4 py-2 font-heading font-bold text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none rounded-none"
+                    className="bg-brand-charcoal text-white hover:bg-[#729855] px-4 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none rounded-none"
                   >
                     <Plus className="w-3.5 h-3.5" /> Add New Address
                   </button>
@@ -1199,7 +1210,7 @@ const Profile = () => {
                         <path d="M50,10 C30,10 15,25 15,45 C15,65 50,90 50,90 C50,90 85,65 85,45 C85,25 70,10 50,10 Z M50,55 C44.5,55 40,50.5 40,45 C40,39.5 44.5,35 50,35 C55.5,35 60,39.5 60,45 C60,50.5 55.5,55 50,55 Z" />
                       </svg>
                     </div>
-                    <h3 className="serif-title text-xl text-brand-charcoal font-normal">No Stored Addresses</h3>
+                    <h3 className="font-heading text-xl text-brand-charcoal font-semibold">No Stored Addresses</h3>
                     <p className="text-brand-muted text-xs leading-relaxed font-body">No delivery addresses stored yet. Click 'Add New Address' to save a shipping profile.</p>
                     <button
                       onClick={handleOpenAddModal}
@@ -1222,7 +1233,7 @@ const Profile = () => {
                       >
                         <div className="space-y-2">
                           <div className="flex justify-between items-center gap-2">
-                            <span className="font-heading uppercase tracking-wider text-brand-muted text-[9px] flex items-center gap-1.5">
+                            <span className="font-heading uppercase tracking-widest text-brand-muted text-xs flex items-center gap-1.5">
                               {addr.addressType === 'Home' && <Home className="w-3.5 h-3.5 text-brand-green" />}
                               {addr.addressType === 'Office' && <Briefcase className="w-3.5 h-3.5 text-blue-600" />}
                               {addr.addressType === 'Other' && <Globe className="w-3.5 h-3.5 text-purple-600" />}
@@ -1230,7 +1241,7 @@ const Profile = () => {
                             </span>
                             <div className="flex items-center gap-1.5">
                               {addr.isDefault && (
-                                <span className="font-heading text-[8px] font-bold uppercase tracking-widest bg-brand-green text-white px-2 py-0.5 rounded-none">
+                                <span className="font-heading text-xs font-bold uppercase tracking-widest bg-brand-green text-white px-2 py-0.5 rounded-none">
                                   DEFAULT
                                 </span>
                               )}
@@ -1238,12 +1249,12 @@ const Profile = () => {
                           </div>
 
                           <p className="text-brand-charcoal font-bold text-sm font-heading">{addr.fullName}</p>
-                          <p className="text-brand-muted font-mono">{addr.phone}</p>
+                          <p className="text-brand-muted font-mono text-sm">{addr.phone}</p>
                           
-                          <p className="text-brand-charcoal/80 font-normal font-body">
+                          <p className="text-brand-charcoal/80 font-normal font-body text-sm">
                             {addr.addressLine1}
                             {addr.addressLine2 && `, ${addr.addressLine2}`}
-                            {addr.landmark && <span className="block text-[11px] text-brand-muted mt-0.5 font-semibold">Landmark: {addr.landmark}</span>}
+                            {addr.landmark && <span className="block text-xs text-brand-muted mt-0.5 font-semibold">Landmark: {addr.landmark}</span>}
                             <span className="block mt-1 font-semibold text-brand-charcoal">
                               {addr.city}, {addr.state} — {addr.postalCode}
                             </span>
@@ -1255,13 +1266,13 @@ const Profile = () => {
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleOpenEditModal(addr)}
-                              className="text-brand-charcoal hover:text-brand-green flex items-center gap-1 px-2.5 py-1.5 border border-brand-border bg-transparent cursor-pointer font-heading font-bold text-[9px] uppercase tracking-wider transition-all rounded-none"
+                              className="text-brand-charcoal hover:text-brand-green flex items-center gap-1 px-2.5 py-1.5 border border-brand-border bg-transparent cursor-pointer font-heading font-bold text-xs uppercase tracking-widest transition-all rounded-none"
                             >
                               <Edit className="w-2.5 h-2.5" /> Edit
                             </button>
                             <button
                               onClick={() => handleDeleteAddress(addr._id)}
-                              className="text-red-600 hover:bg-red-50 hover:border-red-200 flex items-center gap-1 px-2.5 py-1.5 border border-brand-border bg-transparent cursor-pointer font-heading font-bold text-[9px] uppercase tracking-wider transition-all rounded-none"
+                              className="text-red-600 hover:bg-red-50 hover:border-red-200 flex items-center gap-1 px-2.5 py-1.5 border border-brand-border bg-transparent cursor-pointer font-heading font-bold text-xs uppercase tracking-widest transition-all rounded-none"
                             >
                               <Trash className="w-2.5 h-2.5" /> Delete
                             </button>
@@ -1270,7 +1281,7 @@ const Profile = () => {
                           {!addr.isDefault && (
                             <button
                               onClick={() => handleSetDefaultAddress(addr._id)}
-                              className="text-[#729855] hover:bg-[#729855] hover:text-white px-3 py-1.5 border border-[#729855] bg-transparent cursor-pointer font-heading font-bold text-[9px] uppercase tracking-wider transition-all rounded-none"
+                              className="text-[#729855] hover:bg-[#729855] hover:text-white px-3 py-1.5 border border-[#729855] bg-transparent cursor-pointer font-heading font-bold text-xs uppercase tracking-widest transition-all rounded-none"
                             >
                               Set Default
                             </button>
@@ -1300,7 +1311,7 @@ const Profile = () => {
                     <div className="w-16 h-16 mx-auto text-brand-border flex items-center justify-center">
                       <Heart className="w-12 h-12" strokeWidth={1.5} />
                     </div>
-                    <h3 className="serif-title text-xl text-brand-charcoal font-normal">Your Wishlist is Empty</h3>
+                    <h3 className="font-heading text-xl text-brand-charcoal font-semibold">Your Wishlist is Empty</h3>
                     <p className="text-brand-muted text-xs leading-relaxed font-body">Save your favorite luxurious organic items here as you browse our collections.</p>
                     <Link to="/collections/all" className="bg-brand-charcoal hover:bg-[#729855] text-white px-6 py-3 font-heading font-bold text-xs uppercase tracking-widest transition-colors inline-block rounded-none text-center">
                       Explore Collections
@@ -1338,7 +1349,7 @@ const Profile = () => {
                           </p>
                           <button
                             onClick={() => { addToCart(item, 1); showToast('Item added to your bag!', 'success'); }}
-                            className="w-full py-2 bg-brand-charcoal hover:bg-[#729855] text-white font-heading text-[10px] font-bold tracking-widest uppercase cursor-pointer border-none rounded-none transition-colors"
+                            className="w-full py-2 bg-brand-charcoal hover:bg-[#729855] text-white font-heading text-xs font-bold tracking-widest uppercase cursor-pointer border-none rounded-none transition-colors"
                           >
                             ADD TO BAG
                           </button>
@@ -1375,7 +1386,7 @@ const Profile = () => {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <span className="serif-title text-4xl text-brand-muted select-none">
+                          <span className="font-heading text-4xl text-brand-muted select-none">
                             {user?.name?.slice(0, 1).toUpperCase()}
                           </span>
                         )}
@@ -1388,10 +1399,10 @@ const Profile = () => {
                     </div>
 
                     <div className="flex flex-col items-center sm:items-start gap-2">
-                      <label className="serif-title text-sm text-brand-charcoal">Profile Picture</label>
+                      <label className="font-heading text-sm font-bold uppercase tracking-widest text-[#333]">Profile Picture</label>
                       <div className="flex gap-2">
                         <label
-                          className="bg-brand-charcoal text-white hover:bg-brand-button-hover px-4 py-2 font-heading font-bold text-[10px] uppercase tracking-wider transition-all cursor-pointer inline-block select-none rounded-none"
+                          className="bg-brand-charcoal text-white hover:bg-brand-button-hover px-4 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer inline-block select-none rounded-none"
                         >
                           <input
                             type="file"
@@ -1407,20 +1418,20 @@ const Profile = () => {
                             type="button"
                             onClick={handlePhotoRemove}
                             disabled={uploadingPhoto}
-                            className="border border-red-200 text-red-600 hover:bg-red-50 px-4 py-2 font-heading font-bold text-[10px] uppercase tracking-wider transition-all cursor-pointer bg-transparent rounded-none"
+                            className="border border-red-200 text-red-600 hover:bg-red-50 px-4 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer bg-transparent rounded-none"
                           >
                             Remove
                           </button>
                         )}
                       </div>
-                      <span className="text-[10px] text-brand-muted font-semibold">
+                      <span className="text-xs text-brand-muted font-semibold">
                         Supported formats: JPG, JPEG, PNG, WEBP. Max size: 5MB.
                       </span>
                     </div>
                   </div>
 
                   <div>
-                    <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-2 block">Name</label>
+                    <label className="font-heading text-xs font-bold uppercase tracking-widest text-[#333] mb-2 block">Name</label>
                     <input
                       type="text"
                       required
@@ -1431,7 +1442,7 @@ const Profile = () => {
                   </div>
 
                   <div>
-                    <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-2 block">Email Address</label>
+                    <label className="font-heading text-xs font-bold uppercase tracking-widest text-[#333] mb-2 block">Email Address</label>
                     <input
                       type="text"
                       required
@@ -1442,7 +1453,7 @@ const Profile = () => {
                   </div>
 
                   <div>
-                    <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-2 block">Phone Number</label>
+                    <label className="font-heading text-xs font-bold uppercase tracking-widest text-[#333] mb-2 block">Phone Number</label>
                     <input
                       type="text"
                       placeholder="9876543210"
@@ -1454,7 +1465,7 @@ const Profile = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-brand-border/40">
                     <div>
-                      <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-2 block">New Password (optional)</label>
+                      <label className="font-heading text-xs font-bold uppercase tracking-widest text-[#333] mb-2 block">New Password (optional)</label>
                       <input
                         type="password"
                         placeholder="••••••••"
@@ -1464,7 +1475,7 @@ const Profile = () => {
                       />
                     </div>
                     <div>
-                      <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-2 block">Confirm Password</label>
+                      <label className="font-heading text-xs font-bold uppercase tracking-widest text-[#333] mb-2 block">Confirm Password</label>
                       <input
                         type="password"
                         placeholder="••••••••"
@@ -1503,7 +1514,7 @@ const Profile = () => {
             </button>
 
             <div>
-              <h3 className="serif-title text-xl text-brand-charcoal font-normal">
+              <h3 className="font-heading text-xl text-brand-charcoal font-semibold">
                 {editingAddress ? 'Edit Delivery Address' : 'Add New Delivery Address'}
               </h3>
               <p className="text-brand-muted text-xs font-body mt-0.5">Enter shipping coordinates for your order invoices.</p>
@@ -1519,121 +1530,121 @@ const Profile = () => {
             <form onSubmit={handleAddressSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-1 block">Full Name</label>
+                  <label className="font-heading text-xs font-bold uppercase tracking-widest text-[#333] mb-1 block">Full Name</label>
                   <input
                     type="text"
                     required
                     placeholder="Jane Doe"
                     value={addrFullName}
                     onChange={(e) => setAddrFullName(e.target.value)}
-                    className="w-full border border-brand-border px-3 py-2 text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none bg-white"
+                    className="w-full border border-brand-border px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none bg-white"
                   />
                 </div>
                 <div>
-                  <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-1 block">Phone Number</label>
+                  <label className="font-heading text-xs font-bold uppercase tracking-widest text-[#333] mb-1 block">Phone Number</label>
                   <input
                     type="text"
                     required
                     placeholder="9876543210"
                     value={addrPhone}
                     onChange={(e) => setAddrPhone(e.target.value)}
-                    className="w-full border border-brand-border px-3 py-2 text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
+                    className="w-full border border-brand-border px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-1 block">Address Line 1</label>
+                <label className="font-heading text-xs font-bold uppercase tracking-widest text-[#333] mb-1 block">Address Line 1</label>
                 <input
                   type="text"
                   required
                   placeholder="Flat No, Building, Street Name"
                   value={addrLine1}
                   onChange={(e) => setAddrLine1(e.target.value)}
-                  className="w-full border border-brand-border px-3 py-2 text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
+                  className="w-full border border-brand-border px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-1 block">Address Line 2 (optional)</label>
+                  <label className="font-heading text-xs font-bold uppercase tracking-widest text-[#333] mb-1 block">Address Line 2 (optional)</label>
                   <input
                     type="text"
                     placeholder="Apartment, Colony, Area"
                     value={addrLine2}
                     onChange={(e) => setAddrLine2(e.target.value)}
-                    className="w-full border border-brand-border px-3 py-2 text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
+                    className="w-full border border-brand-border px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
                   />
                 </div>
                 <div>
-                  <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-1 block">Landmark (optional)</label>
+                  <label className="font-heading text-xs font-bold uppercase tracking-widest text-[#333] mb-1 block">Landmark (optional)</label>
                   <input
                     type="text"
                     placeholder="Near Rose Pharmacy"
                     value={addrLandmark}
                     onChange={(e) => setAddrLandmark(e.target.value)}
-                    className="w-full border border-brand-border px-3 py-2 text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
+                    className="w-full border border-brand-border px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-1 block">City</label>
+                  <label className="font-heading text-xs font-bold uppercase tracking-widest text-[#333] mb-1 block">City</label>
                   <input
                     type="text"
                     required
                     placeholder="Chennai"
                     value={addrCity}
                     onChange={(e) => setAddrCity(e.target.value)}
-                    className="w-full border border-brand-border px-3 py-2 text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
+                    className="w-full border border-brand-border px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
                   />
                 </div>
                 <div>
-                  <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-1 block">State</label>
+                  <label className="font-heading text-xs font-bold uppercase tracking-widest text-[#333] mb-1 block">State</label>
                   <input
                     type="text"
                     required
                     placeholder="Tamil Nadu"
                     value={addrState}
                     onChange={(e) => setAddrState(e.target.value)}
-                    className="w-full border border-brand-border px-3 py-2 text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
+                    className="w-full border border-brand-border px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-1 block">Postal Code / PIN Code</label>
+                  <label className="font-heading text-xs font-bold uppercase tracking-widest text-[#333] mb-1 block">Postal Code / PIN Code</label>
                   <input
                     type="text"
                     required
                     placeholder="600001"
                     value={addrPostalCode}
                     onChange={(e) => setAddrPostalCode(e.target.value)}
-                    className="w-full border border-brand-border px-3 py-2 text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
+                    className="w-full border border-brand-border px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
                   />
                 </div>
                 <div>
-                  <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-1 block">Country</label>
+                  <label className="font-heading text-xs font-bold uppercase tracking-widest text-[#333] mb-1 block">Country</label>
                   <input
                     type="text"
                     required
                     placeholder="India"
                     value={addrCountry}
                     onChange={(e) => setAddrCountry(e.target.value)}
-                    className="w-full border border-brand-border px-3 py-2 text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
+                    className="w-full border border-brand-border px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div>
-                  <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-1 block">Address Slot Type</label>
+                  <label className="font-heading text-xs font-bold uppercase tracking-widest text-[#333] mb-1 block">Address Slot Type</label>
                   <select
                     value={addrType}
                     onChange={(e) => setAddrType(e.target.value)}
-                    className="w-full border border-brand-border px-3 py-2 text-sm text-brand-charcoal bg-white focus:outline-none focus:border-brand-green rounded-none"
+                    className="w-full border border-brand-border px-3 py-2 font-body text-sm text-brand-charcoal bg-white focus:outline-none focus:border-brand-green rounded-none"
                   >
                     <option value="Home">Home</option>
                     <option value="Office">Office</option>
@@ -1658,14 +1669,14 @@ const Profile = () => {
                 <button
                   type="button"
                   onClick={() => setIsAddressModalOpen(false)}
-                  className="px-4 py-2 border border-brand-border text-brand-muted hover:text-brand-charcoal font-heading font-bold text-[10px] uppercase tracking-wider transition-all bg-transparent cursor-pointer"
+                  className="px-4 py-2 border border-brand-border text-brand-muted hover:text-brand-charcoal font-heading font-bold text-xs uppercase tracking-widest transition-all bg-transparent cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingAddress}
-                  className="bg-brand-charcoal hover:bg-brand-button-hover text-white px-6 py-2 font-heading font-bold text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1 cursor-pointer border-none"
+                  className="bg-brand-charcoal hover:bg-brand-button-hover text-white px-6 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-1 cursor-pointer border-none"
                 >
                   {submittingAddress ? <Loader size="small" /> : (editingAddress ? 'Update' : 'Save Address')}
                 </button>
