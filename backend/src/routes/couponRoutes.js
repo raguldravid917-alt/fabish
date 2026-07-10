@@ -4,13 +4,12 @@ const couponController = require('../controllers/couponController');
 const { authenticate, authorize } = require('../middleware/authMiddleware');
 const { ROLES } = require('../constants');
 
-// Apply auth to all coupon endpoints
-router.use(authenticate);
-
-// Public/Customer endpoints (Apply coupon)
+// Public/Customer endpoints (no authentication required)
 router.post('/apply', couponController.applyCoupon);
+router.get('/public', couponController.getPublicCoupons);
 
-// Admin-only endpoints
+// Admin-only endpoints (requires authentication and admin role)
+router.use(authenticate);
 router.use(authorize(ROLES.ADMIN));
 
 router.route('/')

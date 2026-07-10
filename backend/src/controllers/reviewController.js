@@ -2,6 +2,21 @@ const reviewService = require('../services/reviewService');
 const { HTTP_STATUS } = require('../constants');
 
 class ReviewController {
+  // @desc    Get all reviews (admin moderation)
+  // @route   GET /api/reviews
+  // @access  Private/Admin
+  async getReviews(req, res, next) {
+    try {
+      const reviews = await reviewService.getReviews();
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        data: reviews,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // @desc    Get all reviews for a product
   // @route   GET /api/reviews/product/:productId
   // @access  Public

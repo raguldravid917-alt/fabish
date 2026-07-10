@@ -612,7 +612,7 @@ const Home = () => {
               </div>
               <div className="flex flex-col pr-4">
                 <p className="font-body text-[13px] text-black mb-[10px]">
-                  {post.author || 'Admin'} &nbsp;|&nbsp; {post.createdAt ? new Date(post.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : (post.date || '25 Mar 2024')} &nbsp;|&nbsp; {post.comments || 'General'}
+                  {typeof post.author === 'object' ? post.author?.name : (post.author || 'Admin')} &nbsp;|&nbsp; {post.createdAt ? new Date(post.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : (post.date || '25 Mar 2024')} &nbsp;|&nbsp; {post.comments || 'General'}
                 </p>
                 <h3 className="font-heading font-semibold text-[22px] leading-[1.3] text-black mb-[20px] line-clamp-2 hover:text-[#729855] transition-colors">
                   <Link to={`/blogs/news/${post.slug || ''}`}>{post.title}</Link>

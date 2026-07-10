@@ -8,6 +8,7 @@ const cartRepository = require('../repositories/cartRepository');
 const User = require('../models/User');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
+const Coupon = require('../models/Coupon');
 const sendEmail = require('../utils/sendEmail');
 
 // Lazy-initialize Razorpay
@@ -114,14 +115,58 @@ class OrderService {
       itemsPrice += product.price * item.qty;
     }
 
-    const shippingPrice = itemsPrice > 2000 ? 0 : 150;
-    const totalPrice = itemsPrice + shippingPrice;
+    // Coupon verification
+    let discountAmount = 0;
+    let appliedCoupon = null;
+    let couponCode = '';
+    let shippingPrice = itemsPrice > 2000 ? 0 : 150;
+
+    if (orderData.couponCode) {
+      const coupon = await Coupon.findOne({
+        code: orderData.couponCode.toUpperCase(),
+        isActive: true,
+        isDeleted: false,
+      });
+
+      if (!coupon) {
+        throw new Error('Applied coupon code is invalid or inactive');
+      }
+
+      if (!coupon.isValid()) {
+        throw new Error('Applied coupon code has expired or reached its usage limit');
+      }
+
+      if (coupon.minimumOrderAmount && itemsPrice < coupon.minimumOrderAmount) {
+        throw new Error(`Minimum purchase of Rs. ${coupon.minimumOrderAmount.toLocaleString('en-IN')} required to use this coupon`);
+      }
+
+      appliedCoupon = coupon;
+      couponCode = coupon.code.toUpperCase();
+
+      if (coupon.discountType === 'Percentage') {
+        let pctDiscount = itemsPrice * ((coupon.discountPercentage || coupon.discountValue || 0) / 100);
+        if (coupon.maxDiscountCap) {
+          pctDiscount = Math.min(pctDiscount, coupon.maxDiscountCap);
+        }
+        discountAmount = pctDiscount;
+      } else if (coupon.discountType === 'Fixed') {
+        discountAmount = Math.min(coupon.discountValue || 0, itemsPrice);
+      } else if (coupon.discountType === 'FreeShipping') {
+        shippingPrice = 0;
+        discountAmount = 0;
+      }
+    }
+
+    const totalPrice = Math.max(0, itemsPrice + shippingPrice - discountAmount);
 
     return {
       verifiedItems,
       itemsPrice,
       shippingPrice,
       totalPrice,
+      coupon: appliedCoupon ? appliedCoupon._id : null,
+      couponCode,
+      discountAmount,
     };
   }
 
@@ -172,7 +217,7 @@ class OrderService {
     }
 
     // 2. Validate products and stock levels
-    const { verifiedItems, itemsPrice, shippingPrice, totalPrice } =
+    const { verifiedItems, itemsPrice, shippingPrice, totalPrice, coupon, couponCode, discountAmount } =
       await this.validateOrderPayload(orderData);
 
     // 3. Atomically decrement stock
@@ -215,9 +260,20 @@ class OrderService {
       razorpaySignature,
       isPaid: true,
       paidAt: Date.now(),
+      coupon,
+      couponCode,
+      discountAmount,
     };
 
     const order = await orderRepository.create(dbPayload);
+
+    // Increment coupon used count if coupon was applied
+    if (couponCode) {
+      await Coupon.findOneAndUpdate(
+        { code: couponCode },
+        { $inc: { usedCount: 1 } }
+      );
+    }
 
     // 5. Clear client-side & server-side cart
     await cartRepository.clear(userId);
@@ -240,7 +296,7 @@ class OrderService {
     }
 
     // 2. Validate payload and pricing
-    const { verifiedItems, itemsPrice, shippingPrice, totalPrice } =
+    const { verifiedItems, itemsPrice, shippingPrice, totalPrice, coupon, couponCode, discountAmount } =
       await this.validateOrderPayload(orderData);
 
     // 3. Atomically reduce stock
@@ -279,9 +335,20 @@ class OrderService {
       paymentStatus: 'Pending',
       orderStatus: 'Pending',
       isPaid: false,
+      coupon,
+      couponCode,
+      discountAmount,
     };
 
     const order = await orderRepository.create(payload);
+
+    // Increment coupon used count if coupon was applied
+    if (couponCode) {
+      await Coupon.findOneAndUpdate(
+        { code: couponCode },
+        { $inc: { usedCount: 1 } }
+      );
+    }
 
     // 5. Clear cart
     await cartRepository.clear(userId);

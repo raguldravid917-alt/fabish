@@ -69,7 +69,8 @@ const AdminStats = ({ products = [], orders = [], users = [] }) => {
   const categoryStats = useMemo(() => {
     const counts = {};
     products.forEach(p => {
-      counts[p.category] = (counts[p.category] || 0) + 1;
+      const catName = p.category ? (typeof p.category === 'object' ? p.category.name : p.category) : 'Uncategorized';
+      counts[catName] = (counts[catName] || 0) + 1;
     });
     const total = products.length || 1;
     return Object.entries(counts).map(([name, count]) => ({
@@ -275,7 +276,7 @@ const AdminStats = ({ products = [], orders = [], users = [] }) => {
               <div key={prod._id} className="flex justify-between items-center py-2.5 border-b border-[#eae8d8]/50 last:border-0">
                 <div>
                   <h4 className="text-xs font-semibold text-black uppercase tracking-wider">{prod.title}</h4>
-                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{prod.category}</span>
+                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{typeof prod.category === 'object' ? prod.category?.name : (prod.category || 'Uncategorized')}</span>
                 </div>
                 <div className="text-right">
                   <span className="text-xs font-bold text-red-600 bg-red-50 px-2.5 py-1">

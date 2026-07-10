@@ -167,10 +167,97 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+
+  // Dynamic coupon validation effect: checks coupon status & minimumOrderAmount whenever cart items or subtotal changes
+  useEffect(() => {
+    const savedCode = localStorage.getItem('appliedCouponCode');
+    if (savedCode && cartItems.length > 0) {
+      const currentItemsPrice = cartItems.reduce((acc, item) => acc + item.price * item.qty, 0);
+      const validateAndApply = async () => {
+        try {
+          const res = await api.post('/coupons/apply', { code: savedCode, cartTotal: currentItemsPrice });
+          if (res.success && res.data) {
+            setAppliedCoupon(res.data);
+          } else {
+            // Remove coupon silently if subtotal falls below minimumOrderAmount or coupon is disabled
+            setAppliedCoupon(null);
+            localStorage.removeItem('appliedCouponCode');
+          }
+        } catch (err) {
+          setAppliedCoupon(null);
+          localStorage.removeItem('appliedCouponCode');
+        }
+      };
+      validateAndApply();
+    } else if (!savedCode || cartItems.length === 0) {
+      setAppliedCoupon(null);
+    }
+  }, [cartItems]);
+
+  const applyCoupon = async (code) => {
+    if (!code || !code.trim()) {
+      setCouponError('Please enter a coupon code.');
+      return { success: false, message: 'Please enter a coupon code.' };
+    }
+    setCouponLoading(true);
+    setCouponError('');
+    try {
+      const currentItemsPrice = cartItems.reduce((acc, item) => acc + item.price * item.qty, 0);
+      const res = await api.post('/coupons/apply', { code: code.trim().toUpperCase(), cartTotal: currentItemsPrice });
+      if (res.success && res.data) {
+        setAppliedCoupon(res.data);
+        localStorage.setItem('appliedCouponCode', res.data.code);
+        setCouponLoading(false);
+        return { success: true, message: 'Coupon applied successfully!', coupon: res.data };
+      } else {
+        const msg = res.message || 'Invalid coupon code.';
+        setCouponError(msg);
+        setCouponLoading(false);
+        return { success: false, message: msg };
+      }
+    } catch (err) {
+      const msg = err.message || 'Failed to apply coupon.';
+      setCouponError(msg);
+      setCouponLoading(false);
+      return { success: false, message: msg };
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponError('');
+    localStorage.removeItem('appliedCouponCode');
+  };
+
   const itemsCount = cartItems.reduce((acc, item) => acc + item.qty, 0);
   const itemsPrice = cartItems.reduce((acc, item) => acc + item.price * item.qty, 0);
-  const shippingPrice = itemsPrice > 2000 || itemsPrice === 0 ? 0 : 150;
-  const totalPrice = itemsPrice + shippingPrice;
+
+  const discountAmount = (() => {
+    if (!appliedCoupon) return 0;
+    if (appliedCoupon.discountType === 'Percentage') {
+      const pctVal = appliedCoupon.discountPercentage !== undefined ? appliedCoupon.discountPercentage : appliedCoupon.discountValue;
+      let pctDiscount = itemsPrice * ((pctVal || 0) / 100);
+      if (appliedCoupon.maxDiscountCap) {
+        pctDiscount = Math.min(pctDiscount, appliedCoupon.maxDiscountCap);
+      }
+      return pctDiscount;
+    }
+    if (appliedCoupon.discountType === 'Fixed') {
+      return Math.min(appliedCoupon.discountValue || 0, itemsPrice);
+    }
+    return 0;
+  })();
+
+  const shippingPrice = (() => {
+    if (itemsPrice === 0) return 0;
+    if (appliedCoupon && appliedCoupon.discountType === 'FreeShipping') return 0;
+    return itemsPrice > 2000 ? 0 : 150;
+  })();
+
+  const totalPrice = Math.max(0, itemsPrice + shippingPrice - discountAmount);
 
   return (
     <CartContext.Provider
@@ -185,6 +272,12 @@ export const CartProvider = ({ children }) => {
         shippingPrice,
         totalPrice,
         loading,
+        appliedCoupon,
+        discountAmount,
+        couponError,
+        couponLoading,
+        applyCoupon,
+        removeCoupon,
       }}
     >
       {children}

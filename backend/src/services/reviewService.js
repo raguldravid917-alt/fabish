@@ -6,6 +6,10 @@ class ReviewService {
     return await reviewRepository.findByProduct(productId);
   }
 
+  async getReviews() {
+    return await reviewRepository.findAll();
+  }
+
   async createReview(userId, name, reviewData) {
     const { product: productId, rating, comment } = reviewData;
 

@@ -97,7 +97,7 @@ const Blog = () => {
                         }).toUpperCase()}
                       </span>
                       <span className="text-[#111]">|</span>
-                      <span>{blog.author || 'Admin'}</span>
+                      <span>{typeof blog.author === 'object' ? blog.author?.name : (blog.author || 'Admin')}</span>
                     </div>
                     <Link to={`/blogs/news/${blog.slug}`} className="group block mb-4">
                       <h3 className="text-[26px] md:text-[28px] font-heading font-semibold text-[#111] group-hover:text-[#729855] transition-colors duration-300 leading-[1.25]">

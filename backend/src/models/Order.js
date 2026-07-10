@@ -103,6 +103,20 @@ const orderSchema = new mongoose.Schema(
     deliveredAt: {
       type: Date,
     },
+    coupon: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Coupon',
+      default: null,
+    },
+    couponCode: {
+      type: String,
+      default: '',
+    },
+    discountAmount: {
+      type: Number,
+      required: true,
+      default: 0.0,
+    },
   },
   {
     timestamps: true,

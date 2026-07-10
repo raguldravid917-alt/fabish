@@ -21,6 +21,14 @@ class ReviewRepository {
     return await Review.findById(id).lean();
   }
 
+  async findAll() {
+    return await Review.find({})
+      .populate('user', 'name email')
+      .populate('product', 'title')
+      .sort({ createdAt: -1 })
+      .lean();
+  }
+
   async getAverageRating(productId) {
     const targetId = typeof productId === 'string' ? new mongoose.Types.ObjectId(productId) : productId;
     return await Review.aggregate([

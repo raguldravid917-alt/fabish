@@ -6,14 +6,31 @@ import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
 import { getLocalImageUrl } from '../utils/imageMapper';
 import { orderService } from '../api/orderService';
+import { useToast } from '../context/ToastContext';
+import { api } from '../api/client';
 
 const Cart = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isCheckoutMode = searchParams.get('checkout') === 'true';
 
+  const { showToast } = useToast();
   const { user, token } = useContext(AuthContext);
-  const { cartItems, updateQty, removeFromCart, clearCart, itemsPrice, shippingPrice, totalPrice } = useContext(CartContext);
+  const { 
+    cartItems, 
+    updateQty, 
+    removeFromCart, 
+    clearCart, 
+    itemsPrice, 
+    shippingPrice, 
+    totalPrice,
+    appliedCoupon,
+    discountAmount,
+    couponError,
+    couponLoading,
+    applyCoupon,
+    removeCoupon
+  } = useContext(CartContext);
 
   // Checkout Form State
   const [address, setAddress] = useState('');
@@ -31,6 +48,34 @@ const Cart = () => {
   const [submitting, setSubmitting] = useState(false);
   const [orderCreated, setOrderCreated] = useState(null);
   const [error, setError] = useState('');
+
+  // Coupon UI states
+  const [couponInput, setCouponInput] = useState('');
+  const [publicCoupons, setPublicCoupons] = useState([]);
+
+  useEffect(() => {
+    const fetchPublicCoupons = async () => {
+      try {
+        const res = await api.get('/coupons/public');
+        if (res.success) {
+          setPublicCoupons(res.data || []);
+        }
+      } catch (err) {
+        console.error('Failed to load public coupons:', err);
+      }
+    };
+    fetchPublicCoupons();
+  }, []);
+
+  const handleApplyCouponClick = async () => {
+    const res = await applyCoupon(couponInput);
+    if (res.success) {
+      showToast(res.message, 'success');
+      setCouponInput('');
+    } else {
+      showToast(res.message, 'error');
+    }
+  };
 
   const loadScript = () => {
     return new Promise((resolve) => {
@@ -76,6 +121,7 @@ const Cart = () => {
         itemsPrice,
         shippingPrice,
         totalPrice,
+        couponCode: appliedCoupon ? appliedCoupon.code : undefined,
       };
 
       if (paymentMethod === 'Card') {
@@ -420,6 +466,12 @@ const Cart = () => {
                     <span>Items Subtotal</span>
                     <span className="text-brand-charcoal">Rs. {itemsPrice.toLocaleString('en-IN')}.00</span>
                   </div>
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between text-[#729855] select-text">
+                      <span>Discount ({appliedCoupon?.code})</span>
+                      <span>- Rs. {discountAmount.toLocaleString('en-IN')}.00</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span>Shipping Fee</span>
                     <span className="text-brand-charcoal">
@@ -431,6 +483,71 @@ const Cart = () => {
                     <span>Total Amount</span>
                     <span className="text-lg">Rs. {totalPrice.toLocaleString('en-IN')}.00</span>
                   </div>
+                </div>
+
+                {/* Coupon Input & Collapsible Offers list */}
+                <div className="border-t border-brand-border pt-4 space-y-3">
+                  <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted block">Promo Code</label>
+                  {appliedCoupon ? (
+                    <div className="flex items-center justify-between bg-green-50 border border-green-200 px-3 py-2.5 text-xs text-brand-green font-semibold rounded-none select-none">
+                      <span>{appliedCoupon.code} ({appliedCoupon.discountType === 'Percentage' ? `${appliedCoupon.discountPercentage}% OFF` : appliedCoupon.discountType === 'FreeShipping' ? 'FREE SHIPPING' : `Rs. ${appliedCoupon.discountValue} OFF`})</span>
+                      <button 
+                        onClick={removeCoupon} 
+                        className="text-red-500 hover:text-red-700 font-bold ml-2 text-xs uppercase tracking-wider bg-transparent border-none cursor-pointer"
+                        type="button"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="ENTER PROMO CODE"
+                        value={couponInput}
+                        onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                        className="flex-grow border border-brand-border px-3 py-2 font-mono font-bold text-xs focus:outline-none focus:border-brand-green rounded-none uppercase"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyCouponClick}
+                        disabled={couponLoading}
+                        className="bg-brand-charcoal hover:bg-brand-button-hover text-white text-[10px] font-heading font-bold uppercase tracking-widest px-4 py-2 disabled:opacity-50 transition-all rounded-none cursor-pointer"
+                      >
+                        {couponLoading ? '...' : 'Apply'}
+                      </button>
+                    </div>
+                  )}
+                  {couponError && (
+                    <span className="text-red-500 text-[10px] block mt-1 font-semibold leading-normal">{couponError}</span>
+                  )}
+                  
+                  {/* Public active coupons list */}
+                  {publicCoupons.length > 0 && !appliedCoupon && (
+                    <div className="pt-2 border-t border-brand-border/40">
+                      <span className="font-heading text-[9px] font-bold uppercase tracking-wider text-brand-muted block mb-2">Available Coupons (Click to Apply):</span>
+                      <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
+                        {publicCoupons.map((c) => (
+                          <button
+                            key={c._id}
+                            type="button"
+                            onClick={() => {
+                              applyCoupon(c.code).then(res => {
+                                if (res.success) {
+                                  showToast(res.message, 'success');
+                                } else {
+                                  showToast(res.message, 'error');
+                                }
+                              });
+                            }}
+                            className="bg-brand-bg-cream hover:bg-[#eae8d8] text-brand-charcoal text-[9px] font-bold font-mono px-2.5 py-1 border border-brand-border cursor-pointer select-none transition-all flex items-center gap-1"
+                          >
+                            <span className="text-[#729855] font-extrabold">%</span> {c.code}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {!isCheckoutMode ? (

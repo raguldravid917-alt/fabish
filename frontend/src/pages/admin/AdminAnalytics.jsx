@@ -68,7 +68,7 @@ const AdminAnalytics = ({ products = [], orders = [] }) => {
               {analytics.highlyRated.map(p => (
                 <tr key={p._id} className="hover:bg-[#eae8d8]/20 transition-colors">
                   <td className="p-4 font-semibold text-black">{p.title}</td>
-                  <td className="p-4 capitalize text-gray-500">{p.category}</td>
+                  <td className="p-4 capitalize text-gray-500">{typeof p.category === 'object' ? p.category?.name : (p.category || 'Uncategorized')}</td>
                   <td className="p-4 font-bold text-yellow-500">{p.ratings.toFixed(1)} ★</td>
                   <td className="p-4 font-semibold text-black">{formatPrice(p.price)}</td>
                 </tr>

@@ -174,7 +174,7 @@ const AdminBlogs = () => {
                       <BookOpen className="w-4 h-4 text-gray-400" />
                       <span>{b.title}</span>
                     </td>
-                    <td className="p-4 text-gray-500 font-medium">{b.author || 'Admin'}</td>
+                    <td className="p-4 text-gray-500 font-medium">{typeof b.author === 'object' ? b.author?.name : (b.author || 'Admin')}</td>
                     <td className="p-4 text-gray-500">{b.tags?.join(', ') || 'General'}</td>
                     <td className="p-4 text-gray-400 font-mono">{new Date(b.createdAt).toLocaleDateString()}</td>
                     <td className="p-4">

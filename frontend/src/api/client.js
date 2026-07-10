@@ -46,6 +46,11 @@ const isProtectedEndpoint = (url) => {
     cleanUrl = '/' + cleanUrl;
   }
 
+  // Bypass authentication check for public coupon endpoints
+  if (cleanUrl === '/coupons/public' || cleanUrl === '/coupons/apply') {
+    return false;
+  }
+
   const protectedPrefixes = [
     '/auth/me',
     '/auth/profile',

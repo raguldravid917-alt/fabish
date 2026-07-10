@@ -14,15 +14,28 @@ const notFoundHandler = (req, res, next) => {
  * Returns normalized API error response.
  */
 const errorHandler = (err, req, res, next) => {
-  const statusCode =
+  let statusCode =
     res.statusCode && res.statusCode !== HTTP_STATUS.OK
       ? res.statusCode
       : HTTP_STATUS.INTERNAL_SERVER_ERROR;
 
+  let errors = err.errors || null;
+  let message = err.message || 'Internal Server Error';
+
+  // Format Mongoose validation errors to return key-value pairs of field: error_message
+  if (err.name === 'ValidationError') {
+    statusCode = HTTP_STATUS.BAD_REQUEST;
+    message = 'Validation Error';
+    errors = {};
+    for (const key in err.errors) {
+      errors[key] = err.errors[key].message;
+    }
+  }
+
   res.status(statusCode).json({
     success: false,
-    message: err.message || 'Internal Server Error',
-    errors: err.errors || null,
+    message,
+    errors,
     stack: process.env.NODE_ENV === 'production' ? null : err.stack,
   });
 };
