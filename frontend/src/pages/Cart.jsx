@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState } from 'react';
 import Loader from '../components/ui/Loader';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { ShoppingBag, Trash2, ArrowRight, ArrowLeft, CreditCard, Landmark, Truck } from 'lucide-react';
@@ -7,7 +7,6 @@ import { AuthContext } from '../context/AuthContext';
 import { getLocalImageUrl } from '../utils/imageMapper';
 import { orderService } from '../api/orderService';
 import { useToast } from '../context/ToastContext';
-import { api } from '../api/client';
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -15,7 +14,7 @@ const Cart = () => {
   const isCheckoutMode = searchParams.get('checkout') === 'true';
 
   const { showToast } = useToast();
-  const { user, token } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const {
     cartItems,
     updateQty,
@@ -47,21 +46,6 @@ const Cart = () => {
 
   // Coupon UI states
   const [couponInput, setCouponInput] = useState('');
-  const [publicCoupons, setPublicCoupons] = useState([]);
-
-  useEffect(() => {
-    const fetchPublicCoupons = async () => {
-      try {
-        const res = await api.get('/coupons/public');
-        if (res.success) {
-          setPublicCoupons(res.data || []);
-        }
-      } catch (err) {
-        console.error('Failed to load public coupons:', err);
-      }
-    };
-    fetchPublicCoupons();
-  }, []);
 
   const handleApplyCouponClick = async () => {
     const res = await applyCoupon(couponInput);
@@ -449,7 +433,7 @@ const Cart = () => {
                         disabled={submitting}
                         className="flex-grow bg-brand-charcoal text-white hover:bg-brand-button-hover py-4 font-heading font-bold text-xs uppercase tracking-widest disabled:opacity-50 transition-all flex items-center justify-center gap-2"
                       >
-                        {submitting ? <Loader size="small" /> : 'Pay and Place Order'}
+                        Pay and Place Order
                       </button>
                     </div>
 
@@ -523,33 +507,6 @@ const Cart = () => {
                   )}
                   {couponError && (
                     <span className="text-red-500 text-[10px] block mt-1 font-semibold leading-normal">{couponError}</span>
-                  )}
-
-                  {/* Public active coupons list */}
-                  {publicCoupons.length > 0 && !appliedCoupon && (
-                    <div className="pt-2 border-t border-brand-border/40">
-                      <span className="font-heading text-[9px] font-bold uppercase tracking-wider text-brand-muted block mb-2">Available Coupons (Click to Apply):</span>
-                      <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
-                        {publicCoupons.map((c) => (
-                          <button
-                            key={c._id}
-                            type="button"
-                            onClick={() => {
-                              applyCoupon(c.code).then(res => {
-                                if (res.success) {
-                                  showToast(res.message, 'success');
-                                } else {
-                                  showToast(res.message, 'error');
-                                }
-                              });
-                            }}
-                            className="bg-brand-bg-cream hover:bg-[#eae8d8] text-brand-charcoal text-[9px] font-bold font-mono px-2.5 py-1 border border-brand-border cursor-pointer select-none transition-all flex items-center gap-1"
-                          >
-                            <span className="text-[#729855] font-extrabold">%</span> {c.code}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
                   )}
                 </div>
 
