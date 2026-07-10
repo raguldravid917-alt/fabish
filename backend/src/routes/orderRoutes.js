@@ -15,6 +15,7 @@ router.post('/verify', orderController.verifyRazorpayPayment);
 router.get('/myorders', orderController.getMyOrders);
 router.route('/:id')
   .get(orderController.getOrderById);
+router.get('/:id/invoice', orderController.getOrderInvoice);
 router.put('/:id/pay', orderController.payOrder);
 
 // Admin only routes

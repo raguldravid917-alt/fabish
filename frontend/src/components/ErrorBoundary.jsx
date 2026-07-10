@@ -4,6 +4,7 @@
  */
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { ENV } from '../config/env';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -17,7 +18,7 @@ class ErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     console.error('ErrorBoundary caught:', error, errorInfo);
-    fetch('http://localhost:5000/api/log-error', {
+    fetch(`${ENV.API_URL}/log-error`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -9,13 +9,14 @@
  * - Added order status column with color-coded labels
  */
 import React, { useState } from 'react';
-import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import { orderService } from '../../api/orderService';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { useToast } from '../../context/ToastContext';
 import Badge from '../../components/ui/Badge';
 import AdminPageHeader from '../../components/ui/AdminPageHeader';
 import { formatPrice } from '../../utils/formatPrice';
+import GSTInvoice from '../../components/invoice/GSTInvoice';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -24,6 +25,7 @@ const AdminOrders = ({ orders = [], onRefresh }) => {
   const { showToast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [invoiceOrder, setInvoiceOrder] = useState(null);
 
   const handleStatusUpdate = async (id, status) => {
     const result = await orderService.updateStatus(id, status);
@@ -49,6 +51,10 @@ const AdminOrders = ({ orders = [], onRefresh }) => {
 
   return (
     <div className="space-y-6 select-none">
+      {/* GST Invoice Modal */}
+      {invoiceOrder && (
+        <GSTInvoice order={invoiceOrder} onClose={() => setInvoiceOrder(null)} />
+      )}
       <AdminPageHeader
         title="Orders"
         subtitle={`${orders.length} total orders — ${orders.filter(o => o.orderStatus !== 'Delivered' && o.orderStatus !== 'Cancelled' && !o.isDelivered).length} pending delivery`}
@@ -137,6 +143,12 @@ const AdminOrders = ({ orders = [], onRefresh }) => {
                     <option value="Delivered">Delivered</option>
                     <option value="Cancelled">Cancelled</option>
                   </select>
+                  <button
+                    onClick={() => setInvoiceOrder(order)}
+                    className="flex items-center justify-center gap-2 px-3 py-2 border border-[#729855] text-[#729855] hover:bg-[#729855] hover:text-white text-[10px] font-heading font-bold uppercase tracking-wider transition-all cursor-pointer rounded-none bg-transparent"
+                  >
+                    <FileText className="w-3.5 h-3.5" /> View GST Invoice
+                  </button>
                 </div>
               </div>
             );
@@ -194,19 +206,27 @@ const AdminOrders = ({ orders = [], onRefresh }) => {
                   {new Date(order.createdAt).toLocaleDateString()}
                 </td>
                 <td className="p-4 text-center">
-                  <select
-                    value={order.orderStatus || (order.isDelivered ? 'Delivered' : 'Pending')}
-                    onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
-                    className="px-2 py-1 border border-[#eae8d8] text-xs font-semibold text-black bg-white focus:outline-none rounded-none cursor-pointer"
-                  >
-                    <option value="Pending">Pending</option>
-                    <option value="Confirmed">Confirmed</option>
-                    <option value="Packed">Packed</option>
-                    <option value="Shipped">Shipped</option>
-                    <option value="Out For Delivery">Out For Delivery</option>
-                    <option value="Delivered">Delivered</option>
-                    <option value="Cancelled">Cancelled</option>
-                  </select>
+                  <div className="flex flex-col gap-1.5 items-center">
+                    <select
+                      value={order.orderStatus || (order.isDelivered ? 'Delivered' : 'Pending')}
+                      onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
+                      className="px-2 py-1 border border-[#eae8d8] text-xs font-semibold text-black bg-white focus:outline-none rounded-none cursor-pointer"
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="Confirmed">Confirmed</option>
+                      <option value="Packed">Packed</option>
+                      <option value="Shipped">Shipped</option>
+                      <option value="Out For Delivery">Out For Delivery</option>
+                      <option value="Delivered">Delivered</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                    <button
+                      onClick={() => setInvoiceOrder(order)}
+                      className="flex items-center gap-1 px-2 py-1 border border-[#729855] text-[#729855] hover:bg-[#729855] hover:text-white text-[9px] font-heading font-bold uppercase tracking-wider transition-all cursor-pointer rounded-none bg-transparent w-full justify-center"
+                    >
+                      <FileText className="w-3 h-3" /> Invoice
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

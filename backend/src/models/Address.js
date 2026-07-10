@@ -37,7 +37,7 @@ const addressSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please add a country'],
       trim: true,
-      default: 'United States',
+      default: 'India',
     },
     isDefault: {
       type: Boolean,

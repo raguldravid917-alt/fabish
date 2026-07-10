@@ -8,19 +8,15 @@ import {
   Settings, 
   CheckCircle2, 
   Truck, 
-  FileText, 
-  Printer, 
   ArrowLeft, 
-  Calendar, 
   ChevronRight,
-  Package,
-  ShieldCheck,
-  ClipboardList
+  Package
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { orderService } from '../api/orderService';
 import { getLocalImageUrl } from '../utils/imageMapper';
 import { useToast } from '../context/ToastContext';
+import GSTInvoice from '../components/invoice/GSTInvoice';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -97,9 +93,7 @@ const Profile = () => {
     }
   };
 
-  const handlePrintInvoice = () => {
-    window.print();
-  };
+  // Invoice printing handled by GSTInvoice component internally
 
   // Define tracking timeline stages helper
   const getTimelineStages = (order) => {
@@ -153,28 +147,7 @@ const Profile = () => {
   return (
     <div className="bg-[#f7f6f0] min-h-screen py-12 font-body text-brand-charcoal select-none">
       
-      {/* Dynamic Printing Style overrides for Invoices */}
-      <style>{`
-        @media print {
-          body {
-            background-color: white !important;
-            color: black !important;
-          }
-          header, footer, nav, button, .no-print, .toast-container {
-            display: none !important;
-          }
-          .print-area {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            border: none !important;
-            box-shadow: none !important;
-          }
-        }
-      `}</style>
+
 
       <div className="max-w-[1440px] mx-auto px-6 md:px-12">
         
@@ -194,128 +167,12 @@ const Profile = () => {
           </button>
         </div>
 
-        {/* Invoice View Overlay/Modal */}
+        {/* GST Tax Invoice Modal */}
         {viewInvoice && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto select-text">
-            <div className="bg-white w-full max-w-3xl border border-brand-border p-6 md:p-10 shadow-2xl relative print-area my-8">
-              
-              {/* Close Button */}
-              <button 
-                onClick={() => setViewInvoice(null)}
-                className="absolute top-4 right-4 text-brand-muted hover:text-brand-charcoal font-bold no-print border-none bg-transparent cursor-pointer text-sm font-heading"
-              >
-                ✕ Close
-              </button>
-
-              {/* Invoice Layout */}
-              <div className="space-y-8 select-text">
-                <div className="flex justify-between items-start border-b border-brand-border pb-6">
-                  <div>
-                    <h2 className="serif-title text-3xl text-brand-charcoal leading-none">FABISH</h2>
-                    <p className="text-[10px] text-brand-muted font-heading uppercase tracking-widest mt-1">Premium Organic Skincare</p>
-                  </div>
-                  <div className="text-right font-heading text-xs font-semibold text-brand-muted uppercase space-y-1">
-                    <div className="text-brand-charcoal font-bold text-sm">INVOICE</div>
-                    <div>Order Ref: #{viewInvoice.orderNumber}</div>
-                    <div>Date: {new Date(viewInvoice.createdAt).toLocaleDateString()}</div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-xs font-semibold">
-                  <div>
-                    <h4 className="font-heading uppercase tracking-wider text-brand-muted mb-2 text-[10px]">Billed To:</h4>
-                    <div className="text-brand-charcoal text-sm font-bold mb-1">{viewInvoice.customerDetails?.name || viewInvoice.user?.name}</div>
-                    <div className="text-brand-muted font-normal leading-relaxed">
-                      {viewInvoice.customerDetails?.email}<br />
-                      {viewInvoice.customerDetails?.phone && `Phone: ${viewInvoice.customerDetails.phone}`}
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="font-heading uppercase tracking-wider text-brand-muted mb-2 text-[10px]">Shipped To:</h4>
-                    <div className="text-brand-charcoal leading-relaxed font-normal">
-                      {viewInvoice.shippingAddress.address}<br />
-                      {viewInvoice.shippingAddress.city}, {viewInvoice.shippingAddress.postalCode}<br />
-                      {viewInvoice.shippingAddress.country}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Products Table - Responsive scroll wrapper */}
-                <div className="overflow-x-auto w-full border-b border-brand-border/40 pb-2">
-                  <table className="w-full text-left border-collapse text-xs min-w-[450px]">
-                    <thead>
-                      <tr className="border-b border-brand-border font-heading font-bold text-[10px] uppercase tracking-wider text-brand-muted">
-                        <th className="pb-3">Item Description</th>
-                        <th className="pb-3 text-center">Qty</th>
-                        <th className="pb-3 text-right">Price</th>
-                        <th className="pb-3 text-right">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-brand-border/40 font-semibold text-brand-charcoal">
-                      {viewInvoice.orderItems.map((item, idx) => (
-                        <tr key={idx} className="hover:bg-brand-bg-cream/20">
-                          <td className="py-4 font-body">{item.title}</td>
-                          <td className="py-4 text-center font-mono">{item.qty}</td>
-                          <td className="py-4 text-right font-mono">Rs. {item.price.toLocaleString('en-IN')}.00</td>
-                          <td className="py-4 text-right font-mono">Rs. {(item.price * item.qty).toLocaleString('en-IN')}.00</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Calculation Summary */}
-                <div className="flex justify-end pt-4 border-t border-brand-border">
-                  <div className="w-64 font-heading text-xs font-semibold text-brand-muted space-y-2">
-                    <div className="flex justify-between">
-                      <span>Subtotal</span>
-                      <span className="text-brand-charcoal font-mono font-bold">Rs. {viewInvoice.itemsPrice.toLocaleString('en-IN')}.00</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Shipping Fee</span>
-                      <span className="text-brand-charcoal font-mono font-bold">
-                        {viewInvoice.shippingPrice === 0 ? 'FREE' : `Rs. ${viewInvoice.shippingPrice.toLocaleString('en-IN')}.00`}
-                      </span>
-                    </div>
-                    <hr className="border-brand-border" />
-                    <div className="flex justify-between text-brand-charcoal font-bold text-sm">
-                      <span>Total Amount</span>
-                      <span className="font-mono text-base text-[#729855]">Rs. {viewInvoice.totalPrice.toLocaleString('en-IN')}.00</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Transaction details */}
-                <div className="bg-brand-bg-cream p-4 border border-brand-border text-[10px] font-heading font-bold uppercase tracking-wider space-y-1.5 leading-relaxed text-brand-muted">
-                  <div><span className="text-brand-charcoal">Payment Method:</span> {viewInvoice.paymentMethod}</div>
-                  <div><span className="text-brand-charcoal">Payment Status:</span> {viewInvoice.paymentStatus}</div>
-                  {viewInvoice.razorpayPaymentId && (
-                    <div><span className="text-brand-charcoal">Razorpay Payment ID:</span> {viewInvoice.razorpayPaymentId}</div>
-                  )}
-                  {viewInvoice.razorpayOrderId && (
-                    <div><span className="text-brand-charcoal">Razorpay Order ID:</span> {viewInvoice.razorpayOrderId}</div>
-                  )}
-                </div>
-
-                {/* Action panel inside Invoice */}
-                <div className="flex justify-end gap-4 no-print border-t border-brand-border pt-6 mt-6">
-                  <button 
-                    onClick={handlePrintInvoice}
-                    className="bg-[#729855] hover:bg-[#5a7d41] text-white px-6 py-3 font-heading font-bold text-xs uppercase tracking-widest transition-all flex items-center gap-2 cursor-pointer rounded-none border-none"
-                  >
-                    <Printer className="w-4 h-4" /> Print / Save PDF
-                  </button>
-                  <button 
-                    onClick={() => setViewInvoice(null)}
-                    className="border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white px-6 py-3 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer rounded-none bg-transparent"
-                  >
-                    Close Invoice
-                  </button>
-                </div>
-              </div>
-
-            </div>
-          </div>
+          <GSTInvoice
+            order={viewInvoice}
+            onClose={() => setViewInvoice(null)}
+          />
         )}
 
         {/* Tab Selection Row */}

@@ -172,6 +172,31 @@ class OrderController {
       next(error);
     }
   }
+
+  // @desc    Get order invoice data
+  // @route   GET /api/orders/:id/invoice
+  // @access  Private
+  async getOrderInvoice(req, res, next) {
+    try {
+      const order = await orderService.getOrderById(req.params.id);
+
+      // Authorization check: User can only see their own orders unless they are admin
+      if (!req.user.isAdmin && order.user._id.toString() !== req.user._id.toString()) {
+        res.status(HTTP_STATUS.FORBIDDEN);
+        throw new Error('Not authorized to access this invoice');
+      }
+
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        data: order,
+      });
+    } catch (error) {
+      if (res.statusCode === HTTP_STATUS.OK) {
+        res.status(HTTP_STATUS.NOT_FOUND);
+      }
+      next(error);
+    }
+  }
 }
 
 module.exports = new OrderController();

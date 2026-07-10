@@ -31,18 +31,12 @@ class AuthService {
   }
 
   async login(email, password) {
-    console.log('[AuthDebug] Incoming email:', email);
     const user = await userRepository.findByEmailWithPassword(email);
-    console.log('[AuthDebug] User found in DB:', user ? 'Yes' : 'No');
-    if (user) {
-      console.log('[AuthDebug] Stored password hash:', user.password);
-    }
 
     if (!user) {
       throw new Error('Email does not exist');
     }
     const isMatch = await user.matchPassword(password);
-    console.log('[AuthDebug] bcrypt.compare result:', isMatch);
     if (!isMatch) {
       throw new Error('Incorrect password');
     }
@@ -67,18 +61,12 @@ class AuthService {
   }
 
   async adminLogin(email, password) {
-    console.log('[AuthDebug] Incoming email (admin):', email);
     const user = await userRepository.findByEmailWithPassword(email);
-    console.log('[AuthDebug] User found in DB:', user ? 'Yes' : 'No');
-    if (user) {
-      console.log('[AuthDebug] Stored password hash:', user.password);
-    }
 
     if (!user) {
       throw new Error('Email does not exist');
     }
     const isMatch = await user.matchPassword(password);
-    console.log('[AuthDebug] bcrypt.compare result:', isMatch);
     if (!isMatch) {
       throw new Error('Incorrect password');
     }

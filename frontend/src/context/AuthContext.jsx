@@ -53,7 +53,6 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const result = await authService.login(email, password);
-      console.log("LOGIN API RESPONSE:", result); // Debugging-kaaga ithu irukatum
 
       if (result.success) {
         const data = result.data;

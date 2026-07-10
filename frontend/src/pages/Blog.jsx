@@ -29,7 +29,7 @@ const Blog = () => {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    console.log("Searching for:", searchQuery);
+    // Search is handled by the filter below
   };
 
   // Filter blogs based on search query

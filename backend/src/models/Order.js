@@ -8,6 +8,12 @@ const orderSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
+    invoiceNumber: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -25,6 +31,9 @@ const orderSchema = new mongoose.Schema(
         qty: { type: Number, required: true },
         image: { type: String, required: true },
         price: { type: Number, required: true },
+        sku: { type: String, default: '' },
+        hsnCode: { type: String, default: '3304' }, // HSN for beauty/skincare products
+        gstRate: { type: Number, default: 18 },     // GST % for this line item
         product: {
           type: mongoose.Schema.Types.ObjectId,
           ref: 'Product',
@@ -35,6 +44,7 @@ const orderSchema = new mongoose.Schema(
     shippingAddress: {
       address: { type: String, required: true },
       city: { type: String, required: true },
+      state: { type: String, default: '' },
       postalCode: { type: String, required: true },
       country: { type: String, required: true },
     },
@@ -116,6 +126,18 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       required: true,
       default: 0.0,
+    },
+    // GST details for Indian Tax Invoice
+    gstDetails: {
+      taxableValue: { type: Number, default: 0 },   // Pre-tax subtotal (itemsPrice - discount)
+      cgst: { type: Number, default: 0 },            // CGST amount (same state)
+      sgst: { type: Number, default: 0 },            // SGST amount (same state)
+      igst: { type: Number, default: 0 },            // IGST amount (inter-state)
+      totalGst: { type: Number, default: 0 },        // Total GST collected
+      gstRate: { type: Number, default: 18 },        // GST % rate applied
+      isSameState: { type: Boolean, default: true }, // Same state = CGST+SGST, else IGST
+      sellerState: { type: String, default: 'Tamil Nadu' },
+      buyerState: { type: String, default: '' },
     },
   },
   {

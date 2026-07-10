@@ -16,13 +16,13 @@ const Cart = () => {
 
   const { showToast } = useToast();
   const { user, token } = useContext(AuthContext);
-  const { 
-    cartItems, 
-    updateQty, 
-    removeFromCart, 
-    clearCart, 
-    itemsPrice, 
-    shippingPrice, 
+  const {
+    cartItems,
+    updateQty,
+    removeFromCart,
+    clearCart,
+    itemsPrice,
+    shippingPrice,
     totalPrice,
     appliedCoupon,
     discountAmount,
@@ -35,14 +35,10 @@ const Cart = () => {
   // Checkout Form State
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
+  const [state, setState] = useState('');
   const [postalCode, setPostalCode] = useState('');
-  const [country, setCountry] = useState('');
+  const [country, setCountry] = useState('India');
   const [paymentMethod, setPaymentMethod] = useState('Card');
-  
-  // Card mock state
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCvv, setCardCvv] = useState('');
 
   // Status state
   const [submitting, setSubmitting] = useState(false);
@@ -114,6 +110,7 @@ const Cart = () => {
         shippingAddress: {
           address,
           city,
+          state,
           postalCode,
           country,
         },
@@ -219,10 +216,10 @@ const Cart = () => {
           </div>
           <h1 className="serif-title text-3xl text-brand-charcoal mb-4">Order Placed Successfully!</h1>
           <p className="text-brand-muted text-base leading-relaxed mb-6">
-            Thank you for shopping with Fabish! Your order has been registered successfully. 
+            Thank you for shopping with Fabish! Your order has been registered successfully.
             We will process and ship your items shortly.
           </p>
-          
+
           <div className="bg-brand-bg-cream p-4 mb-8 text-left border border-brand-border font-heading text-xs font-semibold uppercase tracking-wider space-y-2 select-text">
             <div><span className="text-brand-muted">Order Number:</span> {orderCreated.orderNumber}</div>
             <div><span className="text-brand-muted">Total Price:</span> Rs. {orderCreated.totalPrice.toLocaleString('en-IN')}.00</div>
@@ -246,7 +243,7 @@ const Cart = () => {
   return (
     <div className="bg-[#f7f6f0] pt-12 pb-28 lg:pb-12 min-h-screen font-body text-base">
       <div className="max-w-[1440px] mx-auto px-6 md:px-12">
-        
+
         <h1 className="serif-title text-3xl md:text-4xl text-brand-charcoal border-b border-brand-border pb-6 mb-10 uppercase tracking-wide">
           {isCheckoutMode ? 'Secure Checkout' : 'Your Shopping Cart'}
         </h1>
@@ -262,17 +259,17 @@ const Cart = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-            
+
             {/* Left side: Cart List or Checkout Form */}
             <div className="lg:col-span-2 space-y-6">
-              
+
               {!isCheckoutMode ? (
                 /* Cart Items List View */
                 <div className="bg-white border border-brand-border p-6 md:p-8 space-y-6">
                   {cartItems.map((item) => (
                     <div key={item._id} className="flex flex-col sm:flex-row gap-6 border-b border-brand-border pb-6 last:border-0 last:pb-0">
                       <img src={getLocalImageUrl(item.images?.[0])} alt={item.title} className="w-24 h-28 object-cover bg-brand-gray-light self-center sm:self-start" />
-                      
+
                       <div className="flex-grow flex flex-col">
                         <div className="flex justify-between items-start mb-2">
                           <div>
@@ -305,7 +302,7 @@ const Cart = () => {
                 /* Checkout Form View */
                 <div className="bg-white border border-brand-border p-6 md:p-8">
                   <h2 className="serif-title text-xl text-brand-charcoal border-b border-brand-border pb-4 mb-6">Shipping Information</h2>
-                  
+
                   {error && (
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 text-xs font-semibold mb-6 text-center">
                       {error}
@@ -313,7 +310,7 @@ const Cart = () => {
                   )}
 
                   <form id="checkout-form" onSubmit={handlePlaceOrder} className="space-y-6">
-                    
+
                     {/* Shipping Fields */}
                     <div>
                       <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-2 block">Address</label>
@@ -327,24 +324,73 @@ const Cart = () => {
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-2 block">City</label>
                         <input
                           type="text"
                           required
-                          placeholder="New York"
+                          placeholder="Chennai"
                           value={city}
                           onChange={(e) => setCity(e.target.value)}
                           className="w-full border border-brand-border px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
                         />
                       </div>
                       <div>
-                        <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-2 block">Postal Code</label>
+                        <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-2 block">State</label>
+                        <select
+                          value={state}
+                          onChange={(e) => setState(e.target.value)}
+                          className="w-full border border-brand-border px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none bg-white"
+                        >
+                          <option value="">Select State</option>
+                          <option>Andhra Pradesh</option>
+                          <option>Arunachal Pradesh</option>
+                          <option>Assam</option>
+                          <option>Bihar</option>
+                          <option>Chhattisgarh</option>
+                          <option>Goa</option>
+                          <option>Gujarat</option>
+                          <option>Haryana</option>
+                          <option>Himachal Pradesh</option>
+                          <option>Jharkhand</option>
+                          <option>Karnataka</option>
+                          <option>Kerala</option>
+                          <option>Madhya Pradesh</option>
+                          <option>Maharashtra</option>
+                          <option>Manipur</option>
+                          <option>Meghalaya</option>
+                          <option>Mizoram</option>
+                          <option>Nagaland</option>
+                          <option>Odisha</option>
+                          <option>Punjab</option>
+                          <option>Rajasthan</option>
+                          <option>Sikkim</option>
+                          <option>Tamil Nadu</option>
+                          <option>Telangana</option>
+                          <option>Tripura</option>
+                          <option>Uttar Pradesh</option>
+                          <option>Uttarakhand</option>
+                          <option>West Bengal</option>
+                          <option>Andaman and Nicobar Islands</option>
+                          <option>Chandigarh</option>
+                          <option>Dadra and Nagar Haveli and Daman and Diu</option>
+                          <option>Delhi</option>
+                          <option>Jammu and Kashmir</option>
+                          <option>Ladakh</option>
+                          <option>Lakshadweep</option>
+                          <option>Puducherry</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-2 block">PIN Code</label>
                         <input
                           type="text"
                           required
-                          placeholder="10001"
+                          placeholder="600 001"
                           value={postalCode}
                           onChange={(e) => setPostalCode(e.target.value)}
                           className="w-full border border-brand-border px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
@@ -355,7 +401,7 @@ const Cart = () => {
                         <input
                           type="text"
                           required
-                          placeholder="United States"
+                          placeholder="India"
                           value={country}
                           onChange={(e) => setCountry(e.target.value)}
                           className="w-full border border-brand-border px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
@@ -370,68 +416,25 @@ const Cart = () => {
                         <button
                           type="button"
                           onClick={() => setPaymentMethod('Card')}
-                          className={`flex items-center justify-center gap-2 py-4 border font-heading font-bold text-xs uppercase tracking-wider select-none transition-all ${
-                            paymentMethod === 'Card'
+                          className={`flex items-center justify-center gap-2 py-4 border font-heading font-bold text-xs uppercase tracking-wider select-none transition-all ${paymentMethod === 'Card'
                               ? 'border-brand-charcoal bg-brand-charcoal text-white'
                               : 'border-brand-border text-brand-muted hover:border-brand-charcoal'
-                          }`}
+                            }`}
                         >
-                          <CreditCard className="w-4 h-4" /> Credit/Debit Card
+                          <CreditCard className="w-4 h-4" /> Online Payment (Razorpay)
                         </button>
                         <button
                           type="button"
                           onClick={() => setPaymentMethod('COD')}
-                          className={`flex items-center justify-center gap-2 py-4 border font-heading font-bold text-xs uppercase tracking-wider select-none transition-all ${
-                            paymentMethod === 'COD'
+                          className={`flex items-center justify-center gap-2 py-4 border font-heading font-bold text-xs uppercase tracking-wider select-none transition-all ${paymentMethod === 'COD'
                               ? 'border-brand-charcoal bg-brand-charcoal text-white'
                               : 'border-brand-border text-brand-muted hover:border-brand-charcoal'
-                          }`}
+                            }`}
                         >
                           <Landmark className="w-4 h-4" /> Cash on Delivery
                         </button>
                       </div>
                     </div>
-
-                    {/* Card fields if Card chosen */}
-                    {paymentMethod === 'Card' && (
-                      <div className="p-4 bg-brand-bg-cream border border-brand-border space-y-4">
-                        <div>
-                          <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-2 block">Card Number (Mock)</label>
-                          <input
-                            type="text"
-                            required
-                            placeholder="4111 2222 3333 4444"
-                            value={cardNumber}
-                            onChange={(e) => setCardNumber(e.target.value)}
-                            className="w-full border border-brand-border bg-white px-4 py-3 font-body text-base focus:outline-none rounded-none"
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-2 block">Expiration</label>
-                            <input
-                              type="text"
-                              required
-                              placeholder="MM/YY"
-                              value={cardExpiry}
-                              onChange={(e) => setCardExpiry(e.target.value)}
-                              className="w-full border border-brand-border bg-white px-4 py-3 font-body text-base focus:outline-none rounded-none"
-                            />
-                          </div>
-                          <div>
-                            <label className="font-heading text-[10px] font-bold uppercase tracking-wider text-brand-muted mb-2 block">CVV</label>
-                            <input
-                              type="password"
-                              required
-                              placeholder="123"
-                              value={cardCvv}
-                              onChange={(e) => setCardCvv(e.target.value)}
-                              className="w-full border border-brand-border bg-white px-4 py-3 font-body text-base focus:outline-none rounded-none"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
 
                     <div className="flex gap-4 pt-4">
                       <button
@@ -460,7 +463,7 @@ const Cart = () => {
             <div>
               <div className="bg-white border border-brand-border p-6 md:p-8 space-y-6 sticky top-28">
                 <h3 className="font-heading text-sm font-bold uppercase tracking-wider text-brand-charcoal border-b border-brand-border pb-4">Order Summary</h3>
-                
+
                 <div className="space-y-4 text-sm font-semibold text-brand-muted font-heading">
                   <div className="flex justify-between">
                     <span>Items Subtotal</span>
@@ -491,8 +494,8 @@ const Cart = () => {
                   {appliedCoupon ? (
                     <div className="flex items-center justify-between bg-green-50 border border-green-200 px-3 py-2.5 text-xs text-brand-green font-semibold rounded-none select-none">
                       <span>{appliedCoupon.code} ({appliedCoupon.discountType === 'Percentage' ? `${appliedCoupon.discountPercentage}% OFF` : appliedCoupon.discountType === 'FreeShipping' ? 'FREE SHIPPING' : `Rs. ${appliedCoupon.discountValue} OFF`})</span>
-                      <button 
-                        onClick={removeCoupon} 
+                      <button
+                        onClick={removeCoupon}
                         className="text-red-500 hover:text-red-700 font-bold ml-2 text-xs uppercase tracking-wider bg-transparent border-none cursor-pointer"
                         type="button"
                       >
@@ -521,7 +524,7 @@ const Cart = () => {
                   {couponError && (
                     <span className="text-red-500 text-[10px] block mt-1 font-semibold leading-normal">{couponError}</span>
                   )}
-                  
+
                   {/* Public active coupons list */}
                   {publicCoupons.length > 0 && !appliedCoupon && (
                     <div className="pt-2 border-t border-brand-border/40">

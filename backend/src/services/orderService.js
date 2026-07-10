@@ -11,6 +11,10 @@ const Order = require('../models/Order');
 const Coupon = require('../models/Coupon');
 const sendEmail = require('../utils/sendEmail');
 
+// Seller configuration
+const SELLER_STATE = process.env.SELLER_STATE || 'Tamil Nadu';
+const DEFAULT_GST_RATE = 18; // 18% GST for beauty/skincare products (HSN 3304)
+
 // Lazy-initialize Razorpay
 let razorpay;
 const getRazorpayInstance = () => {
@@ -36,47 +40,126 @@ const generateOrderNumber = () => {
   return `FAB-${Date.now().toString().slice(-6)}-${randStr}`;
 };
 
-// Helper: Send email confirmation
+/**
+ * Generate a unique sequential invoice number in the format FAB-YYYY-XXXXXX
+ * Uses atomic findOneAndUpdate to ensure no duplicate invoice numbers
+ */
+const generateInvoiceNumber = async () => {
+  const year = new Date().getFullYear();
+  const prefix = `FAB-${year}-`;
+
+  // Find the latest invoice for this year
+  const latest = await Order.findOne(
+    { invoiceNumber: { $regex: `^${prefix}` } },
+    { invoiceNumber: 1 },
+    { sort: { invoiceNumber: -1 } }
+  );
+
+  let nextSeq = 1;
+  if (latest && latest.invoiceNumber) {
+    const parts = latest.invoiceNumber.split('-');
+    const lastSeq = parseInt(parts[parts.length - 1], 10);
+    if (!isNaN(lastSeq)) {
+      nextSeq = lastSeq + 1;
+    }
+  }
+
+  return `${prefix}${String(nextSeq).padStart(6, '0')}`;
+};
+
+/**
+ * Calculate Indian GST for an order
+ * If buyer state === seller state → CGST + SGST (split equally)
+ * Otherwise → IGST (full rate)
+ * 
+ * Note: Products are priced INCLUSIVE of GST on the Fabish platform.
+ * We back-calculate the taxable value (pre-tax) from the inclusive price.
+ */
+const calculateGST = (itemsPrice, discountAmount, buyerState, gstRate = DEFAULT_GST_RATE) => {
+  const normalizedBuyer = (buyerState || '').trim().toLowerCase();
+  const normalizedSeller = SELLER_STATE.trim().toLowerCase();
+  const isSameState = normalizedBuyer === normalizedSeller || normalizedBuyer === '';
+
+  // Prices on Fabish are inclusive of GST
+  // Back-calculate: taxableValue = totalInclusive / (1 + gstRate/100)
+  const totalInclusive = itemsPrice - discountAmount;
+  const taxableValue = Math.round((totalInclusive / (1 + gstRate / 100)) * 100) / 100;
+  const totalGst = Math.round((totalInclusive - taxableValue) * 100) / 100;
+
+  let cgst = 0;
+  let sgst = 0;
+  let igst = 0;
+
+  if (isSameState) {
+    cgst = Math.round((totalGst / 2) * 100) / 100;
+    sgst = Math.round((totalGst - cgst) * 100) / 100;
+  } else {
+    igst = totalGst;
+  }
+
+  return {
+    taxableValue,
+    cgst,
+    sgst,
+    igst,
+    totalGst,
+    gstRate,
+    isSameState,
+    sellerState: SELLER_STATE,
+    buyerState: buyerState || '',
+  };
+};
+
+// Helper: Send order confirmation email
 const sendOrderConfirmationEmail = async (email, order) => {
   try {
     const productsList = order.orderItems
       .map(
         (item) =>
-          `<li>${item.title} (x${item.qty}) - Rs. ${item.price.toLocaleString('en-IN')}.00</li>`
+          `<li>${item.title} (x${item.qty}) — Rs. ${item.price.toLocaleString('en-IN')}.00</li>`
       )
       .join('');
+
+    const gstLine = order.gstDetails && order.gstDetails.totalGst > 0
+      ? `<p><strong>GST (${order.gstDetails.gstRate}%):</strong> Rs. ${order.gstDetails.totalGst.toLocaleString('en-IN')}</p>`
+      : '';
 
     const html = `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eae8d8;">
         <h2 style="color: #729855; border-bottom: 2px solid #729855; padding-bottom: 10px;">Order Confirmation</h2>
         <p>Thank you for your order, <strong>${order.customerDetails?.name || 'Customer'}</strong>!</p>
         <p>Your order number is: <strong style="font-size: 16px; color: #212b36;">${order.orderNumber}</strong></p>
+        ${order.invoiceNumber ? `<p>Invoice Number: <strong>${order.invoiceNumber}</strong></p>` : ''}
         <hr style="border: 0; border-top: 1px solid #eae8d8; margin: 20px 0;" />
         <h3>Order Summary</h3>
         <ul style="padding-left: 20px; line-height: 1.6;">
           ${productsList}
         </ul>
-        <p><strong>Total Price:</strong> Rs. ${order.totalPrice.toLocaleString('en-IN')}.00</p>
+        <p><strong>Subtotal:</strong> Rs. ${order.itemsPrice.toLocaleString('en-IN')}.00</p>
+        ${order.discountAmount > 0 ? `<p><strong>Coupon Discount:</strong> -Rs. ${order.discountAmount.toLocaleString('en-IN')}.00</p>` : ''}
+        ${gstLine}
+        <p><strong>Shipping:</strong> ${order.shippingPrice === 0 ? 'FREE' : `Rs. ${order.shippingPrice.toLocaleString('en-IN')}.00`}</p>
+        <p style="font-size: 16px;"><strong>Grand Total:</strong> Rs. ${order.totalPrice.toLocaleString('en-IN')}.00</p>
         <hr style="border: 0; border-top: 1px solid #eae8d8; margin: 20px 0;" />
         <h3>Shipping Address</h3>
         <p style="line-height: 1.5; color: #555;">
           ${order.shippingAddress.address}<br />
-          ${order.shippingAddress.city}, ${order.shippingAddress.postalCode}<br />
+          ${order.shippingAddress.city}${order.shippingAddress.state ? `, ${order.shippingAddress.state}` : ''}, ${order.shippingAddress.postalCode}<br />
           ${order.shippingAddress.country}
         </p>
         <hr style="border: 0; border-top: 1px solid #eae8d8; margin: 20px 0;" />
-        <p style="font-size: 11px; color: #999; text-align: center;">This is an automated notification. If you have any questions, feel free to reply to this email.</p>
+        <p style="font-size: 11px; color: #999; text-align: center;">This is an automated notification. For queries, contact support@fabish.in</p>
       </div>
     `;
 
     await sendEmail({
       email,
-      subject: `Order Confirmation - ${order.orderNumber}`,
-      message: `Thank you for your order! Order Number: ${order.orderNumber}. Total: Rs. ${order.totalPrice}.`,
+      subject: `Order Confirmed — ${order.orderNumber} | Fabish`,
+      message: `Thank you for your order! Order: ${order.orderNumber}. Invoice: ${order.invoiceNumber || 'N/A'}. Total: Rs. ${order.totalPrice}.`,
       html,
     });
-  } catch (error) {
-    console.error('Failed to send order confirmation email:', error.message);
+  } catch (err) {
+    console.error('[ORDER_EMAIL] Failed to send order confirmation email:', err.message);
   }
 };
 
@@ -106,9 +189,12 @@ class OrderService {
         title: product.title,
         qty: item.qty,
         image: (product.images && product.images[0] && typeof product.images[0] === 'object')
-          ? product.images[0].secure_url 
+          ? product.images[0].secure_url
           : (product.images[0] || item.image || ''),
         price: product.price,
+        sku: product.sku || product.slug || '',
+        hsnCode: '3304', // HSN code for beauty/skincare products
+        gstRate: DEFAULT_GST_RATE,
         product: product._id,
       });
 
@@ -159,6 +245,10 @@ class OrderService {
 
     const totalPrice = Math.max(0, itemsPrice + shippingPrice - discountAmount);
 
+    // Calculate GST
+    const buyerState = orderData.shippingAddress?.state || '';
+    const gstDetails = calculateGST(itemsPrice, discountAmount, buyerState);
+
     return {
       verifiedItems,
       itemsPrice,
@@ -167,6 +257,7 @@ class OrderService {
       coupon: appliedCoupon ? appliedCoupon._id : null,
       couponCode,
       discountAmount,
+      gstDetails,
     };
   }
 
@@ -217,7 +308,7 @@ class OrderService {
     }
 
     // 2. Validate products and stock levels
-    const { verifiedItems, itemsPrice, shippingPrice, totalPrice, coupon, couponCode, discountAmount } =
+    const { verifiedItems, itemsPrice, shippingPrice, totalPrice, coupon, couponCode, discountAmount, gstDetails } =
       await this.validateOrderPayload(orderData);
 
     // 3. Atomically decrement stock
@@ -232,9 +323,13 @@ class OrderService {
       }
     }
 
-    // 4. Save the completed Paid Order
+    // 4. Generate invoice number
+    const invoiceNumber = await generateInvoiceNumber();
+
+    // 5. Save the completed Paid Order
     const dbPayload = {
       orderNumber: generateOrderNumber(),
+      invoiceNumber,
       user: userId,
       customerDetails: {
         name: userDetails.name,
@@ -263,6 +358,7 @@ class OrderService {
       coupon,
       couponCode,
       discountAmount,
+      gstDetails,
     };
 
     const order = await orderRepository.create(dbPayload);
@@ -275,11 +371,11 @@ class OrderService {
       );
     }
 
-    // 5. Clear client-side & server-side cart
+    // 6. Clear client-side & server-side cart
     await cartRepository.clear(userId);
     await User.findByIdAndUpdate(userId, { $set: { cart: [] } });
 
-    // 6. Email user confirmation
+    // 7. Email user confirmation
     await sendOrderConfirmationEmail(userDetails.email, order);
 
     return order;
@@ -296,7 +392,7 @@ class OrderService {
     }
 
     // 2. Validate payload and pricing
-    const { verifiedItems, itemsPrice, shippingPrice, totalPrice, coupon, couponCode, discountAmount } =
+    const { verifiedItems, itemsPrice, shippingPrice, totalPrice, coupon, couponCode, discountAmount, gstDetails } =
       await this.validateOrderPayload(orderData);
 
     // 3. Atomically reduce stock
@@ -311,9 +407,13 @@ class OrderService {
       }
     }
 
-    // 4. Setup payload for COD
+    // 4. Generate invoice number
+    const invoiceNumber = await generateInvoiceNumber();
+
+    // 5. Setup payload for COD
     const payload = {
       orderNumber: generateOrderNumber(),
+      invoiceNumber,
       user: userId,
       customerDetails: {
         name: user.name,
@@ -338,6 +438,7 @@ class OrderService {
       coupon,
       couponCode,
       discountAmount,
+      gstDetails,
     };
 
     const order = await orderRepository.create(payload);
@@ -350,11 +451,11 @@ class OrderService {
       );
     }
 
-    // 5. Clear cart
+    // 6. Clear cart
     await cartRepository.clear(userId);
     await User.findByIdAndUpdate(userId, { $set: { cart: [] } });
 
-    // 6. Email customer confirmation
+    // 7. Email customer confirmation
     await sendOrderConfirmationEmail(user.email, order);
 
     return order;
@@ -377,7 +478,7 @@ class OrderService {
   }
 
   /**
-   * Pay Order (Legacy support / mock payment)
+   * Pay Order (Legacy support / manual payment completion)
    */
   async payOrder(id, paymentResult = {}) {
     const order = await orderRepository.findById(id);
@@ -385,16 +486,23 @@ class OrderService {
       throw new Error('Order not found');
     }
 
+    // Generate invoice number if missing
+    let invoiceNumber = order.invoiceNumber;
+    if (!invoiceNumber) {
+      invoiceNumber = await generateInvoiceNumber();
+    }
+
     const payload = {
       isPaid: true,
       paidAt: Date.now(),
       paymentStatus: 'Paid',
       orderStatus: 'Confirmed',
+      invoiceNumber,
       paymentResult: {
-        id: paymentResult.id || `MOCK_PAY_${Date.now()}`,
+        id: paymentResult.id || `PAY_${Date.now()}`,
         status: paymentResult.status || 'COMPLETED',
         update_time: paymentResult.update_time || new Date().toISOString(),
-        email_address: paymentResult.email_address || order.user?.email || 'customer@example.com',
+        email_address: paymentResult.email_address || order.customerDetails?.email || '',
       },
     };
 
@@ -436,6 +544,11 @@ class OrderService {
       if (!order.isPaid) {
         payload.paidAt = Date.now();
       }
+    }
+
+    // Ensure invoice number is generated if missing
+    if (!order.invoiceNumber) {
+      payload.invoiceNumber = await generateInvoiceNumber();
     }
 
     // If order was cancelled, restore product stock
