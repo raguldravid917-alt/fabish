@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { useToast } from '../context/ToastContext';
+import { contactService } from '../api/contactService';
 
 /* ── Social Icon Helpers ──────────────────────────────────────── */
 const TwitterIcon = ({ size = 18 }) => (
@@ -31,6 +33,32 @@ const InstagramIcon = ({ size = 18 }) => (
 const Footer = () => {
   const [isVisible, setIsVisible] = useState(false);
   const footerRef = useRef(null);
+  const { showToast } = useToast();
+  const [email, setEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    if (!email || !email.trim()) return;
+    setSubmitting(true);
+    try {
+      const res = await contactService.submit({
+        name: 'Get Active Subscriber',
+        email: email.trim(),
+        message: 'Newsletter subscription request from Get Active footer form.'
+      });
+      if (res.success) {
+        showToast('Thank you for subscribing to our newsletter!', 'success');
+        setEmail('');
+      } else {
+        showToast(res.message || 'Subscription failed. Please try again.', 'error');
+      }
+    } catch (err) {
+      showToast(err.message || 'Connection error. Please check your network.', 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -142,20 +170,24 @@ const Footer = () => {
               </p>
 
               {/* Form & Button Fixed */}
-              <form onSubmit={e => e.preventDefault()} className="flex flex-col gap-[16px] w-full max-w-[340px]">
+              <form onSubmit={handleSubscribe} className="flex flex-col gap-[16px] w-full max-w-[340px]">
                 <input
                   type="email"
                   placeholder="Your Email Id"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={submitting}
                   required
                   className="w-full h-[50px] px-[20px] bg-white border-none outline-none text-[15px] text-black font-medium box-border rounded-none text-left font-body"
                 />
                 <div>
                   <button
                     type="submit"
-                    className="h-[46px] px-[36px] bg-[#000000] hover:bg-[#8B5A2B] text-white text-[12px] font-extrabold tracking-[0.15em] uppercase border-none cursor-pointer rounded-none transition-colors duration-300 font-heading inline-flex items-center justify-center"
+                    disabled={submitting}
+                    className="h-[46px] px-[36px] bg-[#000000] hover:bg-[#8B5A2B] text-white text-[12px] font-extrabold tracking-[0.15em] uppercase border-none cursor-pointer rounded-none transition-colors duration-300 font-heading inline-flex items-center justify-center disabled:opacity-50"
                     style={{ fontFamily: '"Outfit", sans-serif' }}
                   >
-                    SUBMIT NOW
+                    {submitting ? 'SUBMITTING...' : 'SUBMIT NOW'}
                   </button>
                 </div>
               </form>

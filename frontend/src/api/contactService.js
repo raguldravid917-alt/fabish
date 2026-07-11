@@ -20,4 +20,21 @@ export const contactService = {
    */
   getAll: () =>
     api.get(ENDPOINTS.CONTACT, { auth: true }),
+
+  /**
+   * Update contact status (admin only).
+   * @param {string} id
+   * @param {string} status
+   * @returns {Promise<{ success, data, message }>}
+   */
+  updateStatus: (id, status) =>
+    api.patch(`${ENDPOINTS.CONTACT}/${id}`, { status }, { auth: true }),
+
+  /**
+   * Delete contact inquiry (admin only).
+   * @param {string} id
+   * @returns {Promise<{ success, data, message }>}
+   */
+  delete: (id) =>
+    api.delete(`${ENDPOINTS.CONTACT}/${id}`, { auth: true }),
 };

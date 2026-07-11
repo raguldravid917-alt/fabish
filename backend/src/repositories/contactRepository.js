@@ -5,6 +5,10 @@ class ContactRepository {
     return await Contact.create(contactData);
   }
 
+  async findByEmailAndName(email, name) {
+    return await Contact.findOne({ email, name });
+  }
+
   async findAll() {
     return await Contact.find({}).sort({ createdAt: -1 }).lean();
   }
