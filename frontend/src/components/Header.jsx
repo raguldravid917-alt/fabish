@@ -426,6 +426,22 @@ const Header = () => {
                         >
                           Orders
                         </Link>
+                        <Link
+                          to="/account/profile?tab=addresses" // Pluralized to fix mapping issue
+                          onClick={() => setIsAccountOpen(false)}
+                          className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium"
+                          style={{ textDecoration: 'none' }}
+                        >
+                          Address
+                        </Link>
+                        <Link
+                          to="/account/profile?tab=rewards"
+                          onClick={() => setIsAccountOpen(false)}
+                          className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium"
+                          style={{ textDecoration: 'none' }}
+                        >
+                          Reward Points
+                        </Link>
                         <button
                           onClick={() => {
                             setIsAccountOpen(false);
@@ -483,6 +499,22 @@ const Header = () => {
                           style={{ textDecoration: 'none' }}
                         >
                           Orders
+                        </Link>
+                        <Link
+                          to="/account/profile?tab=addresses" // Pluralized to fix mapping issue
+                          onClick={() => setIsAccountOpen(false)}
+                          className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium"
+                          style={{ textDecoration: 'none' }}
+                        >
+                          Address
+                        </Link>
+                        <Link
+                          to="/account/profile?tab=rewards"
+                          onClick={() => setIsAccountOpen(false)}
+                          className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium"
+                          style={{ textDecoration: 'none' }}
+                        >
+                          Reward Points
                         </Link>
                         <button
                           onClick={() => {
@@ -696,25 +728,25 @@ const Header = () => {
         <div className="fixed inset-0 z-50 flex">
           <div onClick={() => setIsWishlistOpen(false)} className="fixed inset-0 bg-black/40"></div>
           <div className="relative flex flex-col w-full max-w-md bg-white h-full ml-auto shadow-2xl p-6 animate-slide-left">
-            <div className="flex items-center justify-between border-b border-brand-border pb-4 mb-6">
+            <div className="flex items-center justify-between border-b border-[#eae8d8] pb-4 mb-6">
               <h2 className="font-heading text-lg font-bold text-brand-charcoal">My Wishlist ({wishlistItems.length})</h2>
-              <button onClick={() => setIsWishlistOpen(false)} className="p-2 hover:text-brand-green">
+              <button onClick={() => setIsWishlistOpen(false)} className="p-2 hover:text-[#729855]">
                 <X className="w-6 h-6" />
               </button>
             </div>
 
             {wishlistItems.length === 0 ? (
               <div className="flex-grow flex flex-col items-center justify-center text-center">
-                <Heart className="w-16 h-16 text-brand-border mb-4" />
+                <Heart className="w-16 h-16 text-[#eae8d8] mb-4" />
                 <p className="font-heading text-brand-muted">Your wishlist is empty</p>
               </div>
             ) : (
               <div className="flex-grow overflow-y-auto space-y-4 pr-2 no-scrollbar">
                 {wishlistItems.map((item) => (
-                  <div key={item._id} className="flex gap-4 border-b border-brand-border pb-4 items-center">
+                  <div key={item._id} className="flex gap-4 border-b border-[#eae8d8] pb-4 items-center">
                     <img src={getLocalImageUrl(item.images?.[0])} alt={item.title} className="w-16 h-20 object-cover bg-brand-gray-light" />
                     <div className="flex-grow">
-                      <h4 className="font-heading font-medium text-sm text-brand-charcoal line-clamp-2 hover:text-brand-green mb-1">
+                      <h4 className="font-heading font-medium text-sm text-brand-charcoal line-clamp-2 hover:text-[#729855] mb-1">
                         <Link to={`/products/${item.slug}`} onClick={() => setIsWishlistOpen(false)}>{item.title}</Link>
                       </h4>
                       <span className="font-heading text-sm font-semibold">Rs. {item.price.toLocaleString('en-IN')}.00</span>
@@ -726,12 +758,12 @@ const Header = () => {
                       <button
                         onClick={() => handleMoveToCart(item)}
                         disabled={movingWishlistItems.has(item._id?.toString())}
-                        className="text-gray-500 hover:text-[#729855] p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="text-gray-500 hover:text-[#729855] p-2 disabled:opacity-50 disabled:cursor-not-allowed bg-transparent border-none cursor-pointer"
                         aria-label="Add to Cart"
                       >
                         <ShoppingBag className="w-4 h-4" />
                       </button>
-                      <button onClick={() => toggleWishlist(item)} className="text-red-500 hover:text-red-700 p-2">
+                      <button onClick={() => toggleWishlist(item)} className="text-red-500 hover:text-red-700 p-2 bg-transparent border-none cursor-pointer">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -763,7 +795,7 @@ const Header = () => {
                 className="w-full sm:flex-grow border border-brand-border px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none min-w-0"
                 autoFocus
               />
-              <button type="submit" className="bg-brand-charcoal text-white hover:bg-brand-button-hover h-12 sm:h-auto px-6 font-heading font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 shrink-0">
+              <button type="submit" className="bg-brand-charcoal text-white hover:bg-brand-button-hover h-12 sm:h-auto px-6 font-heading font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 shrink-0 border-none cursor-pointer">
                 Search <ArrowRight className="w-4 h-4" />
               </button>
             </form>

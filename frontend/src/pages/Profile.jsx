@@ -1,14 +1,14 @@
-import React, { useContext, useState, useEffect, useMemo } from 'react';
+import React, { useContext, useState, useEffect, useMemo, useRef } from 'react';
 import Loader from '../components/ui/Loader';
 import { useSearchParams, Link, useNavigate, useLocation } from 'react-router-dom';
-import { 
-  ShoppingBag, 
-  User, 
-  MapPin, 
-  Settings, 
-  CheckCircle2, 
-  Truck, 
-  ArrowLeft, 
+import {
+  ShoppingBag,
+  User,
+  MapPin,
+  Settings,
+  CheckCircle2,
+  Truck,
+  ArrowLeft,
   ChevronRight,
   Package,
   ClipboardList,
@@ -34,6 +34,8 @@ import { WishlistContext } from '../context/WishlistContext';
 import { orderService } from '../api/orderService';
 import { addressService } from '../api/addressService';
 import { authService } from '../api/authService';
+import { productService } from '../api/productService';
+import { api } from '../api/client';
 import { getLocalImageUrl } from '../utils/imageMapper';
 import { useToast } from '../context/ToastContext';
 import GSTInvoice from '../components/invoice/GSTInvoice';
@@ -49,7 +51,7 @@ const AnimatedCounter = ({ value }) => {
       setCount(value);
       return;
     }
-    
+
     const duration = 800; // 0.8 seconds
     const stepTime = Math.abs(Math.floor(duration / end));
     const timer = setInterval(() => {
@@ -95,6 +97,9 @@ const Profile = () => {
   const [addresses, setAddresses] = useState([]);
   const [movingWishlistItems, setMovingWishlistItems] = useState(new Set());
   const [loadingAddresses, setLoadingAddresses] = useState(true);
+  const reorderingRef = useRef(false);
+  const [availableCoupons, setAvailableCoupons] = useState([]);
+  const [loadingCoupons, setLoadingCoupons] = useState(true);
 
   const fetchAddresses = async () => {
     if (!user) return;
@@ -158,6 +163,26 @@ const Profile = () => {
       fetchOrders();
     }
   }, [user, showToast]);
+
+  useEffect(() => {
+    const fetchCoupons = async () => {
+      try {
+        setLoadingCoupons(true);
+        const res = await api.get(`/coupons/public?_cb=${Date.now()}`);
+        if (res.success && res.data) {
+          setAvailableCoupons(res.data);
+        }
+      } catch (err) {
+        console.error('Failed to load coupons:', err);
+      } finally {
+        setLoadingCoupons(false);
+      }
+    };
+
+    if (user) {
+      fetchCoupons();
+    }
+  }, [user]);
 
   const rewards = useMemo(() => {
     const pts = user?.rewardPoints || 0;
@@ -414,21 +439,33 @@ const Profile = () => {
     }
   };
 
-  const handleBuyAgain = (order) => {
+  const handleBuyAgain = async (order) => {
     if (!order || !order.orderItems) return;
+    if (reorderingRef.current) return;
+    reorderingRef.current = true;
     try {
-      order.orderItems.forEach(item => {
-        const productObj = {
-          _id: item.product,
-          title: item.title,
-          price: item.price,
-          images: [item.image]
-        };
-        addToCart(productObj, item.qty || 1);
-      });
-      showToast('Items added to your bag!', 'success');
+      let allSuccess = true;
+      for (const item of order.orderItems) {
+        const res = await productService.getById(item.product);
+        if (res.success && res.data) {
+          const product = res.data;
+          const success = await addToCart(product, item.qty || 1);
+          if (!success) {
+            allSuccess = false;
+          }
+        } else {
+          allSuccess = false;
+        }
+      }
+      if (allSuccess) {
+        showToast('Items added to your bag!', 'success');
+      } else {
+        showToast('Some items could not be added to your bag', 'warning');
+      }
     } catch (err) {
       showToast('Failed to add items to bag', 'error');
+    } finally {
+      reorderingRef.current = false;
     }
   };
 
@@ -477,8 +514,6 @@ const Profile = () => {
     }
   };
 
-  // Invoice printing handled by GSTInvoice component internally
-
   // Define tracking timeline stages helper
   const getTimelineStages = (order) => {
     const isPaid = order.paymentStatus === 'Paid' || order.isPaid;
@@ -487,41 +522,41 @@ const Profile = () => {
 
     return [
       { label: 'Order Placed', desc: 'Your order was registered.', done: true, key: 'Placed' },
-      { 
-        label: 'Payment Verified', 
-        desc: isPaid ? 'Payment received successfully.' : (isCOD ? 'COD order confirmed.' : 'Awaiting payment verification.'), 
-        done: isPaid || isCOD, 
-        key: 'Paid' 
+      {
+        label: 'Payment Verified',
+        desc: isPaid ? 'Payment received successfully.' : (isCOD ? 'COD order confirmed.' : 'Awaiting payment verification.'),
+        done: isPaid || isCOD,
+        key: 'Paid'
       },
-      { 
-        label: 'Confirmed', 
-        desc: 'Seller accepted your order.', 
-        done: ['Confirmed', 'Packed', 'Shipped', 'Out For Delivery', 'Delivered'].includes(status), 
-        key: 'Confirmed' 
+      {
+        label: 'Confirmed',
+        desc: 'Seller accepted your order.',
+        done: ['Confirmed', 'Packed', 'Shipped', 'Out For Delivery', 'Delivered'].includes(status),
+        key: 'Confirmed'
       },
-      { 
-        label: 'Packed', 
-        desc: 'Items are packaged and ready.', 
-        done: ['Packed', 'Shipped', 'Out For Delivery', 'Delivered'].includes(status), 
-        key: 'Packed' 
+      {
+        label: 'Packed',
+        desc: 'Items are packaged and ready.',
+        done: ['Packed', 'Shipped', 'Out For Delivery', 'Delivered'].includes(status),
+        key: 'Packed'
       },
-      { 
-        label: 'Shipped', 
-        desc: 'In transit to distribution hub.', 
-        done: ['Shipped', 'Out For Delivery', 'Delivered'].includes(status), 
-        key: 'Shipped' 
+      {
+        label: 'Shipped',
+        desc: 'In transit to distribution hub.',
+        done: ['Shipped', 'Out For Delivery', 'Delivered'].includes(status),
+        key: 'Shipped'
       },
-      { 
-        label: 'Out For Delivery', 
-        desc: 'Courier is delivering today.', 
-        done: ['Out For Delivery', 'Delivered'].includes(status), 
-        key: 'Out For Delivery' 
+      {
+        label: 'Out For Delivery',
+        desc: 'Courier is delivering today.',
+        done: ['Out For Delivery', 'Delivered'].includes(status),
+        key: 'Out For Delivery'
       },
-      { 
-        label: 'Delivered', 
-        desc: 'Successfully received.', 
-        done: status === 'Delivered', 
-        key: 'Delivered' 
+      {
+        label: 'Delivered',
+        desc: 'Successfully received.',
+        done: status === 'Delivered',
+        key: 'Delivered'
       }
     ];
   };
@@ -530,25 +565,25 @@ const Profile = () => {
 
   return (
     <div className="bg-[#f7f6f0] min-h-screen py-12 font-body text-brand-charcoal select-none">
-      
 
+      {/* Dynamic CSS styles matching premium store theme */}
+      <style>{`
+        .glass-card {
+          background: rgba(255, 255, 255, 0.7);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(114, 152, 85, 0.15);
+        }
+      `}</style>
 
       <div className="max-w-[1440px] mx-auto px-6 md:px-12">
-        
-        {/* Page Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-brand-border pb-6 mb-10 gap-4 no-print">
-          <div>
-            <h1 className="serif-title text-3xl md:text-4xl uppercase tracking-wide">My Account</h1>
-            <p className="text-brand-muted text-xs font-semibold tracking-wider font-heading uppercase mt-1">
-              Welcome back, {user.name}
-            </p>
-          </div>
-          <button 
-            onClick={logout}
-            className="border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white px-6 py-2.5 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer"
-          >
-            Logout
-          </button>
+
+        {/* Page Header - Clean & Minimalist, No Logout Button */}
+        <div className="text-left border-b border-[#eae8d8] pb-6 mb-10 no-print">
+          <h1 className="font-serif text-3xl md:text-4xl font-semibold tracking-wide text-brand-charcoal">MY ACCOUNT</h1>
+          <p className="text-brand-muted text-[11px] font-bold tracking-widest font-heading uppercase mt-1">
+            WELCOME BACK, {user.name}
+          </p>
         </div>
 
         {/* GST Tax Invoice Modal */}
@@ -560,52 +595,46 @@ const Profile = () => {
         )}
 
         {/* Tab Selection Row */}
-        <div className="flex border-b border-brand-border mb-10 overflow-x-auto no-scrollbar no-print gap-1 select-none">
-          <button 
+        <div className="flex border-b border-[#eae8d8] mb-10 overflow-x-auto no-scrollbar no-print gap-1 select-none">
+          <button
             onClick={() => setSearchParams({ tab: 'dashboard' })}
-            className={`py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${
-              activeTab === 'dashboard' ? 'border-[#729855] text-brand-charcoal' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
-            }`}
+            className={`py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${activeTab === 'dashboard' ? 'border-[#729855] text-brand-charcoal' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
+              }`}
           >
             <User className="w-3.5 h-3.5" /> Dashboard
           </button>
-          <button 
+          <button
             onClick={() => { setSearchParams({ tab: 'orders' }); setSelectedOrder(null); }}
-            className={`py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${
-              activeTab === 'orders' ? 'border-[#729855] text-brand-charcoal' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
-            }`}
+            className={`py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${activeTab === 'orders' ? 'border-[#729855] text-brand-charcoal' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
+              }`}
           >
             <ShoppingBag className="w-3.5 h-3.5" /> My Orders
           </button>
-          <button 
+          <button
             onClick={() => setSearchParams({ tab: 'addresses' })}
-            className={`py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${
-              activeTab === 'addresses' ? 'border-[#729855] text-brand-charcoal' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
-            }`}
+            className={`py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${activeTab === 'addresses' ? 'border-[#729855] text-brand-charcoal' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
+              }`}
           >
             <MapPin className="w-3.5 h-3.5" /> Addresses
           </button>
-          <button 
+          <button
             onClick={() => setSearchParams({ tab: 'wishlist' })}
-            className={`py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${
-              activeTab === 'wishlist' ? 'border-[#729855] text-brand-charcoal' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
-            }`}
+            className={`py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${activeTab === 'wishlist' ? 'border-[#729855] text-brand-charcoal' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
+              }`}
           >
             <Heart className="w-3.5 h-3.5" /> Wishlist
           </button>
-          <button 
+          <button
             onClick={() => setSearchParams({ tab: 'settings' })}
-            className={`py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${
-              activeTab === 'settings' ? 'border-[#729855] text-brand-charcoal' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
-            }`}
+            className={`py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${activeTab === 'settings' ? 'border-[#729855] text-brand-charcoal' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
+              }`}
           >
             <Settings className="w-3.5 h-3.5" /> Settings
           </button>
-          <button 
+          <button
             onClick={() => setSearchParams({ tab: 'rewards' })}
-            className={`py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${
-              activeTab === 'rewards' ? 'border-[#729855] text-brand-charcoal' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
-            }`}
+            className={`py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${activeTab === 'rewards' ? 'border-[#729855] text-brand-charcoal' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
+              }`}
           >
             <Award className="w-3.5 h-3.5" /> Reward Points
           </button>
@@ -614,7 +643,7 @@ const Profile = () => {
         {/* Content Panels */}
         <div className="no-print">
           <AnimatePresence mode="wait">
-            
+
             {/* TABS 0: DASHBOARD */}
             {activeTab === 'dashboard' && (
               <motion.div
@@ -626,7 +655,7 @@ const Profile = () => {
                 className="space-y-8"
               >
                 {/* Welcome Banner */}
-                <div className="bg-[#faf9f5] border border-brand-border p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden rounded-none">
+                <div className="bg-[#faf9f5] border border-[#eae8d8] p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden rounded-none">
                   {/* Organic leaf vector SVG overlays background */}
                   <div className="absolute right-[-20px] bottom-[-20px] opacity-[0.05] pointer-events-none select-none text-brand-green z-0">
                     <svg width="280" height="280" viewBox="0 0 100 100" fill="currentColor">
@@ -641,7 +670,7 @@ const Profile = () => {
                     <p className="text-sm font-body text-brand-muted max-w-md leading-relaxed mt-2">
                       Manage your orders, saved delivery coordinates, rewards tier details, and edit your profile settings.
                     </p>
-                    
+
                     {/* Quick Actions */}
                     <div className="flex flex-wrap gap-4 pt-3 text-xs font-heading font-bold uppercase tracking-widest">
                       <Link to="/collections/all" className="text-brand-charcoal hover:text-[#729855] underline underline-offset-4 decoration-1 transition-colors">
@@ -658,25 +687,25 @@ const Profile = () => {
                     </div>
                   </div>
 
-                  <div className="flex gap-6 items-center shrink-0 border border-brand-border bg-white p-5 rounded-none z-10 w-full md:w-auto">
+                  <div className="flex gap-6 items-center shrink-0 border border-[#eae8d8] bg-white p-5 rounded-none z-10 w-full md:w-auto">
                     <div className="text-left space-y-1">
                       <span className="block font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Member Tier</span>
                       <span className="font-heading text-base text-brand-charcoal flex items-center gap-1.5 font-semibold mt-1">
                         <Award className="w-4 h-4 text-[#729855]" /> {rewards.tierName}
                       </span>
-                      <span className="block text-xs font-medium text-brand-muted font-body mt-1">Joined {user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', {month: 'short', year: 'numeric'}) : 'Recently'}</span>
+                      <span className="block text-xs font-medium text-brand-muted font-body mt-1">Joined {user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Recently'}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Statistics Cards Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
-                  
+
                   {/* Card 1: Orders */}
                   <motion.div
                     whileHover={{ y: -4, borderColor: '#729855' }}
                     onClick={() => setSearchParams({ tab: 'orders' })}
-                    className="bg-white border border-brand-border p-5 rounded-none flex flex-col justify-between cursor-pointer group transition-colors select-none text-left"
+                    className="bg-white border border-[#eae8d8] p-5 rounded-none flex flex-col justify-between cursor-pointer group transition-colors select-none text-left"
                   >
                     <div className="flex justify-between items-start mb-4">
                       <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted group-hover:text-brand-charcoal transition-colors">Orders Placed</span>
@@ -691,7 +720,7 @@ const Profile = () => {
                   <motion.div
                     whileHover={{ y: -4, borderColor: '#729855' }}
                     onClick={() => setSearchParams({ tab: 'addresses' })}
-                    className="bg-white border border-brand-border p-5 rounded-none flex flex-col justify-between cursor-pointer group transition-colors select-none text-left"
+                    className="bg-white border border-[#eae8d8] p-5 rounded-none flex flex-col justify-between cursor-pointer group transition-colors select-none text-left"
                   >
                     <div className="flex justify-between items-start mb-4">
                       <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted group-hover:text-brand-charcoal transition-colors">Addresses</span>
@@ -706,7 +735,7 @@ const Profile = () => {
                   <motion.div
                     whileHover={{ y: -4, borderColor: '#729855' }}
                     onClick={() => setSearchParams({ tab: 'wishlist' })}
-                    className="bg-white border border-brand-border p-5 rounded-none flex flex-col justify-between cursor-pointer group transition-colors select-none text-left"
+                    className="bg-white border border-[#eae8d8] p-5 rounded-none flex flex-col justify-between cursor-pointer group transition-colors select-none text-left"
                   >
                     <div className="flex justify-between items-start mb-4">
                       <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted group-hover:text-brand-charcoal transition-colors">Wishlist Items</span>
@@ -721,7 +750,7 @@ const Profile = () => {
                   <motion.div
                     whileHover={{ y: -4, borderColor: '#729855' }}
                     onClick={() => setSearchParams({ tab: 'rewards' })}
-                    className="bg-white border border-brand-border p-5 rounded-none flex flex-col justify-between group transition-colors select-none text-left cursor-pointer"
+                    className="bg-white border border-[#eae8d8] p-5 rounded-none flex flex-col justify-between group transition-colors select-none text-left cursor-pointer"
                   >
                     <div className="flex justify-between items-start mb-4">
                       <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Reward Points</span>
@@ -735,7 +764,7 @@ const Profile = () => {
                   {/* Card 5: Coupons */}
                   <motion.div
                     whileHover={{ y: -4, borderColor: '#729855' }}
-                    className="bg-white border border-brand-border p-5 rounded-none flex flex-col justify-between group transition-colors select-none text-left"
+                    className="bg-white border border-[#eae8d8] p-5 rounded-none flex flex-col justify-between group transition-colors select-none text-left"
                   >
                     <div className="flex justify-between items-start mb-4">
                       <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Active Coupons</span>
@@ -750,13 +779,13 @@ const Profile = () => {
 
                 {/* Main Dashboard Layout Columns */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-                  
+
                   {/* Left Column: Recent Orders & Tier Rewards progress */}
                   <div className="lg:col-span-2 space-y-6 md:space-y-8">
-                    
+
                     {/* Recent Orders section */}
-                    <div className="bg-white border border-brand-border p-6 rounded-none space-y-6">
-                      <div className="flex justify-between items-center border-b border-brand-border pb-3">
+                    <div className="bg-white border border-[#eae8d8] p-6 rounded-none space-y-6">
+                      <div className="flex justify-between items-center border-b border-[#eae8d8] pb-3">
                         <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal">Recent Transactions</span>
                         <button onClick={() => setSearchParams({ tab: 'orders' })} className="text-[#729855] hover:text-[#2f3e10] font-heading font-bold text-xs uppercase tracking-widest bg-transparent border-none cursor-pointer p-0">
                           View All Orders
@@ -767,7 +796,7 @@ const Profile = () => {
                         <Loader />
                       ) : orders.length === 0 ? (
                         <div className="py-12 text-center max-w-sm mx-auto space-y-4">
-                          <ClipboardList className="w-10 h-10 text-brand-border mx-auto" />
+                          <ClipboardList className="w-10 h-10 text-[#eae8d8] mx-auto" />
                           <h4 className="font-heading text-base text-brand-charcoal font-semibold">Your order history is empty</h4>
                           <p className="text-brand-muted text-sm leading-relaxed font-body">No orders registered yet. Browse our collections to find your organic skincare routine.</p>
                           <Link to="/collections/all" className="inline-flex items-center justify-center bg-brand-charcoal hover:bg-[#729855] text-white font-heading text-xs font-bold tracking-widest uppercase transition-all px-6 py-2.5 rounded-none">
@@ -777,20 +806,18 @@ const Profile = () => {
                       ) : (
                         <div className="space-y-4">
                           {orders.slice(0, 2).map((order) => (
-                            <div key={order._id} className="border border-brand-border p-4 rounded-none space-y-4 text-left">
-                              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-brand-border/40 pb-3">
+                            <div key={order._id} className="border border-[#eae8d8] p-4 rounded-none space-y-4 text-left">
+                              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-[#eae8d8]/40 pb-3">
                                 <div>
                                   <span className="font-heading text-xs font-bold uppercase tracking-widest text-[#729855]">Order ID</span>
                                   <p className="font-mono font-bold text-xs text-brand-charcoal leading-snug">#{order.orderNumber}</p>
                                   <span className="text-xs text-brand-muted font-body mt-0.5 block">{new Date(order.createdAt).toLocaleDateString()}</span>
                                 </div>
                                 <div className="flex gap-2">
-                                  <span className={`inline-block px-2 py-0.5 font-heading text-xs font-bold uppercase tracking-widest ${
-                                    order.paymentStatus === 'Paid' ? 'bg-green-50 border border-green-200 text-brand-green' : 'bg-yellow-50 border border-yellow-200 text-yellow-700'
-                                  }`}>{order.paymentStatus}</span>
-                                  <span className={`inline-block px-2 py-0.5 font-heading text-xs font-bold uppercase tracking-widest ${
-                                    order.orderStatus === 'Delivered' ? 'bg-green-50 border border-green-200 text-brand-green' : 'bg-blue-50 border border-blue-200 text-blue-700'
-                                  }`}>{order.orderStatus}</span>
+                                  <span className={`inline-block px-2 py-0.5 font-heading text-xs font-bold uppercase tracking-widest ${order.paymentStatus === 'Paid' ? 'bg-green-50 border border-green-200 text-brand-green' : 'bg-yellow-50 border border-yellow-200 text-yellow-700'
+                                    }`}>{order.paymentStatus}</span>
+                                  <span className={`inline-block px-2 py-0.5 font-heading text-xs font-bold uppercase tracking-widest ${order.orderStatus === 'Delivered' ? 'bg-green-50 border border-green-200 text-brand-green' : 'bg-blue-50 border border-blue-200 text-blue-700'
+                                    }`}>{order.orderStatus}</span>
                                 </div>
                               </div>
                               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -800,7 +827,7 @@ const Profile = () => {
                                       key={idx}
                                       src={getLocalImageUrl(item.image)}
                                       alt={item.title}
-                                      className="w-10 h-12 object-cover bg-brand-bg-cream border border-brand-border shrink-0"
+                                      className="w-10 h-12 object-cover bg-[#faf9f5] border border-[#eae8d8] shrink-0"
                                       title={item.title}
                                     />
                                   ))}
@@ -839,7 +866,7 @@ const Profile = () => {
                     </div>
 
                     {/* Tier Rewards Progression Card */}
-                    <div className="bg-[#faf9f5] border border-brand-border p-6 rounded-none space-y-5 text-left">
+                    <div className="bg-[#faf9f5] border border-[#eae8d8] p-6 rounded-none space-y-5 text-left">
                       <div className="flex justify-between items-start">
                         <div>
                           <span className="font-heading text-xs font-bold uppercase tracking-widest text-[#729855] block mb-1">Rewards Progress</span>
@@ -859,7 +886,7 @@ const Profile = () => {
                         </div>
                       </div>
 
-                      <div className="pt-4 border-t border-brand-border/40 space-y-2 text-xs">
+                      <div className="pt-4 border-t border-[#eae8d8]/40 space-y-2 text-xs">
                         <span className="block font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Unlocked Perks</span>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 font-semibold text-brand-charcoal text-xs">
                           <div className="flex items-center gap-2">
@@ -875,7 +902,7 @@ const Profile = () => {
 
                       {/* Points History */}
                       {user?.rewardHistory && user.rewardHistory.length > 0 && (
-                        <div className="pt-4 border-t border-brand-border/40 space-y-3">
+                        <div className="pt-4 border-t border-[#eae8d8]/40 space-y-3">
                           <span className="block font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Points History</span>
                           <div className="space-y-2 max-h-32 overflow-y-auto no-scrollbar pr-1">
                             {user.rewardHistory.map((h, i) => (
@@ -900,10 +927,10 @@ const Profile = () => {
 
                   {/* Right Column: Default Address Preview & Active Coupons list */}
                   <div className="space-y-6 md:space-y-8">
-                    
+
                     {/* Default Address preview card */}
-                    <div className="bg-white border border-brand-border p-6 rounded-none space-y-4 text-left">
-                      <div className="flex justify-between items-center border-b border-brand-border pb-3">
+                    <div className="bg-white border border-[#eae8d8] p-6 rounded-none space-y-4 text-left">
+                      <div className="flex justify-between items-center border-b border-[#eae8d8] pb-3">
                         <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal">Delivery Coordinates</span>
                         <button onClick={() => setSearchParams({ tab: 'addresses' })} className="text-[#729855] hover:text-[#2f3e10] font-heading font-bold text-xs uppercase tracking-widest bg-transparent border-none cursor-pointer p-0">
                           Manage
@@ -926,7 +953,7 @@ const Profile = () => {
                               <>
                                 <div className="flex justify-between items-center">
                                   <p className="font-bold text-sm font-heading">{def.fullName}</p>
-                                  <span className="font-heading text-xs font-bold uppercase tracking-widest bg-[#faf9f5] border border-brand-border text-brand-charcoal px-2 py-0.5">
+                                  <span className="font-heading text-xs font-bold uppercase tracking-widest bg-[#faf9f5] border border-[#eae8d8] text-brand-charcoal px-2 py-0.5">
                                     {def.addressType || 'Home'}
                                   </span>
                                 </div>
@@ -934,7 +961,11 @@ const Profile = () => {
                                 <p className="text-brand-charcoal/80 font-normal text-sm leading-relaxed">
                                   {def.addressLine1}
                                   {def.addressLine2 && `, ${def.addressLine2}`}
-                                  <span className="block mt-0.5 font-semibold text-brand-charcoal">{def.city}, {def.state} — {def.postalCode}</span>
+                                  {def.landmark && <span className="block text-xs text-brand-muted mt-0.5 font-semibold">Landmark: {def.landmark}</span>}
+                                  <span className="block mt-1 font-semibold text-brand-charcoal">
+                                    {def.city}, {def.state} — {def.postalCode}
+                                  </span>
+                                  <span className="block font-semibold text-brand-charcoal">{def.country}</span>
                                 </p>
                               </>
                             );
@@ -944,59 +975,43 @@ const Profile = () => {
                     </div>
 
                     {/* Coupons Available Card */}
-                    <div className="bg-white border border-brand-border p-6 rounded-none space-y-4 text-left">
-                      <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal block border-b border-brand-border pb-3">Available Promos</span>
-                      
+                    <div className="bg-white border border-[#eae8d8] p-6 rounded-none space-y-4 text-left">
+                      <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal block border-b border-[#eae8d8] pb-3">Available Promos</span>
+
                       <div className="space-y-3.5">
-                        
-                        {/* Coupon 1: WELCOME10 */}
-                        <div className="border border-dashed border-brand-border p-3 flex justify-between items-center rounded-none bg-[#faf9f5]/40 hover:bg-[#faf9f5]/80 transition-colors">
-                          <div className="text-left">
-                            <span className="font-heading text-xs font-bold uppercase tracking-widest bg-green-50 text-brand-green px-1.5 py-0.5 border border-green-200">10% OFF</span>
-                            <p className="font-mono font-bold text-xs text-brand-charcoal mt-1">WELCOME10</p>
-                            <span className="text-xs text-brand-muted font-semibold block mt-1">Expires in 30 days</span>
-                          </div>
-                          <button
-                            onClick={() => handleCopyCoupon('WELCOME10')}
-                            className="bg-brand-charcoal hover:bg-[#729855] text-white p-2 transition-all cursor-pointer border-none rounded-none flex items-center justify-center"
-                            title="Copy Coupon"
-                          >
-                            <Copy className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-
-                        {/* Coupon 2: FABISH20 */}
-                        <div className="border border-dashed border-brand-border p-3 flex justify-between items-center rounded-none bg-[#faf9f5]/40 hover:bg-[#faf9f5]/80 transition-colors">
-                          <div className="text-left">
-                            <span className="font-heading text-xs font-bold uppercase tracking-widest bg-green-50 text-brand-green px-1.5 py-0.5 border border-green-200">20% OFF</span>
-                            <p className="font-mono font-bold text-xs text-brand-charcoal mt-1">FABISH20</p>
-                            <span className="text-xs text-brand-muted font-semibold block mt-1">Expires in 15 days</span>
-                          </div>
-                          <button
-                            onClick={() => handleCopyCoupon('FABISH20')}
-                            className="bg-brand-charcoal hover:bg-[#729855] text-white p-2 transition-all cursor-pointer border-none rounded-none flex items-center justify-center"
-                            title="Copy Coupon"
-                          >
-                            <Copy className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-
-                        {/* Coupon 3: FREESHIP */}
-                        <div className="border border-dashed border-brand-border p-3 flex justify-between items-center rounded-none bg-[#faf9f5]/40 hover:bg-[#faf9f5]/80 transition-colors">
-                          <div className="text-left">
-                            <span className="font-heading text-xs font-bold uppercase tracking-widest bg-green-50 text-brand-green px-1.5 py-0.5 border border-green-200">FREE SHIP</span>
-                            <p className="font-mono font-bold text-xs text-brand-charcoal mt-1">FREESHIP</p>
-                            <span className="text-xs text-brand-muted font-semibold block mt-1">Member Exclusive</span>
-                          </div>
-                          <button
-                            onClick={() => handleCopyCoupon('FREESHIP')}
-                            className="bg-brand-charcoal hover:bg-[#729855] text-white p-2 transition-all cursor-pointer border-none rounded-none flex items-center justify-center"
-                            title="Copy Coupon"
-                          >
-                            <Copy className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-
+                        {loadingCoupons ? (
+                          <p className="text-xs text-brand-muted font-semibold">Loading available promos...</p>
+                        ) : availableCoupons.length === 0 ? (
+                          <p className="text-xs text-brand-muted font-semibold">No promos available at the moment.</p>
+                        ) : (
+                          availableCoupons.map((coupon) => (
+                            <div key={coupon._id} className="border border-dashed border-[#eae8d8] p-3 flex justify-between items-center rounded-none bg-[#faf9f5]/40 hover:bg-[#faf9f5]/80 transition-colors">
+                              <div className="text-left">
+                                <span className="font-heading text-[10px] font-bold uppercase tracking-widest bg-green-50 text-brand-green px-1.5 py-0.5 border border-green-200">
+                                  {coupon.discountType === 'Percentage' 
+                                    ? `${coupon.discountPercentage || coupon.discountValue}% OFF` 
+                                    : coupon.discountType === 'FreeShipping' 
+                                      ? 'FREE SHIP' 
+                                      : `Rs. ${coupon.discountValue} OFF`}
+                                </span>
+                                <p className="font-mono font-bold text-xs text-brand-charcoal mt-1">{coupon.code}</p>
+                                <span className="text-[10px] text-brand-muted font-semibold block mt-1">
+                                  {coupon.minimumOrderAmount > 0 
+                                    ? `Min Order: Rs. ${coupon.minimumOrderAmount.toLocaleString('en-IN')}` 
+                                    : 'No Minimum Order'}
+                                  {coupon.expiryDate && ` • Expires ${new Date(coupon.expiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`}
+                                </span>
+                              </div>
+                              <button
+                                onClick={() => handleCopyCoupon(coupon.code)}
+                                className="bg-brand-charcoal hover:bg-[#729855] text-white p-2 transition-all cursor-pointer border-none rounded-none flex items-center justify-center"
+                                title="Copy Coupon"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))
+                        )}
                       </div>
                     </div>
 
@@ -1005,9 +1020,9 @@ const Profile = () => {
                 </div>
 
                 {/* Full Width Card: Recent Activity */}
-                <div className="bg-white border border-brand-border p-6 rounded-none text-left space-y-5">
-                  <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal block border-b border-brand-border pb-3">Recent Account Activity</span>
-                  
+                <div className="bg-white border border-[#eae8d8] p-6 rounded-none text-left space-y-5">
+                  <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal block border-b border-[#eae8d8] pb-3">Recent Account Activity</span>
+
                   <div className="relative border-l border-brand-border pl-5 space-y-4 text-sm font-semibold text-brand-charcoal">
                     <div className="relative">
                       <div className="absolute -left-[25px] top-1 w-2 h-2 rounded-full bg-[#729855] border-2 border-white"></div>
@@ -1063,17 +1078,17 @@ const Profile = () => {
               >
                 {selectedOrder ? (
                   /* Detailed Order View with Tracking Timeline */
-                  <div className="bg-white border border-brand-border p-6 md:p-8 space-y-8 select-text text-left rounded-none">
-                    
+                  <div className="bg-white border border-[#eae8d8] p-6 md:p-8 space-y-8 select-text text-left rounded-none">
+
                     {/* Back to List */}
-                    <button 
+                    <button
                       onClick={() => setSelectedOrder(null)}
                       className="inline-flex items-center gap-2 border border-brand-charcoal hover:bg-brand-charcoal hover:text-white px-4 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer bg-transparent rounded-none"
                     >
                       <ArrowLeft className="w-3.5 h-3.5" /> Back to Orders
                     </button>
 
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-brand-border pb-4 gap-4">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-[#eae8d8] pb-4 gap-4">
                       <div>
                         <h2 className="font-heading text-2xl text-brand-charcoal leading-snug font-semibold">Order Number: #{selectedOrder.orderNumber}</h2>
                         <p className="text-brand-muted text-xs font-semibold font-heading uppercase tracking-widest mt-1">Placed on: {new Date(selectedOrder.createdAt).toLocaleDateString()}</p>
@@ -1087,7 +1102,7 @@ const Profile = () => {
                     </div>
 
                     {/* Order tracking timeline */}
-                    <div className="p-6 bg-brand-bg-cream/45 border border-brand-border rounded-none">
+                    <div className="p-6 bg-brand-bg-cream/45 border border-[#eae8d8] rounded-none">
                       <div className="flex justify-between items-center mb-6">
                         <h3 className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal flex items-center gap-2 mb-0">
                           <Truck className="w-4 h-4 text-[#729855]" /> Delivery Tracking
@@ -1101,7 +1116,7 @@ const Profile = () => {
                           </Link>
                         )}
                       </div>
-                      
+
                       {selectedOrder.orderStatus === 'Cancelled' ? (
                         <div className="bg-red-50 border border-red-200 text-red-700 p-4 font-semibold text-xs font-heading uppercase tracking-wider text-center rounded-none">
                           This order has been Cancelled and stock returned.
@@ -1110,7 +1125,7 @@ const Profile = () => {
                         <div className="relative pl-6 md:pl-0">
                           {/* Vertical line on small screens, horizontal on medium+ */}
                           <div className="absolute left-[9px] top-2 bottom-2 w-0.5 bg-brand-border md:hidden"></div>
-                          
+
                           <div className="grid grid-cols-1 md:grid-cols-7 gap-6 relative">
                             {/* Horizontal line for medium+ screens */}
                             <div className="absolute left-6 right-6 top-[15px] h-0.5 bg-brand-border hidden md:block z-0"></div>
@@ -1118,11 +1133,10 @@ const Profile = () => {
                             {getTimelineStages(selectedOrder).map((stage, idx) => (
                               <div key={idx} className="flex md:flex-col items-start md:items-center text-left md:text-center relative z-10 gap-4 md:gap-2">
                                 {/* Dot */}
-                                <div className={`w-5 h-5 rounded-full flex items-center justify-center border-2 font-bold font-mono text-xs shrink-0 ${
-                                  stage.done 
-                                    ? 'bg-[#729855] border-[#729855] text-white' 
+                                <div className={`w-5 h-5 rounded-full flex items-center justify-center border-2 font-bold font-mono text-xs shrink-0 ${stage.done
+                                    ? 'bg-[#729855] border-[#729855] text-white'
                                     : 'bg-white border-brand-border text-brand-muted'
-                                }`}>
+                                  }`}>
                                   {stage.done ? '✓' : idx + 1}
                                 </div>
                                 {/* Label Content */}
@@ -1142,17 +1156,17 @@ const Profile = () => {
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                      
+
                       {/* Left & center: Items list */}
                       <div className="lg:col-span-2 space-y-4">
-                        <h3 className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal border-b border-brand-border pb-2">Ordered Items</h3>
-                        <div className="divide-y divide-brand-border/40">
+                        <h3 className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal border-b border-[#eae8d8] pb-2">Ordered Items</h3>
+                        <div className="divide-y divide-[#eae8d8]/40">
                           {selectedOrder.orderItems.map((item, idx) => (
                             <div key={idx} className="flex gap-4 py-4 first:pt-0 last:pb-0">
-                              <img 
-                                src={getLocalImageUrl(item.image)} 
-                                alt={item.title} 
-                                className="w-16 h-20 object-cover bg-brand-bg-cream border border-brand-border shrink-0 rounded-none" 
+                              <img
+                                src={getLocalImageUrl(item.image)}
+                                alt={item.title}
+                                className="w-16 h-20 object-cover bg-brand-bg-cream border border-[#eae8d8] shrink-0 rounded-none"
                               />
                               <div className="flex-grow flex flex-col justify-between">
                                 <div>
@@ -1170,7 +1184,7 @@ const Profile = () => {
                       </div>
 
                       {/* Right side: Shipping/summary info */}
-                      <div className="bg-brand-bg-cream/40 border border-brand-border p-6 space-y-6 self-start rounded-none">
+                      <div className="bg-brand-bg-cream/40 border border-[#eae8d8] p-6 space-y-6 self-start rounded-none">
                         <div>
                           <h4 className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted mb-2">Shipping Coordinate</h4>
                           <p className="text-xs font-semibold leading-relaxed">
@@ -1210,14 +1224,14 @@ const Profile = () => {
                   </div>
                 ) : (
                   /* Orders List View */
-                  <div className="bg-white border border-brand-border p-6 md:p-8 rounded-none">
-                    <h3 className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal border-b border-brand-border pb-3 mb-6 text-left">Your Transactions</h3>
-                    
+                  <div className="bg-white border border-[#eae8d8] p-6 md:p-8 rounded-none">
+                    <h3 className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal border-b border-[#eae8d8] pb-3 mb-6 text-left">Your Transactions</h3>
+
                     {loadingOrders ? (
                       <Loader />
                     ) : orders.length === 0 ? (
                       <div className="py-20 text-center max-w-sm mx-auto space-y-4">
-                        <ClipboardList className="w-12 h-12 text-brand-border mx-auto" />
+                        <ClipboardList className="w-12 h-12 text-[#eae8d8] mx-auto" />
                         <h3 className="font-heading text-xl text-brand-charcoal font-semibold">No Orders Found</h3>
                         <p className="text-brand-muted text-xs leading-relaxed font-body">You haven't placed any orders yet. Visit our collections to get started!</p>
                         <Link to="/collections/all" className="bg-brand-charcoal hover:bg-[#729855] text-white px-6 py-3 font-heading font-bold text-xs uppercase tracking-widest transition-all inline-block rounded-none">
@@ -1230,9 +1244,9 @@ const Profile = () => {
                           <motion.div
                             key={order._id}
                             whileHover={{ y: -3, borderColor: '#729855' }}
-                            className="border border-brand-border p-6 rounded-none space-y-5 transition-colors text-left"
+                            className="border border-[#eae8d8] p-6 rounded-none space-y-5 transition-colors text-left"
                           >
-                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-brand-border/40 pb-4">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-[#eae8d8]/40 pb-4">
                               <div>
                                 <span className="font-heading text-xs font-bold uppercase tracking-widest text-[#729855]">Order Reference</span>
                                 <h4 className="font-mono font-bold text-sm text-brand-charcoal">#{order.orderNumber}</h4>
@@ -1241,15 +1255,13 @@ const Profile = () => {
                                 </span>
                               </div>
                               <div className="flex gap-2">
-                                <span className={`inline-block px-2 py-0.5 font-heading text-xs font-bold uppercase tracking-widest ${
-                                  order.paymentStatus === 'Paid' ? 'bg-green-50 border border-green-200 text-brand-green' : 'bg-yellow-50 border border-yellow-200 text-yellow-700'
-                                }`}>{order.paymentStatus}</span>
-                                <span className={`inline-block px-2 py-0.5 font-heading text-xs font-bold uppercase tracking-widest ${
-                                  order.orderStatus === 'Delivered' ? 'bg-green-50 border border-green-200 text-brand-green' : 'bg-blue-50 border border-blue-200 text-blue-700'
-                                }`}>{order.orderStatus}</span>
+                                <span className={`inline-block px-2 py-0.5 font-heading text-xs font-bold uppercase tracking-widest ${order.paymentStatus === 'Paid' ? 'bg-green-50 border border-green-200 text-brand-green' : 'bg-yellow-50 border border-yellow-200 text-yellow-700'
+                                  }`}>{order.paymentStatus}</span>
+                                <span className={`inline-block px-2 py-0.5 font-heading text-xs font-bold uppercase tracking-widest ${order.orderStatus === 'Delivered' ? 'bg-green-50 border border-green-200 text-brand-green' : 'bg-blue-50 border border-blue-200 text-blue-700'
+                                  }`}>{order.orderStatus}</span>
                               </div>
                             </div>
-                            
+
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                               <div className="flex flex-wrap gap-3 items-center">
                                 {order.orderItems.map((item, idx) => (
@@ -1257,7 +1269,7 @@ const Profile = () => {
                                     key={idx}
                                     src={getLocalImageUrl(item.image)}
                                     alt={item.title}
-                                    className="w-12 h-16 object-cover bg-brand-bg-cream border border-brand-border rounded-none shrink-0"
+                                    className="w-12 h-16 object-cover bg-brand-bg-cream border border-[#eae8d8] rounded-none shrink-0"
                                     title={`${item.title} (x${item.qty})`}
                                   />
                                 ))}
@@ -1309,9 +1321,9 @@ const Profile = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
                 transition={{ duration: 0.3 }}
-                className="bg-white border border-brand-border p-6 md:p-8 space-y-6 rounded-none text-left"
+                className="bg-white border border-[#eae8d8] p-6 md:p-8 space-y-6 rounded-none text-left"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-brand-border pb-3 gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-[#eae8d8] pb-3 gap-4">
                   <h3 className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal">Your Saved Delivery Addresses</h3>
                   <button
                     onClick={handleOpenAddModal}
@@ -1324,7 +1336,7 @@ const Profile = () => {
                 {loadingAddresses ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {[1, 2].map((i) => (
-                      <div key={i} className="border border-brand-border p-5 space-y-3 animate-pulse rounded-none">
+                      <div key={i} className="border border-[#eae8d8] p-5 space-y-3 animate-pulse rounded-none">
                         <div className="h-4 bg-gray-200 w-1/3"></div>
                         <div className="h-4 bg-gray-200 w-2/3"></div>
                         <div className="h-4 bg-gray-200 w-1/2"></div>
@@ -1353,11 +1365,10 @@ const Profile = () => {
                       <motion.div
                         key={addr._id}
                         whileHover={{ y: -3, borderColor: '#729855' }}
-                        className={`p-5 border transition-all relative rounded-none flex flex-col justify-between ${
-                          addr.isDefault 
-                            ? 'border-[#729855] bg-brand-bg-cream/10' 
-                            : 'border-brand-border'
-                        } font-semibold text-xs leading-relaxed space-y-4`}
+                        className={`p-5 border transition-all relative rounded-none flex flex-col justify-between ${addr.isDefault
+                            ? 'border-[#729855] bg-brand-bg-cream/10'
+                            : 'border-[#eae8d8]'
+                          } font-semibold text-xs leading-relaxed space-y-4`}
                       >
                         <div className="space-y-2">
                           <div className="flex justify-between items-center gap-2">
@@ -1378,7 +1389,7 @@ const Profile = () => {
 
                           <p className="text-brand-charcoal font-bold text-sm font-heading">{addr.fullName}</p>
                           <p className="text-brand-muted font-mono text-sm">{addr.phone}</p>
-                          
+
                           <p className="text-brand-charcoal/80 font-normal font-body text-sm">
                             {addr.addressLine1}
                             {addr.addressLine2 && `, ${addr.addressLine2}`}
@@ -1390,17 +1401,17 @@ const Profile = () => {
                           </p>
                         </div>
 
-                        <div className="pt-3 border-t border-brand-border/40 flex items-center justify-between gap-2 mt-auto">
+                        <div className="pt-3 border-t border-[#eae8d8]/40 flex items-center justify-between gap-2 mt-auto">
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleOpenEditModal(addr)}
-                              className="text-brand-charcoal hover:text-brand-green flex items-center gap-1 px-2.5 py-1.5 border border-brand-border bg-transparent cursor-pointer font-heading font-bold text-xs uppercase tracking-widest transition-all rounded-none"
+                              className="text-brand-charcoal hover:text-brand-green flex items-center gap-1 px-2.5 py-1.5 border border-[#eae8d8] bg-transparent cursor-pointer font-heading font-bold text-xs uppercase tracking-widest transition-all rounded-none"
                             >
                               <Edit className="w-2.5 h-2.5" /> Edit
                             </button>
                             <button
                               onClick={() => handleDeleteAddress(addr._id)}
-                              className="text-red-600 hover:bg-red-50 hover:border-red-200 flex items-center gap-1 px-2.5 py-1.5 border border-brand-border bg-transparent cursor-pointer font-heading font-bold text-xs uppercase tracking-widest transition-all rounded-none"
+                              className="text-red-600 hover:bg-red-50 hover:border-red-200 flex items-center gap-1 px-2.5 py-1.5 border border-[#eae8d8] bg-transparent cursor-pointer font-heading font-bold text-xs uppercase tracking-widest transition-all rounded-none"
                             >
                               <Trash className="w-2.5 h-2.5" /> Delete
                             </button>
@@ -1430,9 +1441,9 @@ const Profile = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
                 transition={{ duration: 0.3 }}
-                className="bg-white border border-brand-border p-6 md:p-8 rounded-none text-left"
+                className="bg-white border border-[#eae8d8] p-6 md:p-8 rounded-none text-left"
               >
-                <h3 className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal border-b border-brand-border pb-3 mb-6">Your Curated Wishlist</h3>
+                <h3 className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal border-b border-[#eae8d8] pb-3 mb-6">Your Curated Wishlist</h3>
 
                 {wishlistItems.length === 0 ? (
                   <div className="py-20 text-center max-w-sm mx-auto space-y-4">
@@ -1450,14 +1461,14 @@ const Profile = () => {
                     {wishlistItems.map((item) => (
                       <div
                         key={item._id}
-                        className="group relative bg-white border border-brand-border rounded-none p-4 flex flex-col h-full hover:border-[#729855] transition-all duration-300 text-center justify-between"
+                        className="group relative bg-white border border-[#eae8d8] rounded-none p-4 flex flex-col h-full hover:border-[#729855] transition-all duration-300 text-center justify-between"
                       >
                         <div className="relative overflow-hidden aspect-[4/5] bg-[#faf9f5] mb-4 flex items-center justify-center">
                           <Link to={`/products/${item.slug}`} className="block w-full h-full">
-                            <img 
-                              src={item.images?.[0] ? getLocalImageUrl(item.images[0]) : '/assets/6.jpg'} 
-                              alt={item.title} 
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                            <img
+                              src={item.images?.[0] ? getLocalImageUrl(item.images[0]) : '/assets/6.jpg'}
+                              alt={item.title}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                             />
                           </Link>
                           <button
@@ -1475,7 +1486,7 @@ const Profile = () => {
                           <p className="font-body text-xs font-semibold text-brand-charcoal">
                             Rs. {item.price.toLocaleString('en-IN')}.00
                           </p>
-                           <button
+                          <button
                             onClick={() => handleMoveToCart(item)}
                             disabled={movingWishlistItems.has(item._id?.toString())}
                             className="w-full py-2 bg-brand-charcoal hover:bg-[#729855] text-white font-heading text-xs font-bold tracking-widest uppercase cursor-pointer border-none rounded-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1498,16 +1509,16 @@ const Profile = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
                 transition={{ duration: 0.3 }}
-                className="bg-white border border-brand-border p-6 md:p-8 rounded-none text-left"
+                className="bg-white border border-[#eae8d8] p-6 md:p-8 rounded-none text-left"
               >
-                <h3 className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal border-b border-brand-border pb-3 mb-6">Profile Settings</h3>
-                
+                <h3 className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal border-b border-[#eae8d8] pb-3 mb-6">Profile Settings</h3>
+
                 <form onSubmit={handleUpdateProfile} className="max-w-xl space-y-6">
-                  
+
                   {/* Profile Picture Upload Zone */}
-                  <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-brand-border/40 mb-6">
+                  <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-[#eae8d8]/40 mb-6">
                     <div className="relative">
-                      <div className="w-24 h-24 rounded-full overflow-hidden border border-brand-border bg-[#faf9f5] flex items-center justify-center relative">
+                      <div className="w-24 h-24 rounded-full overflow-hidden border border-[#eae8d8] bg-[#faf9f5] flex items-center justify-center relative">
                         {user?.avatar ? (
                           <img
                             src={user.avatar.startsWith('http') ? user.avatar : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${user.avatar}`}
@@ -1566,7 +1577,7 @@ const Profile = () => {
                       required
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full border border-brand-border px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none bg-white"
+                      className="w-full border border-[#eae8d8] px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none bg-white"
                     />
                   </div>
 
@@ -1577,7 +1588,7 @@ const Profile = () => {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full border border-brand-border px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none bg-white"
+                      className="w-full border border-[#eae8d8] px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none bg-white"
                     />
                   </div>
 
@@ -1588,11 +1599,11 @@ const Profile = () => {
                       placeholder="9876543210"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      className="w-full border border-brand-border px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none bg-white"
+                      className="w-full border border-[#eae8d8] px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none bg-white"
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-brand-border/40">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-[#eae8d8]/40">
                     <div>
                       <label className="font-heading text-xs font-bold uppercase tracking-widest text-[#333] mb-2 block">New Password (optional)</label>
                       <input
@@ -1600,7 +1611,7 @@ const Profile = () => {
                         placeholder="••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full border border-brand-border px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none bg-white"
+                        className="w-full border border-[#eae8d8] px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none bg-white"
                       />
                     </div>
                     <div>
@@ -1610,7 +1621,7 @@ const Profile = () => {
                         placeholder="••••••••"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="w-full border border-brand-border px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none bg-white"
+                        className="w-full border border-[#eae8d8] px-4 py-3 font-body text-base text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none bg-white"
                       />
                     </div>
                   </div>
@@ -1618,7 +1629,7 @@ const Profile = () => {
                   <button
                     type="submit"
                     disabled={submittingSettings}
-                    className="bg-brand-charcoal hover:bg-[#729855] text-white px-8 py-3.5 font-heading font-bold text-xs uppercase tracking-widest disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer border-none rounded-none"
+                    className="bg-[#2f3e10] hover:bg-black text-white px-8 py-3.5 font-heading font-bold text-xs uppercase tracking-widest disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer border-none rounded-none"
                   >
                     {submittingSettings ? <Loader size="small" /> : 'Save Settings'}
                   </button>
@@ -1637,7 +1648,7 @@ const Profile = () => {
                 {/* Rewards Header / Cards Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {/* Card 1: Balance */}
-                  <div className="bg-white border border-brand-border p-5 rounded-none flex flex-col justify-between text-left select-none shadow-sm">
+                  <div className="bg-white border border-[#eae8d8] p-5 rounded-none flex flex-col justify-between text-left select-none shadow-sm">
                     <div className="flex justify-between items-start mb-4">
                       <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Current Balance</span>
                       <Award className="w-4 h-4 text-[#729855]" />
@@ -1648,7 +1659,7 @@ const Profile = () => {
                   </div>
 
                   {/* Card 2: Lifetime Earned */}
-                  <div className="bg-white border border-brand-border p-5 rounded-none flex flex-col justify-between text-left select-none shadow-sm">
+                  <div className="bg-white border border-[#eae8d8] p-5 rounded-none flex flex-col justify-between text-left select-none shadow-sm">
                     <div className="flex justify-between items-start mb-4">
                       <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Lifetime Earned</span>
                       <Award className="w-4 h-4 text-[#729855]" />
@@ -1659,7 +1670,7 @@ const Profile = () => {
                   </div>
 
                   {/* Card 3: Lifetime Redeemed */}
-                  <div className="bg-white border border-brand-border p-5 rounded-none flex flex-col justify-between text-left select-none shadow-sm">
+                  <div className="bg-white border border-[#eae8d8] p-5 rounded-none flex flex-col justify-between text-left select-none shadow-sm">
                     <div className="flex justify-between items-start mb-4">
                       <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Lifetime Redeemed</span>
                       <Award className="w-4 h-4 text-[#729855]" />
@@ -1670,7 +1681,7 @@ const Profile = () => {
                   </div>
 
                   {/* Card 4: Current Tier */}
-                  <div className="bg-[#faf9f5] border border-brand-border p-5 rounded-none flex flex-col justify-between text-left select-none shadow-sm">
+                  <div className="bg-[#faf9f5] border border-[#eae8d8] p-5 rounded-none flex flex-col justify-between text-left select-none shadow-sm">
                     <div className="flex justify-between items-start mb-4">
                       <span className="font-heading text-xs font-bold uppercase tracking-widest text-[#729855]">Current Tier</span>
                       <Award className="w-4 h-4 text-[#729855]" />
@@ -1682,7 +1693,7 @@ const Profile = () => {
                 </div>
 
                 {/* Progress Card */}
-                <div className="bg-white border border-brand-border p-6 rounded-none space-y-4 text-left shadow-sm">
+                <div className="bg-white border border-[#eae8d8] p-6 rounded-none space-y-4 text-left shadow-sm">
                   <div className="flex justify-between items-start">
                     <div>
                       <span className="font-heading text-xs font-bold uppercase tracking-widest text-[#729855] block mb-1">Progress to Next Milestone</span>
@@ -1696,7 +1707,7 @@ const Profile = () => {
                 </div>
 
                 {/* Recent Activity / History Table */}
-                <div className="bg-white border border-brand-border p-6 rounded-none space-y-4 text-left shadow-sm">
+                <div className="bg-white border border-[#eae8d8] p-6 rounded-none space-y-4 text-left shadow-sm">
                   <h3 className="font-heading text-base font-semibold text-brand-charcoal uppercase tracking-wider">Recent Reward Activity</h3>
                   {user?.rewardHistory && user.rewardHistory.length > 0 ? (
                     <div className="overflow-x-auto no-scrollbar">
@@ -1714,22 +1725,20 @@ const Profile = () => {
                           {user.rewardHistory.map((h, i) => (
                             <tr key={i}>
                               <td className="py-3.5 pr-2">
-                                <span className={`inline-block px-2.5 py-0.5 text-[9px] uppercase tracking-wider font-bold ${
-                                  h.type === 'Earn' || h.type === 'Registration Bonus' || h.type === 'First Order Bonus'
+                                <span className={`inline-block px-2.5 py-0.5 text-[9px] uppercase tracking-wider font-bold ${h.type === 'Earn' || h.type === 'Registration Bonus' || h.type === 'First Order Bonus'
                                     ? 'bg-green-50 text-green-700 border border-green-200'
                                     : h.type === 'Redeem'
-                                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                                    : 'bg-red-50 text-red-700 border border-red-200'
-                                }`}>
+                                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                      : 'bg-red-50 text-red-700 border border-red-200'
+                                  }`}>
                                   {h.type}
                                 </span>
                               </td>
                               <td className="py-3.5 text-brand-charcoal/80 font-normal pr-4">{h.reason}</td>
                               <td className="py-3.5 font-mono text-brand-muted">{h.orderRef || 'N/A'}</td>
                               <td className="py-3.5 text-brand-muted">{new Date(h.createdAt).toLocaleDateString()}</td>
-                              <td className={`py-3.5 text-right font-bold font-mono ${
-                                h.points > 0 ? 'text-[#729855]' : 'text-red-500'
-                              }`}>
+                              <td className={`py-3.5 text-right font-bold font-mono ${h.points > 0 ? 'text-[#729855]' : 'text-red-500'
+                                }`}>
                                 {h.points > 0 ? `+${h.points}` : h.points}
                               </td>
                             </tr>
@@ -1752,7 +1761,7 @@ const Profile = () => {
       {/* Address Book Modal Dialog */}
       {isAddressModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in no-print">
-          <div className="bg-white border border-brand-border w-full max-w-lg p-6 md:p-8 space-y-6 relative max-h-[90vh] overflow-y-auto rounded-none text-left">
+          <div className="bg-white border border-[#eae8d8] w-full max-w-lg p-6 md:p-8 space-y-6 relative max-h-[90vh] overflow-y-auto rounded-none text-left">
             <button
               onClick={() => setIsAddressModalOpen(false)}
               className="absolute top-4 right-4 text-brand-muted hover:text-brand-charcoal bg-transparent border-none cursor-pointer p-1"
@@ -1784,7 +1793,7 @@ const Profile = () => {
                     placeholder="Jane Doe"
                     value={addrFullName}
                     onChange={(e) => setAddrFullName(e.target.value)}
-                    className="w-full border border-brand-border px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none bg-white"
+                    className="w-full border border-[#eae8d8] px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none bg-white"
                   />
                 </div>
                 <div>
@@ -1795,7 +1804,7 @@ const Profile = () => {
                     placeholder="9876543210"
                     value={addrPhone}
                     onChange={(e) => setAddrPhone(e.target.value)}
-                    className="w-full border border-brand-border px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
+                    className="w-full border border-[#eae8d8] px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
                   />
                 </div>
               </div>
@@ -1808,7 +1817,7 @@ const Profile = () => {
                   placeholder="Flat No, Building, Street Name"
                   value={addrLine1}
                   onChange={(e) => setAddrLine1(e.target.value)}
-                  className="w-full border border-brand-border px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
+                  className="w-full border border-[#eae8d8] px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
                 />
               </div>
 
@@ -1820,7 +1829,7 @@ const Profile = () => {
                     placeholder="Apartment, Colony, Area"
                     value={addrLine2}
                     onChange={(e) => setAddrLine2(e.target.value)}
-                    className="w-full border border-brand-border px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
+                    className="w-full border border-[#eae8d8] px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
                   />
                 </div>
                 <div>
@@ -1830,7 +1839,7 @@ const Profile = () => {
                     placeholder="Near Rose Pharmacy"
                     value={addrLandmark}
                     onChange={(e) => setAddrLandmark(e.target.value)}
-                    className="w-full border border-brand-border px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
+                    className="w-full border border-[#eae8d8] px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
                   />
                 </div>
               </div>
@@ -1844,7 +1853,7 @@ const Profile = () => {
                     placeholder="Chennai"
                     value={addrCity}
                     onChange={(e) => setAddrCity(e.target.value)}
-                    className="w-full border border-brand-border px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
+                    className="w-full border border-[#eae8d8] px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
                   />
                 </div>
                 <div>
@@ -1855,7 +1864,7 @@ const Profile = () => {
                     placeholder="Tamil Nadu"
                     value={addrState}
                     onChange={(e) => setAddrState(e.target.value)}
-                    className="w-full border border-brand-border px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
+                    className="w-full border border-[#eae8d8] px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
                   />
                 </div>
               </div>
@@ -1869,7 +1878,7 @@ const Profile = () => {
                     placeholder="600001"
                     value={addrPostalCode}
                     onChange={(e) => setAddrPostalCode(e.target.value)}
-                    className="w-full border border-brand-border px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
+                    className="w-full border border-[#eae8d8] px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
                   />
                 </div>
                 <div>
@@ -1880,7 +1889,7 @@ const Profile = () => {
                     placeholder="India"
                     value={addrCountry}
                     onChange={(e) => setAddrCountry(e.target.value)}
-                    className="w-full border border-brand-border px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
+                    className="w-full border border-[#eae8d8] px-3 py-2 font-body text-sm text-brand-charcoal focus:outline-none focus:border-brand-green rounded-none"
                   />
                 </div>
               </div>
@@ -1891,7 +1900,7 @@ const Profile = () => {
                   <select
                     value={addrType}
                     onChange={(e) => setAddrType(e.target.value)}
-                    className="w-full border border-brand-border px-3 py-2 font-body text-sm text-brand-charcoal bg-white focus:outline-none focus:border-brand-green rounded-none"
+                    className="w-full border border-[#eae8d8] px-3 py-2 font-body text-sm text-brand-charcoal bg-white focus:outline-none focus:border-brand-green rounded-none"
                   >
                     <option value="Home">Home</option>
                     <option value="Office">Office</option>
@@ -1905,14 +1914,14 @@ const Profile = () => {
                       checked={addrIsDefault}
                       disabled={editingAddress?.isDefault}
                       onChange={(e) => setAddrIsDefault(e.target.checked)}
-                      className="border-brand-border text-brand-green focus:ring-brand-green rounded-none w-4 h-4"
+                      className="border-[#eae8d8] text-[#729855] focus:ring-[#729855] rounded-none w-4 h-4"
                     />
                     <span>Set as Default Address</span>
                   </label>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-brand-border/40">
+              <div className="flex justify-end gap-3 pt-4 border-t border-[#eae8d8]/40">
                 <button
                   type="button"
                   onClick={() => setIsAddressModalOpen(false)}

@@ -7,6 +7,11 @@ export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const prevToken = useRef(localStorage.getItem('token'));
+  const cartItemsRef = useRef([]);
+
+  useEffect(() => {
+    cartItemsRef.current = cartItems;
+  }, [cartItems]);
 
   // Utility to map backend DB items to the flat structure expected by the existing UI views
   const mapBackendCartToFrontend = (backendCart) => {
@@ -92,7 +97,7 @@ export const CartProvider = ({ children }) => {
     }
 
     try {
-      const existItem = cartItems.find((x) => x._id === product._id);
+      const existItem = cartItemsRef.current.find((x) => x._id === product._id);
       const currentQty = existItem ? existItem.qty : 0;
       const newQty = Math.min(currentQty + qty, product.stock);
 

@@ -28,6 +28,14 @@ export const productService = {
     api.get(ENDPOINTS.PRODUCT_BY_SLUG(slug)),
 
   /**
+   * Get a single product by its ID.
+   * @param {string} id
+   * @returns {Promise<{ success, data, message }>}
+   */
+  getById: (id) =>
+    api.get(ENDPOINTS.PRODUCT_BY_ID(id)),
+
+  /**
    * Create a new product (admin only).
    * @param {object} productData
    * @returns {Promise<{ success, data, message }>}
