@@ -49,6 +49,8 @@ const Cart = () => {
   const [saveAddress, setSaveAddress] = useState(true);
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState('');
+  const [redeemChecked, setRedeemChecked] = useState(false);
+  const [pointsToRedeem, setPointsToRedeem] = useState(0);
 
   // Status state
   const [submitting, setSubmitting] = useState(false);
@@ -223,7 +225,8 @@ const Cart = () => {
         paymentMethod,
         itemsPrice,
         shippingPrice,
-        totalPrice,
+        totalPrice: finalTotalPrice,
+        redeemedPoints: redeemChecked ? pointsToRedeem : undefined,
         couponCode: appliedCoupon ? appliedCoupon.code : undefined,
         saveAddress: saveAddress,
       };
@@ -351,6 +354,11 @@ const Cart = () => {
       </div>
     );
   }
+
+  const baseOrderVal = itemsPrice + shippingPrice - discountAmount;
+  const maxPointsToRedeem = user ? Math.min(user.rewardPoints || 0, Math.floor(baseOrderVal * 2)) : 0;
+  const pointsDiscount = redeemChecked ? Math.min(pointsToRedeem, maxPointsToRedeem) / 10 : 0;
+  const finalTotalPrice = Math.max(0, baseOrderVal - pointsDiscount);
 
   return (
     <div className="bg-[#f7f6f0] pt-12 pb-28 lg:pb-12 min-h-screen font-body text-base">
@@ -682,6 +690,12 @@ const Cart = () => {
                       <span>- Rs. {discountAmount.toLocaleString('en-IN')}.00</span>
                     </div>
                   )}
+                  {pointsDiscount > 0 && (
+                    <div className="flex justify-between text-[#729855]">
+                      <span>Points Discount ({pointsToRedeem} pts)</span>
+                      <span>- Rs. {pointsDiscount.toLocaleString('en-IN')}.00</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span>Shipping Fee</span>
                     <span className="text-brand-charcoal">
@@ -691,7 +705,7 @@ const Cart = () => {
                   <hr className="border-brand-border" />
                   <div className="flex justify-between text-base font-bold text-brand-charcoal">
                     <span>Total Amount</span>
-                    <span className="text-lg">Rs. {totalPrice.toLocaleString('en-IN')}.00</span>
+                    <span className="text-lg">Rs. {finalTotalPrice.toLocaleString('en-IN')}.00</span>
                   </div>
                 </div>
 
@@ -732,6 +746,52 @@ const Cart = () => {
                     <span className="text-red-500 text-[10px] block mt-1 font-semibold leading-normal">{couponError}</span>
                   )}
                 </div>
+
+                {isCheckoutMode && user && user.rewardPoints > 0 && (
+                  <div className="border-t border-brand-border pt-4 space-y-3">
+                    <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-brand-charcoal">
+                      <input
+                        type="checkbox"
+                        checked={redeemChecked}
+                        onChange={(e) => {
+                          setRedeemChecked(e.target.checked);
+                          if (e.target.checked) {
+                            setPointsToRedeem(maxPointsToRedeem);
+                          } else {
+                            setPointsToRedeem(0);
+                          }
+                        }}
+                        className="border-brand-border text-brand-green focus:ring-brand-green rounded-none w-4 h-4"
+                      />
+                      <span>Redeem Reward Points</span>
+                    </label>
+                    
+                    {redeemChecked && (
+                      <div className="space-y-2 animate-fade-in text-left">
+                        <div className="text-xs text-brand-muted font-heading">
+                          Available: <span className="font-bold text-brand-charcoal">{user.rewardPoints} points</span> (₹{(user.rewardPoints / 10).toFixed(0)})
+                        </div>
+                        <div className="flex gap-2">
+                          <input
+                            type="number"
+                            min="0"
+                            max={maxPointsToRedeem}
+                            placeholder="Points to redeem"
+                            value={pointsToRedeem || ''}
+                            onChange={(e) => {
+                              const val = Math.min(maxPointsToRedeem, Math.max(0, parseInt(e.target.value, 10) || 0));
+                              setPointsToRedeem(val);
+                            }}
+                            className="flex-grow border border-brand-border px-3 py-2 font-mono font-bold text-xs focus:outline-none focus:border-brand-green rounded-none bg-white"
+                          />
+                        </div>
+                        <span className="text-[10px] text-brand-muted block mt-1 font-semibold leading-normal">
+                          Max redeemable: {maxPointsToRedeem} points (₹{(maxPointsToRedeem / 10).toFixed(0)})
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {!isCheckoutMode ? (
                   <Link

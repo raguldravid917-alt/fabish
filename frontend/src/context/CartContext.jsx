@@ -88,7 +88,7 @@ export const CartProvider = ({ children }) => {
         localStorage.setItem('guest_cartItems', JSON.stringify(updated));
         return updated;
       });
-      return;
+      return true;
     }
 
     try {
@@ -99,9 +99,12 @@ export const CartProvider = ({ children }) => {
       const result = await api.put('/cart', { productId: product._id, quantity: newQty });
       if (result.success && result.data) {
         setCartItems(mapBackendCartToFrontend(result.data));
+        return true;
       }
+      return false;
     } catch (error) {
       console.error('Error adding to database cart:', error);
+      return false;
     }
   };
 

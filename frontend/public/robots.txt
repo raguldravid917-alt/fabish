@@ -14,5 +14,5 @@ Disallow: /account/
 Disallow: /admin/
 Disallow: /unauthorized
 
-# Define XML Sitemap URL (aligns with domain name when deployed)
-Sitemap: http://localhost:5173/sitemap.xml
+# Dynamic sitemap served from backend API (auto-updates with products, categories, blogs)
+Sitemap: https://fabish-black.vercel.app/api/sitemap.xml

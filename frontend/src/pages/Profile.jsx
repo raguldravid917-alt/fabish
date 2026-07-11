@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect, useMemo } from 'react';
 import Loader from '../components/ui/Loader';
 import { useSearchParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
@@ -33,6 +33,7 @@ import { CartContext } from '../context/CartContext';
 import { WishlistContext } from '../context/WishlistContext';
 import { orderService } from '../api/orderService';
 import { addressService } from '../api/addressService';
+import { authService } from '../api/authService';
 import { getLocalImageUrl } from '../utils/imageMapper';
 import { useToast } from '../context/ToastContext';
 import GSTInvoice from '../components/invoice/GSTInvoice';
@@ -68,9 +69,9 @@ const AnimatedCounter = ({ value }) => {
 const Profile = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout, updateProfile, uploadAvatar, removeAvatar } = useContext(AuthContext);
-  const { addToCart } = useContext(CartContext);
-  const { wishlistItems, toggleWishlist } = useContext(WishlistContext);
+  const { user, logout, updateProfile, uploadAvatar, removeAvatar, setUser } = useContext(AuthContext);
+  const { addToCart, removeFromCart } = useContext(CartContext);
+  const { wishlistItems, toggleWishlist, removeFromWishlist } = useContext(WishlistContext);
   const { showToast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'dashboard';
@@ -92,6 +93,7 @@ const Profile = () => {
 
   // Address Book State
   const [addresses, setAddresses] = useState([]);
+  const [movingWishlistItems, setMovingWishlistItems] = useState(new Set());
   const [loadingAddresses, setLoadingAddresses] = useState(true);
 
   const fetchAddresses = async () => {
@@ -120,6 +122,22 @@ const Profile = () => {
   }, [user, navigate, location]);
 
   useEffect(() => {
+    const refreshProfile = async () => {
+      try {
+        const res = await authService.getMe();
+        if (res.success && res.data) {
+          setUser(res.data);
+        }
+      } catch (err) {
+        console.error('Failed to auto-refresh profile:', err);
+      }
+    };
+    if (user) {
+      refreshProfile();
+    }
+  }, [setUser]);
+
+  useEffect(() => {
     const fetchOrders = async () => {
       try {
         setLoadingOrders(true);
@@ -140,6 +158,49 @@ const Profile = () => {
       fetchOrders();
     }
   }, [user, showToast]);
+
+  const rewards = useMemo(() => {
+    const pts = user?.rewardPoints || 0;
+    if (pts < 1000) {
+      const remaining = 1000 - pts;
+      const pct = (pts / 1000) * 100;
+      return {
+        tier: 'Bronze',
+        tierName: 'Bronze Tier',
+        points: pts,
+        remainingMsg: `${remaining} points to Silver Tier (1,000 pts)`,
+        pct,
+      };
+    } else if (pts < 3000) {
+      const remaining = 3000 - pts;
+      const pct = ((pts - 1000) / 2000) * 100;
+      return {
+        tier: 'Silver',
+        tierName: 'Silver Tier',
+        points: pts,
+        remainingMsg: `${remaining} points to Gold Tier (3,000 pts)`,
+        pct,
+      };
+    } else if (pts < 7000) {
+      const remaining = 7000 - pts;
+      const pct = ((pts - 3000) / 4000) * 100;
+      return {
+        tier: 'Gold',
+        tierName: 'Gold Tier',
+        points: pts,
+        remainingMsg: `${remaining} points to Platinum Tier (7,000 pts)`,
+        pct,
+      };
+    } else {
+      return {
+        tier: 'Platinum',
+        tierName: 'Platinum Tier',
+        points: pts,
+        remainingMsg: 'Max level unlocked! Platinum Tier benefits active.',
+        pct: 100,
+      };
+    }
+  }, [user?.rewardPoints]);
 
   // Address Form States
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
@@ -371,6 +432,42 @@ const Profile = () => {
     }
   };
 
+  const handleMoveToCart = async (item) => {
+    if (!item || !item._id) return;
+    const itemIdStr = item._id.toString();
+    if (movingWishlistItems.has(itemIdStr)) return;
+
+    setMovingWishlistItems((prev) => {
+      const next = new Set(prev);
+      next.add(itemIdStr);
+      return next;
+    });
+
+    try {
+      const success = await addToCart(item, 1);
+      if (success) {
+        const removed = await removeFromWishlist(item._id);
+        if (removed) {
+          showToast('Product moved to cart', 'success');
+        } else {
+          // Transaction Rollback if wishlist remove fails
+          await removeFromCart(item._id);
+          showToast('Failed to remove item from wishlist. Operation cancelled.', 'error');
+        }
+      } else {
+        showToast('Failed to add item to bag', 'error');
+      }
+    } catch (err) {
+      showToast('An error occurred while moving item to bag', 'error');
+    } finally {
+      setMovingWishlistItems((prev) => {
+        const next = new Set(prev);
+        next.delete(itemIdStr);
+        return next;
+      });
+    }
+  };
+
   const handleCopyCoupon = (code) => {
     try {
       navigator.clipboard.writeText(code);
@@ -504,6 +601,14 @@ const Profile = () => {
           >
             <Settings className="w-3.5 h-3.5" /> Settings
           </button>
+          <button 
+            onClick={() => setSearchParams({ tab: 'rewards' })}
+            className={`py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${
+              activeTab === 'rewards' ? 'border-[#729855] text-brand-charcoal' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
+            }`}
+          >
+            <Award className="w-3.5 h-3.5" /> Reward Points
+          </button>
         </div>
 
         {/* Content Panels */}
@@ -557,7 +662,7 @@ const Profile = () => {
                     <div className="text-left space-y-1">
                       <span className="block font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Member Tier</span>
                       <span className="font-heading text-base text-brand-charcoal flex items-center gap-1.5 font-semibold mt-1">
-                        <Award className="w-4 h-4 text-[#729855]" /> Fabish Gold Circle
+                        <Award className="w-4 h-4 text-[#729855]" /> {rewards.tierName}
                       </span>
                       <span className="block text-xs font-medium text-brand-muted font-body mt-1">Joined {user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', {month: 'short', year: 'numeric'}) : 'Recently'}</span>
                     </div>
@@ -615,14 +720,15 @@ const Profile = () => {
                   {/* Card 4: Rewards */}
                   <motion.div
                     whileHover={{ y: -4, borderColor: '#729855' }}
-                    className="bg-white border border-brand-border p-5 rounded-none flex flex-col justify-between group transition-colors select-none text-left"
+                    onClick={() => setSearchParams({ tab: 'rewards' })}
+                    className="bg-white border border-brand-border p-5 rounded-none flex flex-col justify-between group transition-colors select-none text-left cursor-pointer"
                   >
                     <div className="flex justify-between items-start mb-4">
                       <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Reward Points</span>
                       <Award className="w-4 h-4 text-[#729855] group-hover:scale-110 transition-transform duration-300" />
                     </div>
                     <span className="font-heading text-3xl text-brand-charcoal font-semibold">
-                      <AnimatedCounter value={120} />
+                      <AnimatedCounter value={user?.rewardPoints || 0} />
                     </span>
                   </motion.div>
 
@@ -737,19 +843,19 @@ const Profile = () => {
                       <div className="flex justify-between items-start">
                         <div>
                           <span className="font-heading text-xs font-bold uppercase tracking-widest text-[#729855] block mb-1">Rewards Progress</span>
-                          <h4 className="font-heading text-xl text-brand-charcoal font-semibold">Fabish Gold Level milestone</h4>
+                          <h4 className="font-heading text-xl text-brand-charcoal font-semibold">{rewards.tierName}</h4>
                         </div>
-                        <span className="font-heading text-2xl text-[#729855] font-bold">120 <span className="text-xs font-heading font-bold uppercase tracking-widest text-brand-muted">pts</span></span>
+                        <span className="font-heading text-2xl text-[#729855] font-bold">{rewards.points} <span className="text-xs font-heading font-bold uppercase tracking-widest text-brand-muted">pts</span></span>
                       </div>
 
                       {/* Progress bar */}
                       <div className="space-y-2">
                         <div className="w-full bg-brand-border/60 h-1.5 rounded-none overflow-hidden">
-                          <div className="bg-[#729855] h-full" style={{ width: '80%' }}></div>
+                          <div className="bg-[#729855] h-full" style={{ width: `${rewards.pct}%` }}></div>
                         </div>
                         <div className="flex justify-between text-xs text-brand-muted font-semibold">
-                          <span>120 points earned</span>
-                          <span>30 points to next discount tier (150 pts)</span>
+                          <span>{rewards.points} points earned</span>
+                          <span>{rewards.remainingMsg}</span>
                         </div>
                       </div>
 
@@ -766,6 +872,28 @@ const Profile = () => {
                           </div>
                         </div>
                       </div>
+
+                      {/* Points History */}
+                      {user?.rewardHistory && user.rewardHistory.length > 0 && (
+                        <div className="pt-4 border-t border-brand-border/40 space-y-3">
+                          <span className="block font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Points History</span>
+                          <div className="space-y-2 max-h-32 overflow-y-auto no-scrollbar pr-1">
+                            {user.rewardHistory.map((h, i) => (
+                              <div key={i} className="flex justify-between items-center text-xs font-semibold text-brand-charcoal gap-4">
+                                <div className="min-w-0 flex-grow">
+                                  <p className="truncate text-brand-charcoal/80 font-normal leading-tight">{h.reason}</p>
+                                  <span className="text-[10px] text-brand-muted font-mono block mt-0.5">
+                                    {new Date(h.createdAt).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                <span className={`font-bold shrink-0 ${h.points > 0 ? 'text-[#729855]' : 'text-red-500'}`}>
+                                  {h.points > 0 ? `+${h.points}` : h.points} pts
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                   </div>
@@ -1347,11 +1475,12 @@ const Profile = () => {
                           <p className="font-body text-xs font-semibold text-brand-charcoal">
                             Rs. {item.price.toLocaleString('en-IN')}.00
                           </p>
-                          <button
-                            onClick={() => { addToCart(item, 1); showToast('Item added to your bag!', 'success'); }}
-                            className="w-full py-2 bg-brand-charcoal hover:bg-[#729855] text-white font-heading text-xs font-bold tracking-widest uppercase cursor-pointer border-none rounded-none transition-colors"
+                           <button
+                            onClick={() => handleMoveToCart(item)}
+                            disabled={movingWishlistItems.has(item._id?.toString())}
+                            className="w-full py-2 bg-brand-charcoal hover:bg-[#729855] text-white font-heading text-xs font-bold tracking-widest uppercase cursor-pointer border-none rounded-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            ADD TO BAG
+                            {movingWishlistItems.has(item._id?.toString()) ? 'MOVING...' : 'ADD TO BAG'}
                           </button>
                         </div>
                       </div>
@@ -1494,6 +1623,124 @@ const Profile = () => {
                     {submittingSettings ? <Loader size="small" /> : 'Save Settings'}
                   </button>
                 </form>
+              </motion.div>
+            )}
+
+            {activeTab === 'rewards' && (
+              <motion.div
+                key="rewards"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="space-y-6 md:space-y-8"
+              >
+                {/* Rewards Header / Cards Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {/* Card 1: Balance */}
+                  <div className="bg-white border border-brand-border p-5 rounded-none flex flex-col justify-between text-left select-none shadow-sm">
+                    <div className="flex justify-between items-start mb-4">
+                      <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Current Balance</span>
+                      <Award className="w-4 h-4 text-[#729855]" />
+                    </div>
+                    <span className="font-heading text-3xl text-brand-charcoal font-semibold">
+                      {user?.rewardPoints || 0} <span className="text-xs font-heading font-bold uppercase tracking-widest text-brand-muted">pts</span>
+                    </span>
+                  </div>
+
+                  {/* Card 2: Lifetime Earned */}
+                  <div className="bg-white border border-brand-border p-5 rounded-none flex flex-col justify-between text-left select-none shadow-sm">
+                    <div className="flex justify-between items-start mb-4">
+                      <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Lifetime Earned</span>
+                      <Award className="w-4 h-4 text-[#729855]" />
+                    </div>
+                    <span className="font-heading text-3xl text-[#729855] font-semibold">
+                      {user?.lifetimeEarned || 0} <span className="text-xs font-heading font-bold uppercase tracking-widest text-brand-muted">pts</span>
+                    </span>
+                  </div>
+
+                  {/* Card 3: Lifetime Redeemed */}
+                  <div className="bg-white border border-brand-border p-5 rounded-none flex flex-col justify-between text-left select-none shadow-sm">
+                    <div className="flex justify-between items-start mb-4">
+                      <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Lifetime Redeemed</span>
+                      <Award className="w-4 h-4 text-[#729855]" />
+                    </div>
+                    <span className="font-heading text-3xl text-red-500 font-semibold">
+                      {user?.lifetimeRedeemed || 0} <span className="text-xs font-heading font-bold uppercase tracking-widest text-brand-muted">pts</span>
+                    </span>
+                  </div>
+
+                  {/* Card 4: Current Tier */}
+                  <div className="bg-[#faf9f5] border border-brand-border p-5 rounded-none flex flex-col justify-between text-left select-none shadow-sm">
+                    <div className="flex justify-between items-start mb-4">
+                      <span className="font-heading text-xs font-bold uppercase tracking-widest text-[#729855]">Current Tier</span>
+                      <Award className="w-4 h-4 text-[#729855]" />
+                    </div>
+                    <span className="font-heading text-xl text-brand-charcoal font-bold uppercase tracking-widest">
+                      {rewards.tier} Tier
+                    </span>
+                  </div>
+                </div>
+
+                {/* Progress Card */}
+                <div className="bg-white border border-brand-border p-6 rounded-none space-y-4 text-left shadow-sm">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="font-heading text-xs font-bold uppercase tracking-widest text-[#729855] block mb-1">Progress to Next Milestone</span>
+                      <h4 className="font-heading text-lg text-brand-charcoal font-semibold">{rewards.tierName}</h4>
+                    </div>
+                    <span className="text-xs font-heading font-bold uppercase tracking-widest text-brand-muted">{rewards.remainingMsg}</span>
+                  </div>
+                  <div className="w-full bg-brand-border/60 h-2 rounded-none overflow-hidden">
+                    <div className="bg-[#729855] h-full transition-all duration-500" style={{ width: `${rewards.pct}%` }}></div>
+                  </div>
+                </div>
+
+                {/* Recent Activity / History Table */}
+                <div className="bg-white border border-brand-border p-6 rounded-none space-y-4 text-left shadow-sm">
+                  <h3 className="font-heading text-base font-semibold text-brand-charcoal uppercase tracking-wider">Recent Reward Activity</h3>
+                  {user?.rewardHistory && user.rewardHistory.length > 0 ? (
+                    <div className="overflow-x-auto no-scrollbar">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-brand-border font-heading text-[10px] uppercase tracking-widest text-brand-muted">
+                            <th className="pb-3 font-bold">Type</th>
+                            <th className="pb-3 font-bold">Reason</th>
+                            <th className="pb-3 font-bold">Order Ref</th>
+                            <th className="pb-3 font-bold">Date</th>
+                            <th className="pb-3 font-bold text-right">Points</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-brand-border/40 font-body text-xs font-semibold text-brand-charcoal">
+                          {user.rewardHistory.map((h, i) => (
+                            <tr key={i}>
+                              <td className="py-3.5 pr-2">
+                                <span className={`inline-block px-2.5 py-0.5 text-[9px] uppercase tracking-wider font-bold ${
+                                  h.type === 'Earn' || h.type === 'Registration Bonus' || h.type === 'First Order Bonus'
+                                    ? 'bg-green-50 text-green-700 border border-green-200'
+                                    : h.type === 'Redeem'
+                                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                    : 'bg-red-50 text-red-700 border border-red-200'
+                                }`}>
+                                  {h.type}
+                                </span>
+                              </td>
+                              <td className="py-3.5 text-brand-charcoal/80 font-normal pr-4">{h.reason}</td>
+                              <td className="py-3.5 font-mono text-brand-muted">{h.orderRef || 'N/A'}</td>
+                              <td className="py-3.5 text-brand-muted">{new Date(h.createdAt).toLocaleDateString()}</td>
+                              <td className={`py-3.5 text-right font-bold font-mono ${
+                                h.points > 0 ? 'text-[#729855]' : 'text-red-500'
+                              }`}>
+                                {h.points > 0 ? `+${h.points}` : h.points}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="text-sm font-body text-brand-muted">No reward transactions found.</p>
+                  )}
+                </div>
               </motion.div>
             )}
 

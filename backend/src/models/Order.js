@@ -127,6 +127,18 @@ const orderSchema = new mongoose.Schema(
       required: true,
       default: 0.0,
     },
+    rewardPointsCredited: {
+      type: Boolean,
+      default: false,
+    },
+    redeemedPoints: {
+      type: Number,
+      default: 0,
+    },
+    redeemedPointsDiscount: {
+      type: Number,
+      default: 0,
+    },
     // GST details for Indian Tax Invoice
     gstDetails: {
       taxableValue: { type: Number, default: 0 },   // Pre-tax subtotal (itemsPrice - discount)

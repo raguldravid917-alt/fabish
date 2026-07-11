@@ -177,7 +177,7 @@ class OrderService {
   /**
    * Pre-check stock levels and calculate prices safely on the backend
    */
-  async validateOrderPayload(orderData) {
+  async validateOrderPayload(orderData, userId = null) {
     if (!orderData.orderItems || orderData.orderItems.length === 0) {
       throw new Error('No order items provided');
     }
@@ -253,11 +253,35 @@ class OrderService {
       }
     }
 
-    const totalPrice = Math.max(0, itemsPrice + shippingPrice - discountAmount);
+    // Points redemption verification
+    let redeemedPoints = 0;
+    let redeemedPointsDiscount = 0;
+    if (orderData.redeemedPoints && userId) {
+      const user = await User.findById(userId);
+      if (user) {
+        const availablePoints = user.rewardPoints || 0;
+        const requestedPoints = Math.max(0, parseInt(orderData.redeemedPoints, 10) || 0);
+        if (requestedPoints > availablePoints) {
+          throw new Error('Insufficient reward points balance');
+        }
+
+        // Calculate max allowed points: 20% of itemsPrice + shippingPrice - discountAmount
+        const baseOrderVal = itemsPrice + shippingPrice - discountAmount;
+        const maxPoints = Math.floor(baseOrderVal * 2);
+        if (requestedPoints > maxPoints) {
+          throw new Error('Cannot redeem more than 20% of order value in points');
+        }
+
+        redeemedPoints = requestedPoints;
+        redeemedPointsDiscount = redeemedPoints / 10;
+      }
+    }
+
+    const totalPrice = Math.max(0, itemsPrice + shippingPrice - discountAmount - redeemedPointsDiscount);
 
     // Calculate GST
     const buyerState = orderData.shippingAddress?.state || '';
-    const gstDetails = calculateGST(itemsPrice, discountAmount, buyerState);
+    const gstDetails = calculateGST(itemsPrice, discountAmount + redeemedPointsDiscount, buyerState);
 
     return {
       verifiedItems,
@@ -268,6 +292,8 @@ class OrderService {
       couponCode,
       discountAmount,
       gstDetails,
+      redeemedPoints,
+      redeemedPointsDiscount,
     };
   }
 
@@ -275,7 +301,7 @@ class OrderService {
    * Create Razorpay Order
    */
   async createRazorpayOrder(userId, orderData) {
-    const { totalPrice } = await this.validateOrderPayload(orderData);
+    const { totalPrice } = await this.validateOrderPayload(orderData, userId);
 
     const rzpInstance = getRazorpayInstance();
     const options = {
@@ -318,8 +344,18 @@ class OrderService {
     }
 
     // 2. Validate products and stock levels
-    const { verifiedItems, itemsPrice, shippingPrice, totalPrice, coupon, couponCode, discountAmount, gstDetails } =
-      await this.validateOrderPayload(orderData);
+    const { 
+      verifiedItems, 
+      itemsPrice, 
+      shippingPrice, 
+      totalPrice, 
+      coupon, 
+      couponCode, 
+      discountAmount, 
+      gstDetails,
+      redeemedPoints,
+      redeemedPointsDiscount 
+    } = await this.validateOrderPayload(orderData, userId);
 
     // 3. Atomically decrement stock
     for (const item of verifiedItems) {
@@ -381,9 +417,30 @@ class OrderService {
       couponCode,
       discountAmount,
       gstDetails,
+      redeemedPoints,
+      redeemedPointsDiscount,
     };
 
     const order = await orderRepository.create(dbPayload);
+
+    // Deduct points from user balance
+    if (redeemedPoints > 0) {
+      const user = await User.findById(userId);
+      if (user) {
+        user.rewardPoints = Math.max(0, (user.rewardPoints || 0) - redeemedPoints);
+        user.lifetimeRedeemed = (user.lifetimeRedeemed || 0) + redeemedPoints;
+        user.tier = calculateTier(user.rewardPoints);
+        user.rewardHistory.push({
+          points: -redeemedPoints,
+          type: 'Redeem',
+          reason: `Points redeemed on order #${dbPayload.orderNumber}`,
+          orderRef: dbPayload.orderNumber,
+          createdAt: new Date(),
+        });
+        await user.save();
+      }
+    }
+
     await this.syncAddressToBook(userId, orderData);
 
     // Increment coupon used count if coupon was applied
@@ -401,6 +458,9 @@ class OrderService {
     // 7. Email user confirmation
     await sendOrderConfirmationEmail(userDetails.email, order);
 
+    // Update reward points for paid order
+    await updateRewardPointsForOrder(order);
+
     return order;
   }
 
@@ -415,8 +475,18 @@ class OrderService {
     }
 
     // 2. Validate payload and pricing
-    const { verifiedItems, itemsPrice, shippingPrice, totalPrice, coupon, couponCode, discountAmount, gstDetails } =
-      await this.validateOrderPayload(orderData);
+    const { 
+      verifiedItems, 
+      itemsPrice, 
+      shippingPrice, 
+      totalPrice, 
+      coupon, 
+      couponCode, 
+      discountAmount, 
+      gstDetails,
+      redeemedPoints,
+      redeemedPointsDiscount 
+    } = await this.validateOrderPayload(orderData, userId);
 
     // 3. Atomically reduce stock
     for (const item of verifiedItems) {
@@ -472,9 +542,27 @@ class OrderService {
       couponCode,
       discountAmount,
       gstDetails,
+      redeemedPoints,
+      redeemedPointsDiscount,
     };
 
     const order = await orderRepository.create(payload);
+
+    // Deduct points from user balance
+    if (redeemedPoints > 0) {
+      user.rewardPoints = Math.max(0, (user.rewardPoints || 0) - redeemedPoints);
+      user.lifetimeRedeemed = (user.lifetimeRedeemed || 0) + redeemedPoints;
+      user.tier = calculateTier(user.rewardPoints);
+      user.rewardHistory.push({
+        points: -redeemedPoints,
+        type: 'Redeem',
+        reason: `Points redeemed on order #${payload.orderNumber}`,
+        orderRef: payload.orderNumber,
+        createdAt: new Date(),
+      });
+      await user.save();
+    }
+
     await this.syncAddressToBook(userId, orderData);
 
     // Increment coupon used count if coupon was applied
@@ -661,7 +749,9 @@ class OrderService {
       }
     }
 
-    return await orderRepository.update(id, payload);
+    const updatedOrder = await orderRepository.update(id, payload);
+    await updateRewardPointsForOrder(updatedOrder, status === 'Cancelled');
+    return updatedOrder;
   }
 
   /**
@@ -761,6 +851,119 @@ class OrderService {
       trackingHistory: order.trackingHistory || [],
       createdAt: order.createdAt,
     };
+  }
+}
+
+function calculateTier(points) {
+  if (points >= 7000) return 'Platinum';
+  if (points >= 3000) return 'Gold';
+  if (points >= 1000) return 'Silver';
+  return 'Bronze';
+}
+
+async function updateRewardPointsForOrder(order, isCancelled = false) {
+  try {
+    if (!order || !order.user) return;
+    const User = require('../models/User');
+    const user = await User.findById(order.user);
+    if (!user) return;
+
+    const orderNumber = order.orderNumber;
+    const isOrderDelivered = order.orderStatus === 'Delivered';
+    const isOrderReverted = isCancelled || order.orderStatus === 'Cancelled' || order.paymentStatus === 'Refunded';
+
+    if (isOrderReverted) {
+      // Revert credited purchase points and first order bonus if they were credited
+      if (order.rewardPointsCredited) {
+        // Calculate points originally credited
+        const purchasePoints = Math.floor(order.totalPrice / 100) * 10;
+        const hasFirstOrderBonusForThisOrder = user.rewardHistory.some(
+          (h) => h.orderRef === orderNumber && h.type === 'First Order Bonus'
+        );
+        const bonusPoints = hasFirstOrderBonusForThisOrder ? 200 : 0;
+        const pointsToDeduct = purchasePoints + bonusPoints;
+
+        if (pointsToDeduct > 0) {
+          user.rewardPoints = Math.max(0, (user.rewardPoints || 0) - pointsToDeduct);
+          user.lifetimeEarned = Math.max(0, (user.lifetimeEarned || 0) - pointsToDeduct);
+          user.rewardHistory.push({
+            points: -pointsToDeduct,
+            type: 'Refund Adjustment',
+            reason: `Points reverted from cancelled/refunded order #${orderNumber}`,
+            orderRef: orderNumber,
+            createdAt: new Date(),
+          });
+        }
+        
+        // Mark as not credited
+        order.rewardPointsCredited = false;
+        await Order.findByIdAndUpdate(order._id, { rewardPointsCredited: false });
+      }
+
+      // Refund redeemed points if any were redeemed
+      const pointsToRefund = order.redeemedPoints || 0;
+      if (pointsToRefund > 0) {
+        const alreadyRefundedRedeem = user.rewardHistory.some(
+          (h) => h.orderRef === orderNumber && h.type === 'Refund Adjustment' && h.reason.includes('Redeemed points refunded')
+        );
+        if (!alreadyRefundedRedeem) {
+          user.rewardPoints = (user.rewardPoints || 0) + pointsToRefund;
+          user.lifetimeRedeemed = Math.max(0, (user.lifetimeRedeemed || 0) - pointsToRefund);
+          user.rewardHistory.push({
+            points: pointsToRefund,
+            type: 'Refund Adjustment',
+            reason: `Redeemed points refunded from cancelled/refunded order #${orderNumber}`,
+            orderRef: orderNumber,
+            createdAt: new Date(),
+          });
+        }
+      }
+
+      user.tier = calculateTier(user.rewardPoints);
+      await user.save();
+      
+    } else if (isOrderDelivered) {
+      // Credit purchase points and bonus points if not already credited
+      if (!order.rewardPointsCredited) {
+        const purchasePoints = Math.floor(order.totalPrice / 100) * 10;
+        const hasFirstOrderBonus = user.rewardHistory.some((h) => h.type === 'First Order Bonus');
+        const bonusPoints = !hasFirstOrderBonus ? 200 : 0;
+        const totalToEarn = purchasePoints + bonusPoints;
+
+        if (totalToEarn > 0) {
+          user.rewardPoints = (user.rewardPoints || 0) + totalToEarn;
+          user.lifetimeEarned = (user.lifetimeEarned || 0) + totalToEarn;
+          
+          if (purchasePoints > 0) {
+            user.rewardHistory.push({
+              points: purchasePoints,
+              type: 'Earn',
+              reason: `Points earned from order #${orderNumber}`,
+              orderRef: orderNumber,
+              createdAt: new Date(),
+            });
+          }
+
+          if (bonusPoints > 0) {
+            user.rewardHistory.push({
+              points: bonusPoints,
+              type: 'First Order Bonus',
+              reason: 'First successful delivered order bonus',
+              orderRef: orderNumber,
+              createdAt: new Date(),
+            });
+          }
+          
+          user.tier = calculateTier(user.rewardPoints);
+          await user.save();
+
+          order.rewardPointsCredited = true;
+          await Order.findByIdAndUpdate(order._id, { rewardPointsCredited: true });
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error updating reward points for order:', err.message);
   }
 }
 

@@ -26,15 +26,57 @@ const blogRoutes = require('./src/routes/blogRoutes');
 const contactRoutes = require('./src/routes/contactRoutes');
 const userRoutes = require('./src/routes/userRoutes');
 const profileRoutes = require('./src/routes/profileRoutes');
+const sitemapRoutes = require('./src/routes/sitemapRoutes');
 
 const app = express();
 
 // Trust proxy to ensure correct client IP is identified behind reverse proxies (like Render)
 app.set('trust proxy', 1);
 
-// 1. Security Headers
+// 1. Security Headers with explicit CSP for Razorpay, Cloudinary, Google Fonts
 app.use(helmet({
   crossOriginResourcePolicy: false, // Allow public loading of local uploads
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        "'unsafe-inline'",       // Required for Razorpay & React inline scripts
+        "https://checkout.razorpay.com",
+        "https://api.razorpay.com",
+      ],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",       // Required for Tailwind CSS-in-JS & inline styles
+        "https://fonts.googleapis.com",
+      ],
+      fontSrc: [
+        "'self'",
+        "https://fonts.gstatic.com",
+        "data:",
+      ],
+      imgSrc: [
+        "'self'",
+        "data:",
+        "blob:",
+        "https:",                // Allow Cloudinary, CDN images
+      ],
+      connectSrc: [
+        "'self'",
+        "https://api.razorpay.com",
+        "https://lumberjack.razorpay.com",
+        process.env.BACKEND_URL || "http://localhost:5000",
+        process.env.FRONTEND_URL || "http://localhost:5173",
+      ],
+      frameSrc: [
+        "'self'",
+        "https://api.razorpay.com",
+        "https://checkout.razorpay.com",
+      ],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null,
+    },
+  },
 }));
 
 // 2. CORS setup
@@ -102,11 +144,13 @@ app.use('/api/coupons', couponRoutes);
 app.use('/api/blogs', blogRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/sitemap.xml', sitemapRoutes);
 
 app.post('/api/log-error', (req, res) => {
-  console.log('--- CLIENT ERROR BOUNDARY CAUGHT ---');
-  console.log(JSON.stringify(req.body, null, 2));
-  console.log('------------------------------------');
+  // Only log in development to avoid flooding production logs with client-side errors
+  if (process.env.NODE_ENV !== 'production') {
+    console.error('[CLIENT ERROR BOUNDARY]', req.body?.message || 'Unknown error');
+  }
   res.sendStatus(200);
 });
 

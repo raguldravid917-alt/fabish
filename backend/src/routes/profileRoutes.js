@@ -13,4 +13,6 @@ router.route('/photo')
   .put(upload.single('avatar'), profileController.updateProfilePhoto)
   .delete(profileController.removeProfilePhoto);
 
+router.get('/rewards', profileController.getRewards);
+
 module.exports = router;

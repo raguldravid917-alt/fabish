@@ -460,3 +460,64 @@
 .animate-slide-left {
   animation: slideLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* =========================================
+   GLOBAL BUTTON & CLICKABLE MICRO-INTERACTIONS
+   ========================================= */
+button,
+[role="button"],
+input[type="button"],
+input[type="submit"],
+.btn,
+.button,
+a.bg-brand-charcoal,
+a.bg-\[\#3e4e20\],
+a.bg-\[\#729855\],
+a.border-brand-charcoal,
+a.border-black,
+.view-all-posts-btn {
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+button:focus-visible,
+[role="button"]:focus-visible,
+input[type="button"]:focus-visible,
+input[type="submit"]:focus-visible,
+.btn:focus-visible,
+.button:focus-visible,
+a.bg-brand-charcoal:focus-visible,
+a.bg-\[\#3e4e20\]:focus-visible,
+a.bg-\[\#729855\]:focus-visible,
+a.border-brand-charcoal:focus-visible,
+a.border-black:focus-visible,
+.view-all-posts-btn:focus-visible {
+  outline: 2px solid #729855 !important;
+  outline-offset: 2px !important;
+}
+
+button:active:not(:disabled),
+[role="button"]:active:not([aria-disabled="true"]),
+input[type="button"]:active,
+input[type="submit"]:active,
+.btn:active,
+.button:active,
+a.bg-brand-charcoal:active,
+a.bg-\[\#3e4e20\]:active,
+a.bg-\[\#729855\]:active,
+a.border-brand-charcoal:active,
+a.border-black:active,
+.view-all-posts-btn:active {
+  transform: scale(0.97) !important;
+  opacity: 0.85 !important;
+}
+
+button:disabled,
+button[disabled],
+[role="button"][aria-disabled="true"],
+.btn.disabled,
+.button.disabled {
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
+  transform: none !important;
+}

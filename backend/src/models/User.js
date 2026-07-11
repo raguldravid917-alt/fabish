@@ -16,6 +16,18 @@ const addressSchema = new mongoose.Schema({
   isDefault: { type: Boolean, default: false }
 });
 
+const rewardHistorySchema = new mongoose.Schema({
+  points: { type: Number, required: true },
+  type: { 
+    type: String, 
+    enum: ['Earn', 'Redeem', 'Refund Adjustment', 'Registration Bonus', 'First Order Bonus'], 
+    required: true 
+  },
+  reason: { type: String, required: true },
+  orderRef: { type: String, default: '' },
+  createdAt: { type: Date, default: Date.now },
+});
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -54,6 +66,24 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    rewardPoints: {
+      type: Number,
+      default: 0,
+    },
+    lifetimeEarned: {
+      type: Number,
+      default: 0,
+    },
+    lifetimeRedeemed: {
+      type: Number,
+      default: 0,
+    },
+    tier: {
+      type: String,
+      enum: ['Bronze', 'Silver', 'Gold', 'Platinum'],
+      default: 'Bronze',
+    },
+    rewardHistory: [rewardHistorySchema],
     phone: {
       type: String,
       default: '',

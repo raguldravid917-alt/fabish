@@ -80,7 +80,53 @@ export const WishlistProvider = ({ children }) => {
   };
 
   const isInWishlist = (id) => {
-    return wishlistItems.some((item) => item._id === id);
+    if (!id) return false;
+    const idStr = id.toString();
+    return wishlistItems.some((x) => {
+      if (!x) return false;
+      if (typeof x === 'string') return x === idStr;
+      const itemId = x._id || x;
+      return itemId && itemId.toString() === idStr;
+    });
+  };
+
+  const removeFromWishlist = async (productId) => {
+    if (!productId) return false;
+    const idStr = productId.toString();
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      setWishlistItems((prevItems) => {
+        const updated = prevItems.filter((x) => {
+          if (!x) return false;
+          if (typeof x === 'string') return x !== idStr;
+          const itemId = x._id || x;
+          return itemId && itemId.toString() !== idStr;
+        });
+        localStorage.setItem('guest_wishlistItems', JSON.stringify(updated));
+        return updated;
+      });
+      return true;
+    }
+
+    try {
+      const isExist = wishlistItems.some((x) => {
+        if (!x) return false;
+        if (typeof x === 'string') return x === idStr;
+        const itemId = x._id || x;
+        return itemId && itemId.toString() === idStr;
+      });
+      if (isExist) {
+        const result = await api.post('/wishlist/toggle', { productId: idStr });
+        if (result.success && result.data) {
+          setWishlistItems(result.data.products || []);
+        }
+      }
+      return true;
+    } catch (error) {
+      console.error('Error removing from database wishlist:', error);
+      return false;
+    }
   };
 
   const clearWishlist = async () => {
@@ -106,6 +152,7 @@ export const WishlistProvider = ({ children }) => {
       value={{
         wishlistItems,
         toggleWishlist,
+        removeFromWishlist,
         isInWishlist,
         clearWishlist,
         loading,

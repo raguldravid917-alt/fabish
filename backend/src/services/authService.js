@@ -10,7 +10,19 @@ class AuthService {
       throw new Error('User already exists');
     }
 
-    const user = await userRepository.create({ name, email, password });
+    const user = await userRepository.create({
+      name,
+      email,
+      password,
+      rewardPoints: 100,
+      lifetimeEarned: 100,
+      tier: 'Bronze',
+      rewardHistory: [{
+        points: 100,
+        type: 'Registration Bonus',
+        reason: 'Welcome bonus on new customer registration',
+      }]
+    });
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
 

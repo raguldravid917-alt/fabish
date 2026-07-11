@@ -55,8 +55,13 @@ class ProductController {
         data: product,
       });
     } catch (error) {
-      // Compatibility fallback: return raw product as root if requested by frontend detail page
-      res.status(HTTP_STATUS.OK).json(error.message === 'Product not found' ? null : error.message);
+      if (error.message === 'Product not found') {
+        return res.status(HTTP_STATUS.NOT_FOUND).json({
+          success: false,
+          message: 'Product not found',
+        });
+      }
+      next(error);
     }
   }
 

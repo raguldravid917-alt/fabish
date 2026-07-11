@@ -4,6 +4,7 @@ import { Menu, X, Search, Heart, ShoppingBag, User as UserIcon, Trash2, ArrowRig
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
 import { WishlistContext } from '../context/WishlistContext';
+import { useToast } from '../context/ToastContext';
 import { getLocalImageUrl } from '../utils/imageMapper';
 
 const NavLink = ({ to, label, active }) => (
@@ -25,14 +26,16 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useContext(AuthContext);
-  const { cartItems, itemsCount, removeFromCart, updateQty, totalPrice } = useContext(CartContext);
-  const { wishlistItems, toggleWishlist } = useContext(WishlistContext);
+  const { cartItems, itemsCount, addToCart, removeFromCart, updateQty, totalPrice } = useContext(CartContext);
+  const { wishlistItems, toggleWishlist, removeFromWishlist } = useContext(WishlistContext);
+  const { showToast } = useToast();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [movingWishlistItems, setMovingWishlistItems] = useState(new Set());
 
   // Account Dropdown states & refs
   const [isAccountOpen, setIsAccountOpen] = useState(false);
@@ -46,6 +49,42 @@ const Header = () => {
     setIsSearchOpen(false);
     setIsAccountOpen(false);
   }, [location.pathname]);
+
+  const handleMoveToCart = async (item) => {
+    if (!item || !item._id) return;
+    const itemIdStr = item._id.toString();
+    if (movingWishlistItems.has(itemIdStr)) return;
+
+    setMovingWishlistItems((prev) => {
+      const next = new Set(prev);
+      next.add(itemIdStr);
+      return next;
+    });
+
+    try {
+      const success = await addToCart(item, 1);
+      if (success) {
+        const removed = await removeFromWishlist(item._id);
+        if (removed) {
+          showToast('Product moved to cart', 'success');
+        } else {
+          // Transaction Rollback if wishlist remove fails
+          await removeFromCart(item._id);
+          showToast('Failed to remove item from wishlist. Operation cancelled.', 'error');
+        }
+      } else {
+        showToast('Failed to add item to bag', 'error');
+      }
+    } catch (err) {
+      showToast('An error occurred while moving item to bag', 'error');
+    } finally {
+      setMovingWishlistItems((prev) => {
+        const next = new Set(prev);
+        next.delete(itemIdStr);
+        return next;
+      });
+    }
+  };
 
   // Lock body scroll when drawers are open
   useEffect(() => {
@@ -684,6 +723,14 @@ const Header = () => {
                       <Link to={`/products/${item.slug}`} onClick={() => setIsWishlistOpen(false)} className="text-gray-500 hover:text-[#729855] p-2" aria-label="View Product">
                         <Eye className="w-4 h-4" />
                       </Link>
+                      <button
+                        onClick={() => handleMoveToCart(item)}
+                        disabled={movingWishlistItems.has(item._id?.toString())}
+                        className="text-gray-500 hover:text-[#729855] p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        aria-label="Add to Cart"
+                      >
+                        <ShoppingBag className="w-4 h-4" />
+                      </button>
                       <button onClick={() => toggleWishlist(item)} className="text-red-500 hover:text-red-700 p-2">
                         <Trash2 className="w-4 h-4" />
                       </button>

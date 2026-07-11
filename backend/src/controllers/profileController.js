@@ -57,6 +57,8 @@ class ProfileController {
           role: user.role,
           isAdmin: user.isAdmin,
           addresses: user.addresses || [],
+          rewardPoints: user.rewardPoints || 0,
+          rewardHistory: user.rewardHistory || [],
         },
       });
     } catch (error) {
@@ -117,6 +119,8 @@ class ProfileController {
           role: user.role,
           isAdmin: user.isAdmin,
           addresses: user.addresses || [],
+          rewardPoints: user.rewardPoints || 0,
+          rewardHistory: user.rewardHistory || [],
         },
       });
     } catch (error) {
@@ -159,6 +163,33 @@ class ProfileController {
           role: user.role,
           isAdmin: user.isAdmin,
           addresses: user.addresses || [],
+          rewardPoints: user.rewardPoints || 0,
+          rewardHistory: user.rewardHistory || [],
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // @desc    Get current user reward points and history
+  // @route   GET /api/profile/rewards or GET /api/auth/profile/rewards
+  // @access  Private
+  async getRewards(req, res, next) {
+    try {
+      const user = await User.findById(req.user._id);
+      if (!user) {
+        return res.status(HTTP_STATUS.NOT_FOUND).json({
+          success: false,
+          message: 'User not found',
+        });
+      }
+
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        data: {
+          rewardPoints: user.rewardPoints || 0,
+          rewardHistory: user.rewardHistory || [],
         },
       });
     } catch (error) {

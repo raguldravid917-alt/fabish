@@ -75,104 +75,207 @@ const GSTInvoice = ({ order, onClose }) => {
   return (
     <>
       <style>{`
-        @media print {
-          body * { visibility: hidden !important; }
-          #gst-invoice-print-area,
-          #gst-invoice-print-area * { visibility: visible !important; }
-          #gst-invoice-print-area {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100% !important;
-            margin: 0 !important;
-            padding: 20px !important;
-            background: white !important;
-            z-index: 99999 !important;
-            font-family: 'Arial', sans-serif !important;
-          }
-          .no-print { display: none !important; }
-          .invoice-table th, .invoice-table td {
-            border: 1px solid #d1d5db !important;
-          }
-          @page { size: A4; margin: 15mm; }
+        /* Main modal overlay container */
+        .invoice-modal-overlay {
+          box-sizing: border-box;
         }
 
-        /* Desktop specific style defaults */
+        /* Action bar for Print / Close actions */
+        .invoice-action-bar {
+          width: 100%;
+          max-width: 800px;
+          box-sizing: border-box;
+          margin-bottom: 16px;
+        }
+
+        /* Main invoice print container */
+        .invoice-container {
+          background: white;
+          width: 100%;
+          max-width: 800px;
+          margin: 0 auto;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+          border: 1px solid #e5e7eb;
+          box-sizing: border-box;
+        }
+
+        /* Text wrapping utilities */
+        .wrap-text {
+          overflow-wrap: break-word !important;
+          word-break: break-word !important;
+          white-space: pre-wrap !important;
+        }
+
+        /* Header layout */
+        .invoice-header-flex {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          flex-wrap: wrap;
+          gap: 16px;
+        }
+        .invoice-header-logo {
+          text-align: left;
+        }
+        .invoice-header-meta {
+          text-align: right;
+        }
+
+        /* Details grid (Seller / Customer info) */
         .invoice-details-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
+          border-bottom: 1px solid #e5e7eb;
+          box-sizing: border-box;
         }
         .invoice-details-col-left {
-          padding: 20px 32px;
+          padding: 24px 32px;
           border-right: 1px solid #e5e7eb;
+          box-sizing: border-box;
         }
         .invoice-details-col-right {
-          padding: 20px 32px;
+          padding: 24px 32px;
+          box-sizing: border-box;
         }
+
+        /* Product Table */
+        .invoice-table-wrapper {
+          width: 100%;
+          overflow: visible;
+        }
+        .invoice-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 11px;
+        }
+        .invoice-table th, .invoice-table td {
+          border: 1px solid #e5e7eb;
+          padding: 12px;
+        }
+        .invoice-table th {
+          background: #f3f4f6;
+          font-weight: 700;
+          text-transform: uppercase;
+          font-size: 9px;
+          letter-spacing: 0.5px;
+          color: #374151;
+          border-bottom: 2px solid #d1d5db;
+        }
+        .invoice-table tr:nth-child(even) {
+          background: #fafafa;
+        }
+
+        /* Summary grid (Tax / Amount breakup) */
         .invoice-summary-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
           border-top: 2px solid #2f3e10;
+          box-sizing: border-box;
         }
         .invoice-summary-col-left {
-          padding: 20px 32px;
+          padding: 24px 32px;
           border-right: 1px solid #e5e7eb;
+          box-sizing: border-box;
         }
         .invoice-summary-col-right {
-          padding: 20px 32px;
+          padding: 24px 32px;
+          box-sizing: border-box;
         }
+
+        /* Footer columns */
         .invoice-footer-grid {
           display: grid;
           grid-template-columns: 1fr 1fr 1fr;
           gap: 24px;
+          box-sizing: border-box;
         }
 
-        /* Responsive Breakpoints */
+        /* Responsive Breakpoints: Tablet (max-width: 1024px) */
+        @media screen and (max-width: 1024px) {
+          .invoice-details-col-left,
+          .invoice-details-col-right,
+          .invoice-summary-col-left,
+          .invoice-summary-col-right {
+            padding: 20px 24px;
+          }
+        }
+
+        /* Responsive Breakpoints: Mobile (max-width: 767px) */
         @media screen and (max-width: 767px) {
           .invoice-modal-overlay {
             padding: 8px !important;
+          }
+          .invoice-action-bar {
+            margin-bottom: 12px;
+            padding: 12px !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+            align-items: stretch !important;
+          }
+          .invoice-action-bar .flex {
+            justify-content: space-between !important;
+            width: 100% !important;
           }
           .invoice-header-flex {
             flex-direction: column !important;
             gap: 12px !important;
             text-align: left !important;
           }
-          .invoice-header-flex > div {
+          .invoice-header-logo, .invoice-header-meta {
             text-align: left !important;
           }
           .invoice-details-grid {
             grid-template-columns: 1fr !important;
           }
           .invoice-details-col-left {
-            padding: 16px 20px !important;
             border-right: none !important;
             border-bottom: 1px solid #e5e7eb !important;
+            padding: 16px 20px !important;
           }
           .invoice-details-col-right {
             padding: 16px 20px !important;
           }
-          .invoice-table, .invoice-table thead, .invoice-table tbody, .invoice-table tr, .invoice-table td {
+          
+          /* Table to Stacked Cards transformation on mobile */
+          .invoice-table-wrapper {
+            overflow: visible !important;
+          }
+          .invoice-table, 
+          .invoice-table thead, 
+          .invoice-table tbody, 
+          .invoice-table tr, 
+          .invoice-table td {
             display: block !important;
             width: 100% !important;
+            box-sizing: border-box !important;
           }
           .invoice-table thead {
-            display: none !important;
+            display: none !important; /* Hide standard desktop table header */
           }
           .invoice-table tr {
-            border-bottom: 1px solid #eae8d8 !important;
-            padding: 12px 16px !important;
-            background: #fafafa !important;
-            margin-bottom: 8px !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 0px !important;
+            padding: 16px !important;
+            background: #faf9f5 !important;
+            margin-bottom: 12px !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+          }
+          .invoice-table tr:nth-child(even) {
+            background: #faf9f5 !important; /* Keep consistent background */
           }
           .invoice-table td {
             text-align: right !important;
-            padding: 6px 0 !important;
+            padding: 8px 0 !important;
             border: none !important;
+            border-bottom: 1px dashed #e5e7eb !important;
             position: relative !important;
             display: flex !important;
             justify-content: space-between !important;
             align-items: center !important;
             font-size: 11px !important;
+          }
+          .invoice-table td:last-child {
+            border-bottom: none !important;
           }
           .invoice-table td::before {
             content: attr(data-label) !important;
@@ -183,16 +286,26 @@ const GSTInvoice = ({ order, onClose }) => {
             text-align: left !important;
             margin-right: 12px !important;
           }
+          /* Hide label prefix on description card header */
           .invoice-table td.cell-desc {
             display: block !important;
             text-align: left !important;
-            padding: 8px 0 !important;
+            padding: 0 0 10px 0 !important;
             border-bottom: 1px solid #e5e7eb !important;
+            margin-bottom: 6px !important;
           }
           .invoice-table td.cell-desc::before {
-            display: block !important;
-            margin-bottom: 4px !important;
+            display: none !important;
           }
+          .invoice-table td.cell-desc .item-title {
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            color: #111827 !important;
+            word-break: break-word !important;
+            overflow-wrap: break-word !important;
+          }
+
+          /* Summary section */
           .invoice-summary-grid {
             grid-template-columns: 1fr !important;
           }
@@ -204,21 +317,128 @@ const GSTInvoice = ({ order, onClose }) => {
           .invoice-summary-col-right {
             padding: 16px 20px !important;
           }
+
+          /* Footer section */
           .invoice-footer-grid {
             grid-template-columns: 1fr !important;
-            gap: 16px !important;
+            gap: 20px !important;
           }
-          #gst-invoice-print-area {
-            max-width: 100% !important;
+        }
+
+        /* ── Dedicated Print Styles ── */
+        @media print {
+          /* Hide non-invoice content elements globally */
+          #root > *:not(.invoice-modal-overlay),
+          .no-print,
+          header, footer, nav, button {
+            display: none !important;
+          }
+          
+          /* Set body for black and white and high contrast A4 */
+          body {
+            background: white !important;
+            color: black !important;
             margin: 0 !important;
+            padding: 0 !important;
+          }
+
+          .invoice-modal-overlay {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            background: transparent !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow: visible !important;
+            z-index: auto !important;
+            display: block !important;
+          }
+
+          /* Make invoice document take full A4 width */
+          .invoice-container {
+            width: 100% !important;
+            max-width: 100% !important;
+            border: none !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            page-break-after: avoid !important;
+            page-break-inside: avoid !important;
+          }
+
+          /* Desktop table layouts inside printed invoice */
+          .invoice-table-wrapper {
+            overflow: visible !important;
+          }
+          .invoice-table {
+            display: table !important;
+            width: 100% !important;
+            border-collapse: collapse !important;
+          }
+          .invoice-table thead {
+            display: table-header-group !important;
+          }
+          .invoice-table tbody {
+            display: table-row-group !important;
+          }
+          .invoice-table tr {
+            display: table-row !important;
+            background: transparent !important;
+            page-break-inside: avoid !important;
+          }
+          .invoice-table th, .invoice-table td {
+            display: table-cell !important;
+            border: 1px solid #d1d5db !important;
+            padding: 8px 12px !important;
+          }
+          .invoice-table td::before {
+            display: none !important;
+          }
+          .invoice-table td.cell-desc {
+            display: table-cell !important;
+            border-bottom: 1px solid #d1d5db !important;
+            padding-bottom: 8px !important;
+            margin-bottom: 0 !important;
+          }
+
+          /* Tax summary structure */
+          .invoice-summary-grid {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            page-break-inside: avoid !important;
+          }
+          .invoice-summary-col-left {
+            border-right: 1px solid #d1d5db !important;
+            border-bottom: none !important;
+          }
+
+          /* Footer layout */
+          .invoice-footer-grid {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr 1fr !important;
+            gap: 20px !important;
+            page-break-inside: avoid !important;
+          }
+
+          /* Force browser to print background colors and border styles */
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          @page {
+            size: A4;
+            margin: 15mm;
           }
         }
       `}</style>
 
       {/* ── Overlay modal ── */}
-      <div className="invoice-modal-overlay fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto">
+      <div className="invoice-modal-overlay fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm flex flex-col items-center justify-start p-4 overflow-y-auto">
         {/* ── Action bar (no-print) ── */}
-        <div className="no-print sticky top-4 z-10 w-full max-w-4xl flex items-center justify-between bg-[#2f3e10] text-white px-6 py-3 rounded-none shadow-xl mb-4">
+        <div className="invoice-action-bar no-print sticky top-4 z-10 flex items-center justify-between bg-[#2f3e10] text-white px-6 py-3 rounded-none shadow-xl">
           <div className="font-heading font-bold text-sm uppercase tracking-widest flex items-center gap-2">
             <Building2 className="w-4 h-4" />
             GST Tax Invoice — {order.invoiceNumber || order.orderNumber}
@@ -242,14 +462,14 @@ const GSTInvoice = ({ order, onClose }) => {
         {/* ── Invoice document ── */}
         <div
           id="gst-invoice-print-area"
-          className="bg-white w-full max-w-4xl shadow-2xl text-xs font-sans text-gray-800"
+          className="invoice-container text-xs font-sans text-gray-800"
           style={{ fontFamily: 'Arial, sans-serif' }}
         >
           {/* ═══ HEADER ════════════════════════════════════════════════════════ */}
           <div style={{ background: '#2f3e10', color: 'white', padding: '24px 32px' }}>
-            <div className="invoice-header-flex" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+            <div className="invoice-header-flex">
               {/* Business name */}
-              <div>
+              <div className="invoice-header-logo">
                 <div style={{ fontSize: '28px', fontWeight: '900', letterSpacing: '4px', fontFamily: 'Georgia, serif' }}>
                   FABISH
                 </div>
@@ -258,7 +478,7 @@ const GSTInvoice = ({ order, onClose }) => {
                 </div>
               </div>
               {/* Invoice meta */}
-              <div style={{ textAlign: 'right' }}>
+              <div className="invoice-header-meta">
                 <div style={{ fontSize: '20px', fontWeight: '700', letterSpacing: '1px' }}>TAX INVOICE</div>
                 <div style={{ fontSize: '11px', opacity: 0.85, marginTop: '6px' }}>
                   Invoice No: <strong>{order.invoiceNumber || '—'}</strong>
@@ -277,14 +497,14 @@ const GSTInvoice = ({ order, onClose }) => {
           </div>
 
           {/* ═══ SELLER & BUYER DETAILS ════════════════════════════════════════ */}
-          <div className="invoice-details-grid" style={{ borderBottom: '1px solid #e5e7eb' }}>
+          <div className="invoice-details-grid">
             {/* Sold By */}
             <div className="invoice-details-col-left">
               <div style={{ fontSize: '9px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
                 Sold By
               </div>
               <div style={{ fontWeight: '700', fontSize: '13px', color: '#111827' }}>{SELLER.legalName}</div>
-              <div style={{ marginTop: '4px', lineHeight: '1.6', color: '#374151', fontSize: '11px' }}>
+              <div className="wrap-text" style={{ marginTop: '4px', lineHeight: '1.6', color: '#374151', fontSize: '11px' }}>
                 {SELLER.address}<br />
                 {SELLER.city}, {SELLER.state} — {SELLER.pincode}<br />
                 {SELLER.country}
@@ -300,7 +520,7 @@ const GSTInvoice = ({ order, onClose }) => {
               </div>
               <div style={{ marginTop: '8px', fontSize: '10px', color: '#6b7280' }}>
                 <div>{SELLER.phone}</div>
-                <div>{SELLER.email}</div>
+                <div className="wrap-text">{SELLER.email}</div>
                 <div>{SELLER.website}</div>
               </div>
             </div>
@@ -313,7 +533,7 @@ const GSTInvoice = ({ order, onClose }) => {
               <div style={{ fontWeight: '700', fontSize: '13px', color: '#111827' }}>
                 {order.customerDetails?.name || '—'}
               </div>
-              <div style={{ marginTop: '4px', lineHeight: '1.6', color: '#374151', fontSize: '11px' }}>
+              <div className="wrap-text" style={{ marginTop: '4px', lineHeight: '1.6', color: '#374151', fontSize: '11px' }}>
                 {order.shippingAddress?.address}<br />
                 {order.shippingAddress?.city}
                 {order.shippingAddress?.state ? `, ${order.shippingAddress.state}` : ''} — {order.shippingAddress?.postalCode}<br />
@@ -323,7 +543,7 @@ const GSTInvoice = ({ order, onClose }) => {
                 {order.customerDetails?.phone && (
                   <div><span style={{ fontWeight: '600' }}>Phone:</span> {order.customerDetails.phone}</div>
                 )}
-                <div><span style={{ fontWeight: '600' }}>Email:</span> {order.customerDetails?.email}</div>
+                <div className="wrap-text"><span style={{ fontWeight: '600' }}>Email:</span> {order.customerDetails?.email}</div>
                 {order.shippingAddress?.state && (
                   <div style={{ fontWeight: '600', marginTop: '4px' }}>State: {order.shippingAddress.state}</div>
                 )}
@@ -341,7 +561,7 @@ const GSTInvoice = ({ order, onClose }) => {
 
               {/* Razorpay transaction ID if available */}
               {order.razorpayPaymentId && (
-                <div style={{ marginTop: '8px', fontSize: '9px', color: '#6b7280', wordBreak: 'break-all' }}>
+                <div className="wrap-text" style={{ marginTop: '8px', fontSize: '9px', color: '#6b7280' }}>
                   Txn ID: {order.razorpayPaymentId}
                 </div>
               )}
@@ -349,17 +569,17 @@ const GSTInvoice = ({ order, onClose }) => {
           </div>
 
           {/* ═══ PRODUCT TABLE ═════════════════════════════════════════════════ */}
-          <div style={{ padding: '0 0', overflowX: 'auto' }}>
-            <table className="invoice-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+          <div className="invoice-table-wrapper">
+            <table className="invoice-table">
               <thead>
-                <tr style={{ background: '#f3f4f6' }}>
-                  <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: '700', textTransform: 'uppercase', fontSize: '9px', letterSpacing: '0.5px', borderBottom: '2px solid #d1d5db', color: '#374151' }}>#</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: '700', textTransform: 'uppercase', fontSize: '9px', letterSpacing: '0.5px', borderBottom: '2px solid #d1d5db', color: '#374151' }}>Item Description</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'center', fontWeight: '700', textTransform: 'uppercase', fontSize: '9px', letterSpacing: '0.5px', borderBottom: '2px solid #d1d5db', color: '#374151' }}>HSN</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'center', fontWeight: '700', textTransform: 'uppercase', fontSize: '9px', letterSpacing: '0.5px', borderBottom: '2px solid #d1d5db', color: '#374151' }}>Qty</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right', fontWeight: '700', textTransform: 'uppercase', fontSize: '9px', letterSpacing: '0.5px', borderBottom: '2px solid #d1d5db', color: '#374151' }}>Unit Price</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right', fontWeight: '700', textTransform: 'uppercase', fontSize: '9px', letterSpacing: '0.5px', borderBottom: '2px solid #d1d5db', color: '#374151' }}>GST%</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right', fontWeight: '700', textTransform: 'uppercase', fontSize: '9px', letterSpacing: '0.5px', borderBottom: '2px solid #d1d5db', color: '#374151' }}>Total (incl. GST)</th>
+                <tr>
+                  <th>#</th>
+                  <th>Item Description</th>
+                  <th style={{ textAlign: 'center' }}>HSN</th>
+                  <th style={{ textAlign: 'center' }}>Qty</th>
+                  <th style={{ textAlign: 'right' }}>Unit Price</th>
+                  <th style={{ textAlign: 'right' }}>GST%</th>
+                  <th style={{ textAlign: 'right' }}>Total (incl. GST)</th>
                 </tr>
               </thead>
               <tbody>
@@ -370,25 +590,25 @@ const GSTInvoice = ({ order, onClose }) => {
                   const lineGst = lineTotal - lineTaxable;
 
                   return (
-                    <tr key={idx} style={{ borderBottom: '1px solid #f3f4f6', background: idx % 2 === 1 ? '#fafafa' : 'white' }}>
-                      <td data-label="#" style={{ padding: '12px', color: '#6b7280' }}>{idx + 1}</td>
-                      <td className="cell-desc" data-label="Item Description" style={{ padding: '12px' }}>
-                        <div style={{ fontWeight: '600', color: '#111827', wordBreak: 'break-word' }}>{item.title}</div>
-                        {item.sku && <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px', wordBreak: 'break-all' }}>SKU: {item.sku}</div>}
+                    <tr key={idx}>
+                      <td data-label="#" style={{ color: '#6b7280' }}>{idx + 1}</td>
+                      <td className="cell-desc" data-label="Item Description">
+                        <div className="item-title wrap-text">{item.title}</div>
+                        {item.sku && <div className="wrap-text" style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>SKU: {item.sku}</div>}
                       </td>
-                      <td data-label="HSN" style={{ padding: '12px', textAlign: 'center', color: '#6b7280', fontFamily: 'monospace' }}>
+                      <td data-label="HSN" style={{ textAlign: 'center', color: '#6b7280', fontFamily: 'monospace' }}>
                         {item.hsnCode || '3304'}
                       </td>
-                      <td data-label="Qty" style={{ padding: '12px', textAlign: 'center', fontWeight: '700', color: '#111827' }}>
+                      <td data-label="Qty" style={{ textAlign: 'center', fontWeight: '700', color: '#111827' }}>
                         {item.qty}
                       </td>
-                      <td data-label="Unit Price" style={{ padding: '12px', textAlign: 'right', fontFamily: 'monospace', color: '#374151' }}>
+                      <td data-label="Unit Price" style={{ textAlign: 'right', fontFamily: 'monospace', color: '#374151' }}>
                         {formatInr(item.price)}
                       </td>
-                      <td data-label="GST" style={{ padding: '12px', textAlign: 'right', color: '#6b7280' }}>
+                      <td data-label="GST" style={{ textAlign: 'right', color: '#6b7280' }}>
                         {itemGstRate}%
                       </td>
-                      <td data-label="Total" style={{ padding: '12px', textAlign: 'right', fontWeight: '700', color: '#111827', fontFamily: 'monospace' }}>
+                      <td data-label="Total" style={{ textAlign: 'right', fontWeight: '700', color: '#111827', fontFamily: 'monospace' }}>
                         {formatInr(lineTotal)}
                       </td>
                     </tr>
@@ -446,7 +666,7 @@ const GSTInvoice = ({ order, onClose }) => {
                   </tr>
                 </tbody>
               </table>
-              <div style={{ marginTop: '8px', fontSize: '9px', color: '#9ca3af' }}>
+              <div className="wrap-text" style={{ marginTop: '8px', fontSize: '9px', color: '#9ca3af' }}>
                 {isSameState
                   ? `Intra-state supply (${SELLER.state} → ${order.shippingAddress?.state || SELLER.state}). CGST + SGST applicable.`
                   : `Inter-state supply (${SELLER.state} → ${order.shippingAddress?.state || 'Other State'}). IGST applicable.`}
@@ -467,6 +687,12 @@ const GSTInvoice = ({ order, onClose }) => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: '#15803d' }}>
                     <span>Coupon Discount {order.couponCode ? `(${order.couponCode})` : ''}</span>
                     <span style={{ fontFamily: 'monospace' }}>- {formatInr(order.discountAmount)}</span>
+                  </div>
+                )}
+                {order.redeemedPointsDiscount > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#15803d' }}>
+                    <span>Points Discount ({order.redeemedPoints} pts)</span>
+                    <span style={{ fontFamily: 'monospace' }}>- {formatInr(order.redeemedPointsDiscount)}</span>
                   </div>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: '#374151' }}>
@@ -499,13 +725,13 @@ const GSTInvoice = ({ order, onClose }) => {
             <div className="invoice-footer-grid">
               <div>
                 <div style={{ fontWeight: '700', color: '#374151', marginBottom: '4px', textTransform: 'uppercase', fontSize: '9px', letterSpacing: '0.5px' }}>Return Policy</div>
-                <p style={{ lineHeight: '1.5', margin: 0 }}>
+                <p className="wrap-text" style={{ lineHeight: '1.5', margin: 0 }}>
                   We accept returns within 7 days of delivery only if the items are unopened, unused, and in their original packaging. Contact support@fabish.in for instructions.
                 </p>
               </div>
               <div>
                 <div style={{ fontWeight: '700', color: '#374151', marginBottom: '4px', textTransform: 'uppercase', fontSize: '9px', letterSpacing: '0.5px' }}>Terms & Conditions</div>
-                <p style={{ lineHeight: '1.5', margin: 0 }}>
+                <p className="wrap-text" style={{ lineHeight: '1.5', margin: 0 }}>
                   This is a computer-generated invoice and does not require a physical signature. Goods once sold are not returnable except as per policy. Subject to Chennai jurisdiction.
                 </p>
               </div>

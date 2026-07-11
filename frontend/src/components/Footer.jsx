@@ -39,12 +39,18 @@ const Footer = () => {
 
   const handleSubscribe = async (e) => {
     e.preventDefault();
-    if (!email || !email.trim()) return;
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) return;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      showToast('Please enter a valid email address.', 'error');
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await contactService.submit({
         name: 'Get Active Subscriber',
-        email: email.trim(),
+        email: trimmedEmail,
         message: 'Newsletter subscription request from Get Active footer form.'
       });
       if (res.success) {
