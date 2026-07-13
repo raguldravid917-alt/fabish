@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { EyeOff, Eye } from 'lucide-react';
 import Loader from '../components/ui/Loader';
@@ -11,7 +11,7 @@ const Login = () => {
   const { showToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-
+  const [googleWidth, setGoogleWidth] = useState("340");
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -20,6 +20,17 @@ const Login = () => {
 
   const params = new URLSearchParams(location.search);
   const redirect = params.get('redirect') || '/';
+
+  useEffect(() => {
+    const updateWidth = () => {
+      setGoogleWidth(window.innerWidth < 640 ? "280" : "340");
+    };
+
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+
+    return () => window.removeEventListener("resize", updateWidth);
+  }, []);
 
   React.useEffect(() => {
     if (user) {
@@ -181,17 +192,19 @@ const Login = () => {
           <span className="block text-[10px] font-bold text-gray-400 tracking-[0.2em] uppercase mb-4 text-center">
             Or Sign In with
           </span>
-          <GoogleLogin
+          <div className="w-full flex justify-center overflow-hidden">
+            <GoogleLogin
               onSuccess={handleGoogleSuccess}
               onError={() => {
-                setError('Google Sign-In failed.');
-                showToast('Google Sign-In failed.', 'error');
+                setError("Google Sign-In failed.");
+                showToast("Google Sign-In failed.", "error");
               }}
               theme="outline"
               size="large"
               shape="rectangular"
-              width="340px"
+              width={googleWidth}
             />
+          </div>
         </div>
 
         {/* Footer Link */}
