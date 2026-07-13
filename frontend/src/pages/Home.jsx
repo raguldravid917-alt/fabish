@@ -495,10 +495,10 @@ const Home = () => {
         />
         <div className="absolute inset-0 z-10 w-full max-w-[1280px] mx-auto px-4 md:px-[60px] lg:px-[100px] flex items-center justify-between pointer-events-none">
           <div className="w-full md:w-[60%] lg:w-[45%] text-left pointer-events-auto">
-            <h2 className="font-heading font-medium text-[36px] md:text-[44px] lg:text-[48px] leading-[1.2] text-black mb-[24px]">
+            <h2 className="font-heading font-medium text-[30px] md:text-[36px] lg:text-[40px] leading-[1.2] text-black mb-[20px]">
               AuraBloom Beauty &amp; Personal Care
             </h2>
-            <p className="font-body text-[15px] md:text-[16px] leading-[1.8] text-[#111] font-medium mb-[32px]">
+            <p className="font-body text-[15px] leading-[1.7] text-[#111] mb-[20px]">
               Mollis Aliquam Ut Porttitor Leo A. Diam Quis Enim Lobortis Scelerisque Fermentum Dui. Turpis Tincidunt Id Aliquet Risus Feugiat In Ante. Luctus Venenatis Lectus Magna Fringilla Urna Porttitor. Venenatis A Condimentum Vitae Sapien Pellentesque Habitant. Odio Aenean Sed Adipiscing Diam Donec Adipiscing. Gravida Arcu Ac Tortor Dignissim Convallis Aenean Et Tortor.
             </p>
           </div>
