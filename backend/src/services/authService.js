@@ -3,6 +3,68 @@ const userRepository = require('../repositories/userRepository');
 const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = require('../utils/token');
 
 class AuthService {
+
+  // Secure Google OAuth Login & Registration Logic
+  async googleLogin(idToken) {
+    const { OAuth2Client } = require('google-auth-library');
+    const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+    // 1. Verify Google ID Token securely
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { sub: googleId, email, name, picture } = payload;
+
+    // 2. Check if user already exists
+    let user = await userRepository.findByEmail(email);
+
+    if (!user) {
+      // Register passwordless user with standard registration rewards
+      user = await userRepository.create({
+        name,
+        email,
+        googleId,
+        avatar: picture,
+        isVerified: true,
+        rewardPoints: 100,
+        lifetimeEarned: 100,
+        tier: 'Bronze',
+        rewardHistory: [{
+          points: 100,
+          type: 'Registration Bonus',
+          reason: 'Welcome bonus on new Google registration',
+        }]
+      });
+    } else if (!user.googleId) {
+      // Link Google ID to existing normal account securely
+      user = await userRepository.update(user._id, {
+        googleId,
+        avatar: user.avatar || picture
+      });
+    }
+
+    // 3. Generate tokens matching your standard pattern
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    // Save refresh token to user document
+    await userRepository.update(user._id, { refreshToken });
+
+    return {
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isAdmin: user.isAdmin,
+      },
+      accessToken,
+      refreshToken,
+    };
+  }
+
   // Existing registration, login, refresh, logout, updateProfile methods...
   async register(name, email, password) {
     const existingUser = await userRepository.findByEmail(email);
@@ -117,8 +179,6 @@ class AuthService {
     }
 
     const user = await userRepository.findById(decoded.id);
-    // Exclude checking the exact token value if user document does not have select +refreshToken,
-    // or select it explicitly to match for extra security. Let's do that:
     const dbUser = await userRepository.findByIdWithRefreshToken(decoded.id);
     if (!dbUser || dbUser.refreshToken !== token) {
       throw new Error('Refresh token mismatch or user not found');
@@ -213,7 +273,7 @@ class AuthService {
     user.password = newPassword;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
-    
+
     await user.save();
     return true;
   }

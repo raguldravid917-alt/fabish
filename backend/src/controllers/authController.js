@@ -1,4 +1,3 @@
-// src/controllers/authController.js
 'use strict';
 
 const authService = require('../services/authService');
@@ -69,6 +68,33 @@ const fail = (res, status, message, ctx = '') => {
 class AuthController {
 
   /**
+   * POST /api/auth/google
+   * @public
+   */
+  async googleLogin(req, res, next) {
+    try {
+      const { idToken } = req.body ?? {};
+
+      if (!idToken) {
+        return fail(res, HTTP_STATUS.BAD_REQUEST, 'Google ID token is required', 'googleLogin');
+      }
+
+      // Delegate to service to verify and log/create user
+      const result = await authService.googleLogin(idToken);
+
+      res.cookie('refreshToken', result.refreshToken, getCookieOptions(req));
+      logger.info(`[AuthController] googleLogin: authenticated — ${result.user.email}`);
+
+      return ok(res, HTTP_STATUS.OK, 'Google login successful', {
+        user: result.user,
+        token: result.accessToken,
+      });
+    } catch (error) {
+      return fail(res, HTTP_STATUS.BAD_REQUEST, error.message, 'googleLogin');
+    }
+  }
+
+  /**
    * POST /api/auth/register
    * @public
    */
@@ -114,7 +140,6 @@ class AuthController {
       const err = validateLogin({ email, password });
       if (err) return fail(res, HTTP_STATUS.BAD_REQUEST, err, 'login');
 
-      // ✅ FIX: authService.login() — (was wrongly calling .register())
       const result = await authService.login(
         email.trim().toLowerCase(),
         password
@@ -123,7 +148,6 @@ class AuthController {
       res.cookie('refreshToken', result.refreshToken, getCookieOptions(req));
       logger.info(`[AuthController] login: authenticated — ${email}`);
 
-      // ✅ FIX: 200 OK (was 201)
       return ok(res, HTTP_STATUS.OK, 'Login successful', {
         user: result.user,
         token: result.accessToken,
@@ -152,7 +176,6 @@ class AuthController {
       const err = validateLogin({ email, password });
       if (err) return fail(res, HTTP_STATUS.BAD_REQUEST, err, 'adminLogin');
 
-      // ✅ FIX: authService.adminLogin() — (was wrongly calling .register())
       const result = await authService.adminLogin(
         email.trim().toLowerCase(),
         password
@@ -200,7 +223,6 @@ class AuthController {
       });
     } catch (error) {
       logger.warn(`[AuthController] refresh failed: ${error.message}`);
-      // ✅ Clear stale cookie — stops frontend infinite retry loop
       res.clearCookie('refreshToken', { path: '/' });
       return fail(res, HTTP_STATUS.UNAUTHORIZED, 'Session expired, please login again', 'refresh');
     }
@@ -215,7 +237,6 @@ class AuthController {
       if (req.user?._id) {
         await authService.logout(req.user._id);
       }
-      // ✅ FIX: path must match setCookie path
       res.clearCookie('refreshToken', { path: '/' });
       logger.info(`[AuthController] logout — ${req.user?._id}`);
 
@@ -309,13 +330,11 @@ class AuthController {
       const resetToken = await authService.forgotPassword(email.trim().toLowerCase());
       logger.info(`[AuthController] forgotPassword token generated — ${email}`);
 
-      // Construct reset URL using FRONTEND_URL
       const clientUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
       const resetUrl = `${clientUrl}/account/reset-password/${resetToken}`;
 
-      // Email message details
       const message = `You are receiving this email because a password reset request was made for your Fabish account. Please click on the following link, or paste it into your browser to complete the process:\n\n${resetUrl}\n\nThis link is valid for 30 minutes. If you did not request this, please ignore this email and your password will remain unchanged.\n`;
-      
+
       const html = `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eae8d8; background-color: #fcfcfa;">
           <h2 style="color: #2f3e10; text-transform: uppercase; font-family: 'Outfit', sans-serif; font-size: 20px; letter-spacing: 1px; border-bottom: 1px solid #eae8d8; padding-bottom: 10px;">Password Reset Request</h2>
@@ -338,7 +357,6 @@ class AuthController {
         </div>
       `;
 
-      // Await sendEmail so that any SMTP delivery failure throws an error
       await sendEmail({
         email: email.trim().toLowerCase(),
         subject: 'Fabish Storefront — Password Reset Request',

@@ -18,10 +18,10 @@ const addressSchema = new mongoose.Schema({
 
 const rewardHistorySchema = new mongoose.Schema({
   points: { type: Number, required: true },
-  type: { 
-    type: String, 
-    enum: ['Earn', 'Redeem', 'Refund Adjustment', 'Registration Bonus', 'First Order Bonus'], 
-    required: true 
+  type: {
+    type: String,
+    enum: ['Earn', 'Redeem', 'Refund Adjustment', 'Registration Bonus', 'First Order Bonus'],
+    required: true
   },
   reason: { type: String, required: true },
   orderRef: { type: String, default: '' },
@@ -48,9 +48,13 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, 'Please add a password'],
+      required: false, // Made optional to support passwordless Google OAuth
       minlength: [8, 'Password must be at least 8 characters'],
       select: false,
+    },
+    googleId: {
+      type: String,
+      default: null, // Added to identify Google users uniquely
     },
     role: {
       type: String,
@@ -129,9 +133,9 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Encrypt password using bcrypt before save
+// Encrypt password using bcrypt before save (only if password exists)
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) {
+  if (!this.password || !this.isModified('password')) {
     return next();
   }
   try {
@@ -145,6 +149,7 @@ userSchema.pre('save', async function (next) {
 
 // Match user entered password to hashed password in database
 userSchema.methods.matchPassword = async function (enteredPassword) {
+  if (!this.password) return false; // Prevent empty password matching for Google users
   return await bcrypt.compare(enteredPassword, this.password);
 };
 

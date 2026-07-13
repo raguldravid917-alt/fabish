@@ -65,6 +65,14 @@ export const authService = {
     api.post('/auth/reset-password', { token, password }),
 
   /**
+   * Google OAuth login — sends the Google ID token to the backend for verification.
+   * @param {string} idToken — credential from @react-oauth/google's GoogleLogin onSuccess
+   * @returns {Promise<{ success, data, message }>}
+   */
+  googleLogin: (idToken) =>
+    api.post('/auth/google', { idToken }),
+
+  /**
    * Logout user.
    * @returns {Promise<{ success, data, message }>}
    */

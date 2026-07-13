@@ -27,7 +27,6 @@ export const AuthProvider = ({ children }) => {
         if (res.success && res.data) {
           setUser(res.data);
         } else {
-          // Only clear user state on explicit authorization failures (401/403)
           if (res.status === 401 || res.status === 403) {
             setUser(null);
             localStorage.removeItem('token');
@@ -35,12 +34,10 @@ export const AuthProvider = ({ children }) => {
             setToken(null);
           } else {
             console.warn('Transient failure fetching user profile:', res.message || res);
-            // Keep current user state to prevent forced logout on rate limiting / server down
           }
         }
       } catch (err) {
         console.error('Error fetching user profile:', err);
-        // Keep current user state on network/unexpected errors
       } finally {
         setLoading(false);
       }
@@ -57,7 +54,6 @@ export const AuthProvider = ({ children }) => {
 
       if (result.success) {
         const data = result.data;
-        // Backend 'token' or 'accessToken' epdi anupunalum eduka ithu uthavum
         const actualToken = data?.token || data?.accessToken || result?.token || result?.accessToken;
 
         if (!actualToken) {
@@ -75,6 +71,41 @@ export const AuthProvider = ({ children }) => {
         setError(result.message || 'Login failed');
         setLoading(false);
         return { success: false, message: result.message || 'Login failed' };
+      }
+    } catch (err) {
+      setError('Server connection failed');
+      setLoading(false);
+      return { success: false, message: 'Server connection failed' };
+    }
+  };
+
+  // Google OAuth Login Action
+  const googleLogin = async (idToken) => {
+    setError(null);
+    setLoading(true);
+    try {
+      // Call frontend authService mapped API call for Google
+      const result = await authService.googleLogin(idToken);
+
+      if (result.success) {
+        const data = result.data;
+        const actualToken = data?.token || data?.accessToken || result?.token || result?.accessToken;
+
+        if (!actualToken) {
+          setError("Login Error: Backend didn't send a valid token.");
+          setLoading(false);
+          return { success: false, message: "Token missing from server." };
+        }
+
+        localStorage.setItem('token', actualToken);
+        setToken(actualToken);
+        setUser(data.user || data);
+        setLoading(false);
+        return { success: true, user: data.user || data };
+      } else {
+        setError(result.message || 'Google Login failed');
+        setLoading(false);
+        return { success: false, message: result.message || 'Google Login failed' };
       }
     } catch (err) {
       setError('Server connection failed');
@@ -194,6 +225,7 @@ export const AuthProvider = ({ children }) => {
         loading,
         error,
         login,
+        googleLogin, // Added to global provider context securely
         register,
         logout,
         updateProfile,

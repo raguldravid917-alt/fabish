@@ -1,28 +1,13 @@
-/**
- * Login Page — Rendered inside AuthLayout (no Navbar/Footer).
- *
- * ROOT CAUSE FIX: Previously this component wrapped itself in a full-page
- * `min-h-screen flex items-center justify-center` div, which conflicted with
- * AuthLayout doing the same thing, causing the card to appear compressed/small.
- *
- * The card is now the ROOT element — AuthLayout handles all centering.
- *
- * DESIGN: Matches Shopify-style premium auth form.
- * - Card: max-w-lg (512px), generous padding, white background
- * - Inputs: py-4 height (comfortable 48px touch targets)
- * - Labels: uppercase tracking-widest for premium look
- * - Button: full-width, dark green → black hover
- * - Password toggle: vertically centered inside input
- */
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import { EyeOff, Eye } from 'lucide-react';
 import Loader from '../components/ui/Loader';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../context/ToastContext';
+import { GoogleLogin } from '@react-oauth/google';
 
 const Login = () => {
-  const { login, user } = useAuth();
+  const { login, googleLogin, user } = useAuth(); // Destructured secure googleLogin context method
   const { showToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -33,7 +18,6 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Redirect destination after login
   const params = new URLSearchParams(location.search);
   const redirect = params.get('redirect') || '/';
 
@@ -53,7 +37,7 @@ const Login = () => {
       setLoading(false);
       if (result?.success !== false) {
         showToast('Welcome back!', 'success');
-        navigate('/', { replace: true });
+        navigate(redirect, { replace: true });
       } else {
         const msg = result?.message || 'Invalid email or password.';
         setError(msg);
@@ -67,10 +51,31 @@ const Login = () => {
     }
   };
 
+  // Google OAuth Success Trigger
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError('');
+    setLoading(true);
+    try {
+      const result = await googleLogin(credentialResponse.credential);
+      setLoading(false);
+      if (result?.success !== false) {
+        showToast('Welcome back with Google!', 'success');
+        navigate(redirect, { replace: true });
+      } else {
+        const msg = result?.message || 'Google Sign-In authentication failed.';
+        setError(msg);
+        showToast(msg, 'error');
+      }
+    } catch (err) {
+      setLoading(false);
+      const msg = err?.message || 'Google login connection failed.';
+      setError(msg);
+      showToast(msg, 'error');
+    }
+  };
+
   return (
-    /* Root element is the card — AuthLayout handles all centering */
     <div className="bg-white w-full max-w-lg shadow-sm relative" style={{ boxShadow: '0 4px 32px rgba(0,0,0,0.06)' }}>
-      {/* Sparkle accent icon */}
       <svg
         className="absolute top-8 right-8 w-6 h-6 text-[#729855] opacity-70"
         viewBox="0 0 24 24"
@@ -171,8 +176,26 @@ const Login = () => {
           </button>
         </form>
 
+        {/* Dynamic Google Sign-In mounting block matching your exact premium rectangular theme */}
+        <div className="pt-6 flex flex-col items-center border-t border-gray-100/50 mt-6">
+          <span className="block text-[10px] font-bold text-gray-400 tracking-[0.2em] uppercase mb-4 text-center">
+            Or Sign In with
+          </span>
+          <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => {
+                setError('Google Sign-In failed.');
+                showToast('Google Sign-In failed.', 'error');
+              }}
+              theme="outline"
+              size="large"
+              shape="rectangular"
+              width="340px"
+            />
+        </div>
+
         {/* Footer Link */}
-        <div className="text-center mt-8 pt-6 border-t border-gray-100">
+        <div className="text-center mt-6 pt-6 border-t border-gray-100">
           <span className="text-sm text-[#555] font-medium mr-2">New Customer?</span>
           <Link
             to="/account/register"

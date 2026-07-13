@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import Loader from './components/ui/Loader';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 // Context Providers
 import { ToastProvider } from './context/ToastContext';
@@ -43,6 +44,7 @@ const OrderTracking = lazy(() => import('./pages/OrderTracking'));
 
 function App() {
   return (
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
     <ToastProvider>
       <AuthProvider>
       <CategoryProvider>
@@ -108,6 +110,7 @@ function App() {
       </CategoryProvider>
     </AuthProvider>
    </ToastProvider>
+   </GoogleOAuthProvider>
   );
 }
 

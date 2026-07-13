@@ -506,16 +506,32 @@ const Home = () => {
           <div className="hidden lg:flex pointer-events-auto">
             <button
               onClick={toggleVideoPlay}
-              className="w-[88px] h-[88px] rounded-full border-[2px] border-black hover:border-[#729855] flex items-center justify-center cursor-pointer bg-transparent transition-all duration-300"
+              className="group w-[88px] h-[88px] rounded-full border-2 border-black hover:border-[#729855] flex items-center justify-center bg-transparent transition-all duration-300"
             >
               {isVideoPlaying ? (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="6" y="4" width="4" height="16" fill="black" />
-                  <rect x="14" y="4" width="4" height="16" fill="black" />
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  className="text-black group-hover:text-[#729855] transition-colors duration-300"
+                >
+                  <rect x="6" y="4" width="4" height="16" fill="currentColor" />
+                  <rect x="14" y="4" width="4" height="16" fill="currentColor" />
                 </svg>
               ) : (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="ml-1">
-                  <path d="M6 4L19 12L6 20V4Z" fill="black" stroke="black" strokeWidth="2" strokeLinejoin="round" />
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  className="ml-1 text-black group-hover:text-[#729855] transition-colors duration-300"
+                >
+                  <path
+                    d="M6 4L19 12L6 20V4Z"
+                    fill="currentColor"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               )}
             </button>
@@ -602,10 +618,10 @@ const Home = () => {
             <div key={post._id || index} className="bg-white overflow-hidden flex flex-col text-left">
               <div className="w-full aspect-[16/10] overflow-hidden mb-6 bg-[#f6f5ea]">
                 <Link to={`/blogs/news/${post.slug || ''}`}>
-                  <img 
-                    src={post.image ? `${getLocalImageUrl(post.image)}?t=${new Date(post.updatedAt || post.createdAt || Date.now()).getTime()}` : getLocalImageUrl(post.image)} 
-                    alt={post.title} 
-                    className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" 
+                  <img
+                    src={post.image ? `${getLocalImageUrl(post.image)}?t=${new Date(post.updatedAt || post.createdAt || Date.now()).getTime()}` : getLocalImageUrl(post.image)}
+                    alt={post.title}
+                    className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
                     onError={(e) => { e.target.src = '/assets/Blog07.jpg'; }}
                   />
                 </Link>

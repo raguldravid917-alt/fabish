@@ -35,6 +35,7 @@ app.set('trust proxy', 1);
 
 // 1. Security Headers with explicit CSP for Razorpay, Cloudinary, Google Fonts
 app.use(helmet({
+  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
   crossOriginResourcePolicy: false, // Allow public loading of local uploads
   contentSecurityPolicy: {
     directives: {
