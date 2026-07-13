@@ -21,9 +21,19 @@ const Login = () => {
   const params = new URLSearchParams(location.search);
   const redirect = params.get('redirect') || '/';
 
+  // Responsive Google button width calculator protecting narrow screens (down to 320px)
   useEffect(() => {
     const updateWidth = () => {
-      setGoogleWidth(window.innerWidth < 640 ? "280" : "340");
+      const width = window.innerWidth;
+      if (width < 360) {
+        setGoogleWidth("240");
+      } else if (width < 400) {
+        setGoogleWidth("280");
+      } else if (width < 640) {
+        setGoogleWidth("310");
+      } else {
+        setGoogleWidth("340");
+      }
     };
 
     updateWidth();
@@ -48,7 +58,7 @@ const Login = () => {
       setLoading(false);
       if (result?.success !== false) {
         showToast('Welcome back!', 'success');
-        navigate(redirect, { replace: true });
+        navigate('/', { replace: true });
       } else {
         const msg = result?.message || 'Invalid email or password.';
         setError(msg);
@@ -71,7 +81,7 @@ const Login = () => {
       setLoading(false);
       if (result?.success !== false) {
         showToast('Welcome back with Google!', 'success');
-        navigate(redirect, { replace: true });
+        navigate('/', { replace: true });
       } else {
         const msg = result?.message || 'Google Sign-In authentication failed.';
         setError(msg);
@@ -86,7 +96,9 @@ const Login = () => {
   };
 
   return (
+    /* Root element is the card — AuthLayout handles all centering */
     <div className="bg-white w-full max-w-lg shadow-sm relative" style={{ boxShadow: '0 4px 32px rgba(0,0,0,0.06)' }}>
+      {/* Sparkle accent icon */}
       <svg
         className="absolute top-8 right-8 w-6 h-6 text-[#729855] opacity-70"
         viewBox="0 0 24 24"
@@ -100,13 +112,15 @@ const Login = () => {
         <path d="M12 3v18M3 12h18M5.5 5.5l13 13M18.5 5.5l-13 13" />
       </svg>
 
-      <div className="px-10 pt-12 pb-10 md:px-14 md:pt-14 md:pb-12">
+      {/* Adjusted paddings responsiveness so cards open up comfortably on mobile viewports */}
+      <div className="px-6 py-10 min-[375px]:px-10 sm:px-12 md:px-14 md:pt-14 md:pb-12">
         {/* Header */}
         <div className="text-center mb-10">
-          <span className="block text-[#729855] text-xs font-bold tracking-[0.25em] uppercase mb-3">
+          <span className="block text-[#729855] text-[10px] min-[360px]:text-xs font-bold tracking-[0.25em] uppercase mb-3">
             Registered Customer
           </span>
-          <h1 className="text-3xl md:text-4xl font-heading font-semibold text-[#111] leading-tight">
+          {/* Modified font scaling to ensure the title always locks neatly on a single line */}
+          <h1 className="text-2xl min-[360px]:text-3xl md:text-4xl font-heading font-semibold text-[#111] leading-tight">
             CUSTOMER SIGN IN
           </h1>
         </div>
