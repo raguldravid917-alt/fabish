@@ -40,77 +40,77 @@ const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage')
 const Profile = lazy(() => import('./pages/Profile'));
 const OrderTracking = lazy(() => import('./pages/OrderTracking'));
 
-
-
 function App() {
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-    <ToastProvider>
-      <AuthProvider>
-      <CategoryProvider>
-      <CartProvider>
-        <WishlistProvider>
-          <Router>
-            <ScrollToTop />
-            <ErrorBoundary>
-              <Suspense fallback={<Loader fullScreen />}>
-                  <Routes>
-                    {/* Public routes with MainLayout (Header + Footer + AnnouncementBar) */}
-                    <Route element={<MainLayout />}>
-                      <Route path="/" element={<Home />} />
-                      <Route path="/collections" element={<Collections />} />
-                      <Route path="/collections/:categorySlug" element={<ProductListing />} />
-                      <Route path="/products/:slug" element={<ProductDetail />} />
-                      <Route path="/pages/about-us" element={<AboutUs />} />
-                      <Route path="/pages/contact" element={<Contact />} />
-                      <Route path="/pages/faq" element={<FAQ />} />
-                      <Route path="/blogs/news" element={<Blog />} />
-                      <Route path="/cart" element={<Cart />} />
-                      <Route path="/account/profile" element={<Profile />} />
-                      <Route path="/orders/track" element={<OrderTracking />} />
-                      <Route path="/unauthorized" element={<Unauthorized />} />
-                    </Route>
+      <ToastProvider>
+        <AuthProvider>
+          <CategoryProvider>
+            <CartProvider>
+              <WishlistProvider>
+                <Router>
+                  <ScrollToTop />
+                  <ErrorBoundary>
+                    <Suspense fallback={<Loader fullScreen />}>
+                      <Routes>
+                        {/* Public routes with MainLayout (Header + Footer + AnnouncementBar) */}
+                        <Route element={<MainLayout />}>
+                          <Route path="/" element={<Home />} />
+                          <Route path="/collections" element={<Collections />} />
+                          <Route path="/collections/:categorySlug" element={<ProductListing />} />
+                          <Route path="/products/:slug" element={<ProductDetail />} />
+                          <Route path="/pages/about-us" element={<AboutUs />} />
+                          <Route path="/pages/contact" element={<Contact />} />
+                          <Route path="/pages/faq" element={<FAQ />} />
+                          <Route path="/blogs/news" element={<Blog />} />
+                          {/* Added route for single blog details to prevent wildcard home redirection */}
+                          <Route path="/blogs/news/:slug" element={<Blog />} />
+                          <Route path="/cart" element={<Cart />} />
+                          <Route path="/account/profile" element={<Profile />} />
+                          <Route path="/orders/track" element={<OrderTracking />} />
+                          <Route path="/unauthorized" element={<Unauthorized />} />
+                        </Route>
 
-                    {/* Authentication Layout Routes (Minimal Centered, No Header/Footer) */}
-                    <Route element={<AuthLayout />}>
-                      <Route path="/account/login" element={<Login />} />
-                      <Route path="/account/register" element={<Register />} />
-                      <Route path="/account/forgot-password" element={<ForgotPassword />} />
-                      <Route path="/account/reset-password/:token" element={<ResetPassword />} />
-                      <Route path="/account/verify-otp" element={<OTPVerification />} />
-                      <Route path="/account/verify-email" element={<EmailVerification />} />
-                    </Route>
+                        {/* Authentication Layout Routes (Minimal Centered, No Header/Footer) */}
+                        <Route element={<AuthLayout />}>
+                          <Route path="/account/login" element={<Login />} />
+                          <Route path="/account/register" element={<Register />} />
+                          <Route path="/account/forgot-password" element={<ForgotPassword />} />
+                          <Route path="/account/reset-password/:token" element={<ResetPassword />} />
+                          <Route path="/account/verify-otp" element={<OTPVerification />} />
+                          <Route path="/account/verify-email" element={<EmailVerification />} />
+                        </Route>
 
-                    {/* Admin routes with AdminLayout (tab navigation) */}
-                    <Route element={<AdminLayout />}>
-                      <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-                      <Route path="/admin/products" element={<AdminDashboardPage />} />
-                      <Route path="/admin/categories" element={<AdminDashboardPage />} />
-                      <Route path="/admin/orders" element={<AdminDashboardPage />} />
-                      <Route path="/admin/customers" element={<AdminDashboardPage />} />
-                      <Route path="/admin/users" element={<AdminDashboardPage />} />
-                      <Route path="/admin/coupons" element={<AdminDashboardPage />} />
-                      <Route path="/admin/reviews" element={<AdminDashboardPage />} />
-                      <Route path="/admin/blogs" element={<AdminDashboardPage />} />
-                      <Route path="/admin/analytics" element={<AdminDashboardPage />} />
-                      <Route path="/admin/settings" element={<AdminDashboardPage />} />
-                      <Route path="/admin/contacts" element={<AdminDashboardPage />} />
-                    </Route>
+                        {/* Admin routes with AdminLayout (tab navigation) */}
+                        <Route element={<AdminLayout />}>
+                          <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+                          <Route path="/admin/products" element={<AdminDashboardPage />} />
+                          <Route path="/admin/categories" element={<AdminDashboardPage />} />
+                          <Route path="/admin/orders" element={<AdminDashboardPage />} />
+                          <Route path="/admin/customers" element={<AdminDashboardPage />} />
+                          <Route path="/admin/users" element={<AdminDashboardPage />} />
+                          <Route path="/admin/coupons" element={<AdminDashboardPage />} />
+                          <Route path="/admin/reviews" element={<AdminDashboardPage />} />
+                          <Route path="/admin/blogs" element={<AdminDashboardPage />} />
+                          <Route path="/admin/analytics" element={<AdminDashboardPage />} />
+                          <Route path="/admin/settings" element={<AdminDashboardPage />} />
+                          <Route path="/admin/contacts" element={<AdminDashboardPage />} />
+                        </Route>
 
-                    {/* Fallback redirects */}
-                    <Route path="/account" element={<Navigate to="/" replace />} />
-                    <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                </Suspense>
-            </ErrorBoundary>
-          </Router>
-        </WishlistProvider>
-      </CartProvider>
-      </CategoryProvider>
-    </AuthProvider>
-   </ToastProvider>
-   </GoogleOAuthProvider>
+                        {/* Fallback redirects */}
+                        <Route path="/account" element={<Navigate to="/" replace />} />
+                        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                      </Routes>
+                    </Suspense>
+                  </ErrorBoundary>
+                </Router>
+              </WishlistProvider>
+            </CartProvider>
+          </CategoryProvider>
+        </AuthProvider>
+      </ToastProvider>
+    </GoogleOAuthProvider>
   );
 }
 

@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Search, Heart } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link, useParams } from 'react-router-dom'; // Added useParams for dynamic details routing
+import { Search, Heart, ArrowLeft } from 'lucide-react'; // Added ArrowLeft for clean back button
 import { api } from '../api/client';
 import Loader from '../components/ui/Loader';
 import { getLocalImageUrl } from '../utils/imageMapper';
 
 const Blog = () => {
+  const { slug } = useParams(); // Retrieves active blog slug from URL path
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,9 +28,14 @@ const Blog = () => {
     fetchBlogs();
   }, []);
 
+  // Safely memoize the active blog post based on URL slug
+  const activePost = useMemo(() => {
+    if (!slug || blogs.length === 0) return null;
+    return blogs.find((b) => b.slug === slug);
+  }, [slug, blogs]);
+
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    // Search is handled by the filter below
   };
 
   // Filter blogs based on search query
@@ -48,7 +54,7 @@ const Blog = () => {
   ).slice(0, 10);
 
   return (
-    <div className="w-full bg-white font-body min-h-screen pb-24">
+    <div className="w-full bg-white font-body min-h-screen pb-24 select-none">
 
       {/* 1. TOP BANNER */}
       <div
@@ -58,10 +64,18 @@ const Blog = () => {
         <div className="absolute inset-0 bg-[#faf9f5]/50"></div>
         <div className="relative z-10 text-center">
           <h1 className="text-[40px] md:text-[50px] font-heading font-semibold text-[#555] mb-2 tracking-tight">
-            News
+            {activePost ? 'Article' : 'News'}
           </h1>
           <p className="text-[12px] font-bold text-[#666] tracking-[0.2em] uppercase">
-            <Link to="/" className="hover:text-black transition-colors">Home</Link> <span className="mx-2">|</span> News
+            <Link to="/" onClick={() => window.scrollTo(0, 0)} className="hover:text-black transition-colors">Home</Link>
+            <span className="mx-2">|</span>
+            <Link to="/blogs/news" onClick={() => window.scrollTo(0, 0)} className="hover:text-black transition-colors">News</Link>
+            {activePost && (
+              <>
+                <span className="mx-2">|</span>
+                <span className="text-black truncate max-w-[150px] inline-block align-bottom">{activePost.title}</span>
+              </>
+            )}
           </p>
         </div>
       </div>
@@ -70,17 +84,68 @@ const Blog = () => {
       <div className="max-w-[1280px] mx-auto px-6 md:px-12 py-16 md:py-24">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-16 items-start">
 
-          {/* LEFT COLUMN: Blog Posts Grid */}
+          {/* LEFT COLUMN: Blog Posts Grid OR Single Post Detail View */}
           <div className="lg:col-span-2">
             {loading ? (
               <div className="flex justify-center py-24">
                 <Loader />
               </div>
+            ) : activePost ? (
+              /* SINGLE ARTICLE DETAIL SHOWCASE */
+              <div className="flex flex-col animate-fade-in text-left space-y-6">
+
+                {/* Back to Blog List Button */}
+                <div>
+                  <Link
+                    to="/blogs/news"
+                    onClick={() => window.scrollTo(0, 0)}
+                    className="inline-flex items-center gap-2 border border-[#111] hover:bg-black hover:text-white px-5 py-2.5 font-heading font-bold text-xs uppercase tracking-widest transition-all rounded-none"
+                  >
+                    <ArrowLeft className="w-4 h-4" /> Back to News
+                  </Link>
+                </div>
+
+                {/* Big Cover Image */}
+                <div className="w-full aspect-[16/10] overflow-hidden bg-gray-100 mb-6 shadow-sm">
+                  <img
+                    src={activePost.image ? `${getLocalImageUrl(activePost.image)}?t=${new Date(activePost.updatedAt || activePost.createdAt).getTime()}` : '/assets/Blog07.jpg'}
+                    alt={activePost.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => { e.target.src = '/assets/Rectangle_342.jpg'; }}
+                  />
+                </div>
+
+                {/* Meta details */}
+                <div className="flex items-center gap-3 text-[11px] font-bold text-[#111] tracking-[0.15em] uppercase mb-2">
+                  <span>
+                    {new Date(activePost.date || activePost.createdAt).toLocaleDateString('en-GB', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric'
+                    }).toUpperCase()}
+                  </span>
+                  <span className="text-[#111]">|</span>
+                  <span>{typeof activePost.author === 'object' ? activePost.author?.name : (activePost.author || 'Admin')}</span>
+                </div>
+
+                {/* Article Title */}
+                <h2 className="text-[32px] md:text-[42px] font-heading font-semibold text-[#111] leading-tight mb-4 select-text">
+                  {activePost.title}
+                </h2>
+
+                {/* Secure HTML Article Content Body */}
+                <div
+                  className="text-[16px] text-[#444] font-body leading-[1.85] space-y-6 select-text mb-12 border-t border-gray-100 pt-6"
+                  dangerouslySetInnerHTML={{ __html: activePost.content }}
+                />
+
+              </div>
             ) : (
+              /* BLOG POSTS LIST GRID VIEW */
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-12">
                 {filteredBlogs.map((blog) => (
                   <div key={blog._id} className="flex flex-col animate-fade-in text-left">
-                    <Link to={`/blogs/news/${blog.slug}`} className="w-full aspect-[4/3] overflow-hidden bg-gray-100 mb-6 block">
+                    <Link to={`/blogs/news/${blog.slug}`} onClick={() => window.scrollTo(0, 0)} className="w-full aspect-[4/3] overflow-hidden bg-gray-100 mb-6 block">
                       <img
                         src={blog.image ? `${getLocalImageUrl(blog.image)}?t=${new Date(blog.updatedAt || blog.createdAt).getTime()}` : '/assets/Blog07.jpg'}
                         alt={blog.title}
@@ -99,21 +164,21 @@ const Blog = () => {
                       <span className="text-[#111]">|</span>
                       <span>{typeof blog.author === 'object' ? blog.author?.name : (blog.author || 'Admin')}</span>
                     </div>
-                    <Link to={`/blogs/news/${blog.slug}`} className="group block mb-4">
+                    <Link to={`/blogs/news/${blog.slug}`} onClick={() => window.scrollTo(0, 0)} className="group block mb-4">
                       <h3 className="text-[26px] md:text-[28px] font-heading font-semibold text-[#111] group-hover:text-[#729855] transition-colors duration-300 leading-[1.25]">
                         {blog.title}
                       </h3>
                     </Link>
-                    <p 
+                    <p
                       className="text-[15px] text-[#444] font-body leading-[1.8] mb-8"
-                      dangerouslySetInnerHTML={{ 
-                        __html: blog.content 
+                      dangerouslySetInnerHTML={{
+                        __html: blog.content
                           ? blog.content.replace(/<[^>]*>/g, '').slice(0, 150) + (blog.content.length > 150 ? '...' : '')
-                          : '' 
-                      }} 
+                          : ''
+                      }}
                     />
                     <div>
-                      <Link to={`/blogs/news/${blog.slug}`} className="inline-block text-[12px] font-bold text-[#111] tracking-[0.15em] uppercase border-b-[2px] border-[#111] pb-1 hover:text-[#729855] hover:border-[#729855] transition-colors duration-300">
+                      <Link to={`/blogs/news/${blog.slug}`} onClick={() => window.scrollTo(0, 0)} className="inline-block text-[12px] font-bold text-[#111] tracking-[0.15em] uppercase border-b-[2px] border-[#111] pb-1 hover:text-[#729855] hover:border-[#729855] transition-colors duration-300">
                         READ MORE
                       </Link>
                     </div>
@@ -128,7 +193,7 @@ const Blog = () => {
             )}
           </div>
 
-          {/* RIGHT COLUMN: Sidebar */}
+          {/* RIGHT COLUMN: Sidebar (Stay fully active for both views) */}
           <div className="lg:col-span-1 flex flex-col self-stretch">
 
             {/* --- NON-STICKY SECTION --- */}
@@ -163,13 +228,13 @@ const Blog = () => {
                     <div className="text-gray-400 italic text-xs">Loading recent articles...</div>
                   ) : (
                     blogs.slice(0, 3).map((blog) => (
-                      <Link key={blog._id} to={`/blogs/news/${blog.slug}`} className="group flex gap-5 items-center text-left">
+                      <Link key={blog._id} to={`/blogs/news/${blog.slug}`} onClick={() => window.scrollTo(0, 0)} className="group flex gap-5 items-center text-left">
                         <div className="w-[85px] h-[85px] bg-gray-100 flex-shrink-0 overflow-hidden">
-                          <img 
-                            src={blog.image ? `${getLocalImageUrl(blog.image)}?t=${new Date(blog.updatedAt || blog.createdAt).getTime()}` : '/assets/Blog07.jpg'} 
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                            alt={blog.title} 
-                            onError={(e) => { e.target.src = '/assets/Rectangle_342.jpg'; }} 
+                          <img
+                            src={blog.image ? `${getLocalImageUrl(blog.image)}?t=${new Date(blog.updatedAt || blog.createdAt).getTime()}` : '/assets/Blog07.jpg'}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            alt={blog.title}
+                            onError={(e) => { e.target.src = '/assets/Rectangle_342.jpg'; }}
                           />
                         </div>
                         <div className="flex-grow">
@@ -212,15 +277,15 @@ const Blog = () => {
 
                     {/* Hover Icons */}
                     <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-                      <button className="w-[34px] h-[34px] bg-white rounded-full flex items-center justify-center shadow-sm hover:bg-black hover:text-white transition-colors text-[#111]">
+                      <button className="w-[34px] h-[34px] bg-white rounded-full flex items-center justify-center shadow-sm hover:bg-black hover:text-white transition-colors text-[#111] border-none cursor-pointer">
                         <Heart className="w-4 h-4 stroke-[1.5]" />
                       </button>
-                      <button className="w-[34px] h-[34px] bg-white rounded-full flex items-center justify-center shadow-sm hover:bg-black hover:text-white transition-colors text-[#111]">
+                      <button className="w-[34px] h-[34px] bg-white rounded-full flex items-center justify-center shadow-sm hover:bg-black hover:text-white transition-colors text-[#111] border-none cursor-pointer">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
                       </button>
                     </div>
                   </div>
-                  <Link to="/products/azalea-fields" className="group">
+                  <Link to="/products/azalea-fields" onClick={() => window.scrollTo(0, 0)} className="group">
                     <h4 className="text-[18px] font-heading font-semibold text-[#111] group-hover:text-[#729855] transition-colors mb-2">
                       Azalea Fields Soothing Cream
                     </h4>
@@ -229,10 +294,10 @@ const Blog = () => {
 
                   {/* Carousel Arrows */}
                   <div className="flex items-center justify-center gap-6">
-                    <button className="text-[#888] hover:text-[#111] transition-colors">
+                    <button className="text-[#888] hover:text-[#111] transition-colors bg-transparent border-none cursor-pointer">
                       <svg width="24" height="10" viewBox="0 0 24 12" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6 1L1 6L6 11M1 6H23" /></svg>
                     </button>
-                    <button className="text-[#888] hover:text-[#111] transition-colors">
+                    <button className="text-[#888] hover:text-[#111] transition-colors bg-transparent border-none cursor-pointer">
                       <svg width="24" height="10" viewBox="0 0 24 12" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 1L23 6L18 11M23 6H1" /></svg>
                     </button>
                   </div>
