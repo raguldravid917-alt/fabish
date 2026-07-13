@@ -42,7 +42,8 @@ const OrderTracking = lazy(() => import('./pages/OrderTracking'));
 
 function App() {
   return (
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+    /* Added secure fallback string to prevent rendering-phase crashes when environment variable is empty/undefined */
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID"}>
       <ToastProvider>
         <AuthProvider>
           <CategoryProvider>

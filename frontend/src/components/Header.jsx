@@ -678,25 +678,31 @@ const Header = () => {
               </div>
             ) : (
               <>
-                <div className="flex-grow overflow-y-auto space-y-4 pr-2 no-scrollbar">
+                <div className="flex-grow overflow-y-auto space-y-4 pr-2 no-scrollbar font-sans">
                   {cartItems.map((item) => (
                     <div key={item._id} className="flex gap-4 border-b border-brand-border pb-4">
                       <img src={getLocalImageUrl(item.images?.[0])} alt={item.title} className="w-20 h-24 object-cover bg-brand-gray-light" />
                       <div className="flex-grow">
-                        <h4 className="font-heading font-medium text-sm text-brand-charcoal leading-snug line-clamp-2 hover:text-brand-green mb-1">
+                        <h4 className="font-heading font-medium text-sm text-brand-charcoal leading-snug line-clamp-2 hover:text-brand-green mb-1 text-left">
                           <Link to={`/products/${item.slug}`} onClick={() => setIsCartOpen(false)}>{item.title}</Link>
                         </h4>
-                        <span className="text-[10px] font-heading font-bold uppercase tracking-widest text-brand-muted mb-2 block">{typeof item.category === 'object' ? item.category?.name : item.category}</span>
+                        <span className="text-[10px] font-heading font-bold uppercase tracking-widest text-brand-muted mb-2 block text-left">
+                          {typeof item.category === 'object' && item.category !== null
+                            ? item.category?.name
+                            : (typeof item.category === 'string' && !/^[0-9a-fA-F]{24}$/.test(item.category)
+                              ? item.category
+                              : '')}
+                        </span>
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center border border-brand-border select-none h-11 bg-white">
-                            <button onClick={() => updateQty(item._id, item.qty - 1)} className="h-full px-3.5 text-brand-muted hover:text-brand-charcoal font-semibold flex items-center justify-center cursor-pointer border-none bg-transparent">-</button>
-                            <span className="px-3 text-xs font-bold text-brand-charcoal">{item.qty}</span>
-                            <button onClick={() => updateQty(item._id, item.qty + 1)} className="h-full px-3.5 text-brand-muted hover:text-brand-charcoal font-semibold flex items-center justify-center cursor-pointer border-none bg-transparent">+</button>
+                          <div className="flex items-center border border-brand-border select-none h-9 sm:h-11 bg-white">
+                            <button onClick={() => updateQty(item._id, item.qty - 1)} className="h-full px-2.5 sm:px-3.5 text-brand-muted hover:text-brand-charcoal font-semibold flex items-center justify-center cursor-pointer border-none bg-transparent">-</button>
+                            <span className="px-2 sm:px-3 text-xs font-bold text-brand-charcoal">{item.qty}</span>
+                            <button onClick={() => updateQty(item._id, item.qty + 1)} className="h-full px-2.5 sm:px-3.5 text-brand-muted hover:text-brand-charcoal font-semibold flex items-center justify-center cursor-pointer border-none bg-transparent">+</button>
                           </div>
-                          <span className="font-heading text-sm font-semibold">Rs. {(item.price * item.qty).toLocaleString('en-IN')}.00</span>
+                          <span className="font-heading text-xs sm:text-sm font-semibold whitespace-nowrap ml-2">Rs. {(item.price * item.qty).toLocaleString('en-IN')}.00</span>
                         </div>
                       </div>
-                      <button onClick={() => removeFromCart(item._id)} className="text-red-500 hover:text-red-700 p-1 self-start">
+                      <button onClick={() => removeFromCart(item._id)} className="text-red-500 hover:text-red-700 p-1 self-start bg-transparent border-none cursor-pointer">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -728,9 +734,9 @@ const Header = () => {
         <div className="fixed inset-0 z-50 flex">
           <div onClick={() => setIsWishlistOpen(false)} className="fixed inset-0 bg-black/40"></div>
           <div className="relative flex flex-col w-full max-w-md bg-white h-full ml-auto shadow-2xl p-6 animate-slide-left">
-            <div className="flex items-center justify-between border-b border-[#eae8d8] pb-4 mb-6">
+            <div className="flex items-center justify-between border-b border-brand-border pb-4 mb-6">
               <h2 className="font-heading text-lg font-bold text-brand-charcoal">My Wishlist ({wishlistItems.length})</h2>
-              <button onClick={() => setIsWishlistOpen(false)} className="p-2 hover:text-[#729855]">
+              <button onClick={() => setIsWishlistOpen(false)} className="p-2 hover:text-[#729855] bg-transparent border-none cursor-pointer">
                 <X className="w-6 h-6" />
               </button>
             </div>
@@ -746,7 +752,7 @@ const Header = () => {
                   <div key={item._id} className="flex gap-4 border-b border-[#eae8d8] pb-4 items-center">
                     <img src={getLocalImageUrl(item.images?.[0])} alt={item.title} className="w-16 h-20 object-cover bg-brand-gray-light" />
                     <div className="flex-grow">
-                      <h4 className="font-heading font-medium text-sm text-brand-charcoal line-clamp-2 hover:text-[#729855] mb-1">
+                      <h4 className="font-heading font-medium text-sm text-brand-charcoal line-clamp-2 hover:text-[#729855] mb-1 text-left">
                         <Link to={`/products/${item.slug}`} onClick={() => setIsWishlistOpen(false)}>{item.title}</Link>
                       </h4>
                       <span className="font-heading text-sm font-semibold">Rs. {item.price.toLocaleString('en-IN')}.00</span>
@@ -780,7 +786,7 @@ const Header = () => {
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 px-4 overflow-x-hidden">
           <div onClick={() => setIsSearchOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm"></div>
           <div className="bg-white shadow-2xl p-6 relative z-10" style={{ width: 'min(92vw, 520px)' }}>
-            <div className="flex items-center justify-between mb-4 border-b border-brand-border pb-2">
+            <div className="flex items-center justify-between mb-4 border-b border-[#eae8d8] pb-2">
               <h3 className="font-heading text-base font-semibold text-brand-charcoal uppercase tracking-wider">Search Products</h3>
               <button onClick={() => setIsSearchOpen(false)} className="p-1 text-brand-muted hover:text-brand-charcoal bg-transparent border-none cursor-pointer w-10 h-10 flex items-center justify-center" aria-label="Close search">
                 <X className="w-6 h-6" />

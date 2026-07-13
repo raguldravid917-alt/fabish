@@ -180,7 +180,7 @@ const Home = () => {
 
   return (
     <div className="w-full bg-white">
-      {/* HERO SECTION */}
+      {/* HERO SECTION - Responsive text bounds to let the model's face show clearly */}
       <section className="w-full select-none relative overflow-hidden bg-[#faf9f5] lg:h-[580px] md:h-[500px] h-[400px]">
         <Swiper
           modules={[Pagination, Autoplay]}
@@ -193,11 +193,12 @@ const Home = () => {
           {HERO_SLIDES.map((slide, idx) => (
             <SwiperSlide key={idx} className="relative w-full h-full lg:h-[580px] md:h-[500px] h-[400px] overflow-hidden bg-[#faf9f5]">
               <img src={getLocalImageUrl(slide.image)} alt={slide.imageAlt} className={`absolute inset-0 w-full h-full object-cover z-0 ${slide.objectPosition || 'object-center'}`} />
-              <div className="absolute inset-0 z-10 w-full h-full flex items-center">
+              <div className="absolute inset-0 z-10 w-full h-full flex items-end pb-12 lg:items-center lg:pb-0">
                 <div className="w-full max-w-[1280px] mx-auto px-[24px] md:px-[64px] lg:px-[100px] flex">
-                  <div className={`w-full lg:w-1/2 flex flex-col justify-center text-left ${slide.position === 'right' ? 'lg:ml-auto' : 'lg:mr-auto'}`}>
+                  {/* Narrow text containers to allow model's face to be clear on mobile viewports */}
+                  <div className={`w-[85%] sm:w-[70%] md:w-[60%] lg:w-1/2 flex flex-col justify-end lg:justify-center text-left ${slide.position === 'right' ? 'ml-auto' : 'mr-auto'}`}>
                     <span className="block font-body font-normal text-[12px] uppercase text-[#000] mb-[12px]" style={{ letterSpacing: '0.4em' }}>{slide.tag}</span>
-                    <h1 className="font-serif text-[32px] md:text-[48px] lg:text-[52px] font-normal leading-[1.1] text-[#000] mb-[16px]">{slide.heading}</h1>
+                    <h1 className="font-serif text-[32px] md:text-[48px] lg:text-[52px] font-semibold leading-[1.1] text-[#000] mb-[16px]">{slide.heading}</h1>
                     <p className="font-body text-[16px] leading-[1.8] text-[#333333] mb-[24px] max-w-[440px]">{slide.body}</p>
                     <div>
                       <Link to={slide.ctaTo} className="inline-flex items-center justify-center bg-[#2f3e10] hover:bg-[#1f2a0a] text-white font-body font-bold text-[12px] tracking-[0.18em] uppercase transition-colors duration-200" style={{ width: '142px', height: '48px', textDecoration: 'none' }}>
@@ -414,7 +415,7 @@ const Home = () => {
                       <div className="absolute bottom-[20px] left-1/2 -translate-x-1/2 w-[85%] max-w-[160px] translate-y-0 lg:translate-y-4 lg:group-hover:translate-y-0 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 ease-out z-10">
                         <button
                           onClick={() => addToCart(product)}
-                          className="w-full bg-[#3a4d23] hover:bg-black text-white text-center text-[11px] font-bold tracking-[0.2em] py-[12px] md:py-[14px] uppercase cursor-pointer border-none rounded-none transition-colors duration-300 h-11 flex items-center justify-center"
+                          className="w-full bg-[#3a4d23] hover:bg-black text-white text-[10px] font-bold tracking-[0.2em] py-[12px] md:py-[14px] uppercase cursor-pointer border-none rounded-none transition-colors duration-300 h-11 flex items-center justify-center"
                         >
                           ADD CART
                         </button>
@@ -482,7 +483,7 @@ const Home = () => {
 
       <BeautyProductGrid setQuickViewProduct={setQuickViewProduct} />
 
-      {/* AuraBloom Video Section */}
+      {/* AuraBloom Video Section - Optimized for perfect mobile responsiveness without covering the model's face */}
       <section className="relative w-full h-[350px] lg:h-[500px] overflow-hidden my-12 bg-[#f6f5ea]">
         <video
           ref={videoRef}
@@ -493,12 +494,15 @@ const Home = () => {
           loop
           playsInline
         />
-        <div className="absolute inset-0 z-10 w-full max-w-[1280px] mx-auto px-4 md:px-[60px] lg:px-[100px] flex items-center justify-between pointer-events-none">
-          <div className="w-full md:w-[60%] lg:w-[45%] text-left pointer-events-auto">
-            <h2 className="font-heading font-medium text-[30px] md:text-[36px] lg:text-[40px] leading-[1.2] text-black mb-[20px]">
+        {/* Container aligned to the bottom on mobile, centered on desktop */}
+        <div className="absolute inset-0 z-10 w-full max-w-[1280px] mx-auto px-4 md:px-[60px] lg:px-[100px] flex items-end pb-8 sm:pb-12 lg:items-center lg:pb-0 pointer-events-none">
+
+          {/* Constrain text container width and sizes to keep model's face fully visible on mobile */}
+          <div className="w-[75%] sm:w-[65%] md:w-[60%] lg:w-[45%] text-left pointer-events-auto">
+            <h2 className="font-heading font-medium text-[18px] sm:text-[24px] md:text-[36px] lg:text-[40px] leading-[1.25] text-black mb-2 sm:mb-4 lg:mb-[20px]">
               AuraBloom Beauty &amp; Personal Care
             </h2>
-            <p className="font-body text-[15px] leading-[1.7] text-[#111] mb-[20px]">
+            <p className="font-body text-[12px] sm:text-[14px] lg:text-[15px] leading-[1.6] text-[#111] mb-4 lg:mb-[20px] line-clamp-3 sm:line-clamp-4 lg:line-clamp-none">
               Mollis Aliquam Ut Porttitor Leo A. Diam Quis Enim Lobortis Scelerisque Fermentum Dui. Turpis Tincidunt Id Aliquet Risus Feugiat In Ante. Luctus Venenatis Lectus Magna Fringilla Urna Porttitor. Venenatis A Condimentum Vitae Sapien Pellentesque Habitant. Odio Aenean Sed Adipiscing Diam Donec Adipiscing. Gravida Arcu Ac Tortor Dignissim Convallis Aenean Et Tortor.
             </p>
           </div>
@@ -687,8 +691,8 @@ const Home = () => {
                 </div>
               </div>
             </div>
-            {/* Image 5 */}
-            <div className="relative aspect-[4/5] overflow-hidden group cursor-pointer bg-[#f6f5ea]">
+            {/* Image 5 - Mobile Responsive full width stretch fix */}
+            <div className="relative col-span-2 md:col-span-1 aspect-[8/5] md:aspect-[4/5] overflow-hidden group cursor-pointer bg-[#f6f5ea]">
               <img src="/assets/Rectangle_340.jpg" alt="Gallery 4" className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" />
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 bg-black/10">
                 <div className="w-[48px] h-[48px] rounded-full border border-white flex items-center justify-center bg-black/20 backdrop-blur-sm">
