@@ -1,15 +1,37 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom'; // Added useParams for dynamic details routing
-import { Search, Heart, ArrowLeft } from 'lucide-react'; // Added ArrowLeft for clean back button
+import { Link, useParams } from 'react-router-dom';
+import { Search, Heart, Eye } from 'lucide-react';
 import { api } from '../api/client';
 import Loader from '../components/ui/Loader';
 import { getLocalImageUrl } from '../utils/imageMapper';
+
+// Enhanced path helper
+const ensureAbsolutePath = (path) => {
+  if (!path) return '';
+  let pathStr = '';
+  if (typeof path === 'string') {
+    pathStr = path;
+  } else if (typeof path === 'object' && path !== null) {
+    pathStr = path.url || path.secure_url || '';
+  }
+  if (!pathStr || typeof pathStr !== 'string') return '';
+
+  if (pathStr.includes('via.placeholder.com')) {
+    pathStr = pathStr.replace('via.placeholder.com', 'placehold.co');
+  }
+
+  if (!pathStr.startsWith('/') && !pathStr.startsWith('http')) {
+    return '/' + pathStr;
+  }
+  return pathStr;
+};
 
 const Blog = () => {
   const { slug } = useParams(); // Retrieves active blog slug from URL path
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [products, setProducts] = useState([]); // Added to fetch products for recommended section
 
   const fetchBlogs = async () => {
     try {
@@ -24,7 +46,19 @@ const Blog = () => {
     }
   };
 
+  // Fetch standard products once on mount to populate recommendations shelf
   useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await api.get('/products?limit=8');
+        if (response.success) {
+          setProducts(response.data || []);
+        }
+      } catch (err) {
+        console.error('Error fetching recommended products:', err);
+      }
+    };
+    fetchProducts();
     fetchBlogs();
   }, []);
 
@@ -52,6 +86,11 @@ const Blog = () => {
   const allTags = Array.from(
     new Set(blogs.flatMap(blog => blog.tags || []))
   ).slice(0, 10);
+
+  const handleImageError = (e) => {
+    e.target.onerror = null;
+    e.target.src = '/assets/Blog07.jpg';
+  };
 
   return (
     <div className="w-full bg-white font-body min-h-screen pb-24 select-none">
@@ -82,10 +121,11 @@ const Blog = () => {
 
       {/* 2. MAIN BLOG CONTENT SECTION */}
       <div className="max-w-[1280px] mx-auto px-6 md:px-12 py-16 md:py-24">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-16 items-start">
+        {/* Changed parent layout structure to lg:items-stretch relative for parallel alignment */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-16 lg:items-stretch items-start relative">
 
           {/* LEFT COLUMN: Blog Posts Grid OR Single Post Detail View */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 text-left">
             {loading ? (
               <div className="flex justify-center py-24">
                 <Loader />
@@ -101,7 +141,7 @@ const Blog = () => {
                     onClick={() => window.scrollTo(0, 0)}
                     className="inline-flex items-center gap-2 border border-[#111] hover:bg-black hover:text-white px-5 py-2.5 font-heading font-bold text-xs uppercase tracking-widest transition-all rounded-none"
                   >
-                    <ArrowLeft className="w-4 h-4" /> Back to News
+                    Back to News
                   </Link>
                 </div>
 
@@ -111,7 +151,7 @@ const Blog = () => {
                     src={activePost.image ? `${getLocalImageUrl(activePost.image)}?t=${new Date(activePost.updatedAt || activePost.createdAt).getTime()}` : '/assets/Blog07.jpg'}
                     alt={activePost.title}
                     className="w-full h-full object-cover"
-                    onError={(e) => { e.target.src = '/assets/Rectangle_342.jpg'; }}
+                    onError={handleImageError}
                   />
                 </div>
 
@@ -135,9 +175,54 @@ const Blog = () => {
 
                 {/* Secure HTML Article Content Body */}
                 <div
-                  className="text-[16px] text-[#444] font-body leading-[1.85] space-y-6 select-text mb-12 border-t border-gray-100 pt-6"
+                  className="text-[16px] text-[#444] font-body leading-[1.85] space-y-6 select-text pb-8"
                   dangerouslySetInnerHTML={{ __html: activePost.content }}
                 />
+
+                {/* Recommended Products Shelf to fill up empty space beautifully */}
+                {products.length > 0 && (
+                  <div className="mt-12 pt-8 border-t border-gray-100">
+                    <h3 className="font-heading text-lg font-bold uppercase tracking-wider text-brand-charcoal mb-6">
+                      Recommended Products
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      {products.slice(0, 2).map((prod) => {
+                        const prodImg = getLocalImageUrl(ensureAbsolutePath(prod.images?.[0] || prod.image || '/assets/14.jpg'));
+                        return (
+                          <Link
+                            key={prod._id}
+                            to={`/products/${prod.slug}`}
+                            onClick={() => window.scrollTo(0, 0)}
+                            className="flex gap-4 border border-gray-100 p-3 hover:border-[#729855] transition-colors"
+                          >
+                            <img src={prodImg} alt={prod.title} className="w-16 h-20 object-cover bg-[#f4f5eb] shrink-0" />
+                            <div className="text-left flex flex-col justify-between">
+                              <h4 className="font-heading font-semibold text-sm text-brand-charcoal line-clamp-2 leading-snug">{prod.title}</h4>
+                              <span className="text-xs font-semibold text-[#729855]">Rs. {prod.price.toLocaleString('en-IN')}.00</span>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Professional Leave a Comment Form to enrich bottom space */}
+                <div className="mt-12 pt-8 border-t border-gray-100 space-y-4">
+                  <h3 className="font-heading text-lg font-bold uppercase tracking-wider text-brand-charcoal">
+                    Leave a Comment
+                  </h3>
+                  <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <input type="text" placeholder="Name *" required className="border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-[#729855] rounded-none w-full bg-white" />
+                      <input type="email" placeholder="Email *" required className="border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-[#729855] rounded-none w-full bg-white" />
+                    </div>
+                    <textarea placeholder="Comment *" rows={4} required className="border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-[#729855] rounded-none w-full bg-white"></textarea>
+                    <button type="submit" className="bg-[#2f3e10] hover:bg-black text-white px-6 py-3 font-heading font-bold text-xs uppercase tracking-widest transition-colors cursor-pointer border-none rounded-none">
+                      Post Comment
+                    </button>
+                  </form>
+                </div>
 
               </div>
             ) : (
@@ -150,7 +235,7 @@ const Blog = () => {
                         src={blog.image ? `${getLocalImageUrl(blog.image)}?t=${new Date(blog.updatedAt || blog.createdAt).getTime()}` : '/assets/Blog07.jpg'}
                         alt={blog.title}
                         className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
-                        onError={(e) => { e.target.src = '/assets/Rectangle_342.jpg'; }}
+                        onError={handleImageError}
                       />
                     </Link>
                     <div className="flex items-center gap-3 text-[11px] font-bold text-[#111] tracking-[0.15em] uppercase mb-4">
@@ -193,11 +278,11 @@ const Blog = () => {
             )}
           </div>
 
-          {/* RIGHT COLUMN: Sidebar (Stay fully active for both views) */}
-          <div className="lg:col-span-1 flex flex-col self-stretch">
+          {/* RIGHT COLUMN: Sidebar (Stretches Outer Wrapper for Scroll Track) */}
+          <div className="lg:col-span-1 shrink-0 relative">
 
-            {/* --- NON-STICKY SECTION --- */}
-            <div className="flex flex-col space-y-12 mb-12">
+            {/* INNER STICKY CONTAINER - Sticky aligned at top-6 and h-fit */}
+            <div className="lg:sticky lg:top-6 lg:h-fit flex flex-col space-y-12">
               {/* Search Bar */}
               <div className="w-full">
                 <form onSubmit={handleSearchSubmit} className="relative w-full">
@@ -234,7 +319,7 @@ const Blog = () => {
                             src={blog.image ? `${getLocalImageUrl(blog.image)}?t=${new Date(blog.updatedAt || blog.createdAt).getTime()}` : '/assets/Blog07.jpg'}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             alt={blog.title}
-                            onError={(e) => { e.target.src = '/assets/Rectangle_342.jpg'; }}
+                            onError={handleImageError}
                           />
                         </div>
                         <div className="flex-grow">
@@ -256,10 +341,6 @@ const Blog = () => {
                   )}
                 </div>
               </div>
-            </div>
-
-            {/* --- STICKY SECTION (New Arrivals & Tags) --- */}
-            <div className="sticky top-0 flex flex-col space-y-12">
 
               {/* New Arrivals */}
               <div>

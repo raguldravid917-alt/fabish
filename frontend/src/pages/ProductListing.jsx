@@ -84,8 +84,14 @@ const ProductListing = () => {
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [activeSort, setActiveSort] = useState("BEST SELLING");
 
-  // Grid column state (default 4 columns)
-  const [gridCols, setGridCols] = useState(4);
+  // Grid columns initialize: 2 columns on mobile/tablet viewports, 4 columns on desktop by default
+  const [gridCols, setGridCols] = useState(() =>
+    typeof window !== 'undefined' && window.innerWidth < 1024 ? 2 : 4
+  );
+
+  // Pagination states [1]
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 16; // Restricts strictly to 16 products per page [1]
 
   // Collapsible filter sections
   const [openSections, setOpenSections] = useState({
@@ -321,6 +327,11 @@ const ProductListing = () => {
     }
   };
 
+  // Reset page pagination back to 1 when filters or categories update [1]
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [categorySlug, selectedAvailability, selectedSkinTypes, selectedUnitCounts, activeSort]);
+
   // Dynamic filter lists matching product metadata
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
@@ -361,6 +372,18 @@ const ProductListing = () => {
     });
   }, [products, selectedAvailability, selectedSkinTypes, selectedUnitCounts]);
 
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+
+  // Slices filtered listing grid cleanly to maximum of 16 products [1]
+  const displayedProducts = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredProducts.slice(startIndex, endIndex);
+  }, [filteredProducts, currentPage, itemsPerPage]);
+
+  const showingStart = filteredProducts.length === 0 ? 0 : ((currentPage - 1) * itemsPerPage) + 1;
+  const showingEnd = Math.min(currentPage * itemsPerPage, filteredProducts.length);
+
   const sortOptions = [
     "FEATURED", "MOST RELEVANT", "BEST SELLING", "ALPHABETICALLY, A-Z",
     "ALPHABETICALLY, Z-A", "PRICE, LOW TO HIGH", "PRICE, HIGH TO LOW",
@@ -378,16 +401,18 @@ const ProductListing = () => {
     "600.0 millilitre",
   ];
 
+  // Dynamic responsive grid columns supporting up to 4 columns directly on mobile [1]
   const gridClass = useMemo(() => {
     switch (gridCols) {
       case 1:
         return "grid-cols-1";
       case 2:
-        return "grid-cols-1 sm:grid-cols-2";
+        return "grid-cols-2";
       case 3:
-        return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3";
+        return "grid-cols-3";
+      case 4:
       default:
-        return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4";
+        return "grid-cols-4";
     }
   }, [gridCols]);
 
@@ -528,13 +553,13 @@ const ProductListing = () => {
                 <h3 className="text-[22px] font-heading font-semibold text-[#111] mb-6">
                   Best Seller
                 </h3>
-                 <div 
+                <div
                   onClick={() => {
                     navigate(`/products/${currentBestSeller?.slug}`);
                     window.scrollTo(0, 0);
                   }}
                   className="block cursor-pointer text-center"
-                 >
+                >
                   <div className="group relative aspect-[3/4] bg-[#f2f3ee] flex items-center justify-center overflow-hidden mb-5">
                     <img
                       src={getLocalImageUrl(ensureAbsolutePath(currentBestSeller?.images?.[0] || currentBestSeller?.image))}
@@ -662,7 +687,7 @@ const ProductListing = () => {
           {/* Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-4 mb-10 border-b border-[#eae8d8] pb-4">
             <span className="text-[14px] text-[#333] font-body">
-              Showing 1-{filteredProducts.length} of {filteredProducts.length} Results
+              Showing {showingStart}-{showingEnd} of {filteredProducts.length} Results
             </span>
 
             {/* Mobile filters button */}
@@ -777,7 +802,29 @@ const ProductListing = () => {
           ) : (
             <>
               <div className={`grid ${gridClass} gap-6`}>
-                {filteredProducts.map((product) => {
+                {displayedProducts.map((product) => {
+                  // Safe helper to handle paths, Cloudinary objects, and nested routes
+                  const ensureAbsolutePath = (path) => {
+                    if (!path) return '';
+                    let pathStr = '';
+                    if (typeof path === 'string') {
+                      pathStr = path;
+                    } else if (typeof path === 'object' && path !== null) {
+                      pathStr = path.url || path.secure_url || '';
+                    }
+                    if (!pathStr || typeof pathStr !== 'string') return '';
+
+                    // ERR_CONNECTION_CLOSED 
+                    if (pathStr.includes('via.placeholder.com')) {
+                      pathStr = pathStr.replace('via.placeholder.com', 'placehold.co');
+                    }
+
+                    if (!pathStr.startsWith('/') && !pathStr.startsWith('http')) {
+                      return '/' + pathStr;
+                    }
+                    return pathStr;
+                  };
+
                   const mainImg = getLocalImageUrl(ensureAbsolutePath(product.images?.[0] || product.image || '/assets/14.jpg'));
                   const discount = product.comparePrice > product.price
                     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
@@ -789,17 +836,18 @@ const ProductListing = () => {
                       {/* Image Container with Hover Effects */}
                       <div className="group relative aspect-[3/4] bg-[#f2f3ee] flex items-center justify-center overflow-hidden mb-5 cursor-pointer">
 
-                        {/* Sold Out / Discount Badge — top-left, mutually exclusive */}
-                        {isSoldOut && (
-                          <span className="absolute top-4 left-4 z-10 bg-black text-white text-[10px] font-bold uppercase tracking-[0.15em] px-3 py-1.5">
+                        {/* Sold Out / Discount Badge — top-left, responsive sizing */}
+                        {isSoldOut ? (
+                          <span className={`absolute top-2 left-2 sm:top-4 sm:left-4 z-10 bg-black text-white font-bold uppercase tracking-[0.15em] ${gridCols === 4 ? 'text-[7px] px-1.5 py-0.5' : 'text-[9px] sm:text-[10px] px-2 py-1 sm:px-3 sm:py-1.5'
+                            }`}>
                             Sold Out
                           </span>
-                        )}
-                        {!isSoldOut && discount > 0 && (
-                          <span className="absolute top-4 left-4 z-10 bg-[#5b8a72] text-white text-[10px] font-bold uppercase tracking-[0.15em] px-3 py-1.5">
+                        ) : discount > 0 ? (
+                          <span className={`absolute top-2 left-2 sm:top-4 sm:left-4 z-10 bg-[#5b8a72] text-white font-bold uppercase tracking-[0.15em] ${gridCols === 4 ? 'text-[7px] px-1.5 py-0.5' : 'text-[9px] sm:text-[10px] px-2 py-1 sm:px-3 sm:py-1.5'
+                            }`}>
                             {discount}% OFF
                           </span>
-                        )}
+                        ) : null}
 
                         <Link to={`/products/${product.slug}`} onClick={() => window.scrollTo(0, 0)} className="w-full h-full block">
                           <img
@@ -811,31 +859,40 @@ const ProductListing = () => {
                           />
                         </Link>
 
-                        {/* Hover Actions - Icons (Top Right) */}
-                        <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 z-20">
+                        {/* Floating Price Badge (Mobile Only — renders inside card boundaries) */}
+                        <div className={`absolute bottom-2 left-2 bg-[#2f3e10]/95 text-white font-medium z-10 lg:hidden ${gridCols === 4 ? 'text-[8px] px-1 py-0.5' : 'text-[11px] px-2 py-1'
+                          }`}>
+                          Rs. {(product?.price ?? 0).toLocaleString('en-IN')}
+                        </div>
+
+                        {/* Actions Overlay - Always visible on mobile, hover-only on desktop */}
+                        <div className={`absolute top-2 right-2 sm:top-4 sm:right-4 flex flex-col z-20 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:translate-x-4 lg:group-hover:translate-x-0 transition-all duration-300 ${gridCols === 4 ? 'gap-1' : 'gap-1.5 sm:gap-2'
+                          }`}>
                           <Link
                             to={`/products/${product.slug}`}
-                            aria-label={`Quick view ${product.title}`}
                             onClick={() => window.scrollTo(0, 0)}
-                            className="w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-md hover:bg-[#729855] hover:text-white transition-all duration-300 hover:scale-105 text-[#111]"
+                            aria-label={`Quick view ${product.title}`}
+                            className={`rounded-full bg-white flex items-center justify-center shadow-md hover:bg-[#729855] hover:text-white transition-all duration-300 hover:scale-105 text-[#111] ${gridCols === 4 ? 'w-6 h-6' : 'w-8 h-8 sm:w-9 sm:h-9'
+                              }`}
                           >
-                            <Eye className="w-4 h-4 stroke-[1.8]" />
+                            <Eye size={gridCols === 4 ? 10 : 14} strokeWidth={1.8} />
                           </Link>
                           <button
                             type="button"
                             onClick={() => toggleWishlist(product)}
                             aria-label={`Add ${product.title} to wishlist`}
-                            className={`w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-all duration-300 hover:scale-105 border-none cursor-pointer ${product?._id && isInWishlist(product._id)
-                              ? 'bg-black text-white hover:bg-[#729855]'
-                              : 'bg-white text-black hover:bg-[#729855] hover:text-white'
+                            className={`rounded-full flex items-center justify-center shadow-md transition-all duration-300 hover:scale-105 border-none cursor-pointer ${gridCols === 4 ? 'w-6 h-6' : 'w-8 h-8 sm:w-9 sm:h-9'
+                              } ${product?._id && isInWishlist(product._id)
+                                ? 'bg-black text-white hover:bg-[#729855]'
+                                : 'bg-white text-black hover:bg-[#729855] hover:text-white'
                               }`}
                           >
-                            <Heart className="w-4 h-4 stroke-[1.8]" fill={product?._id && isInWishlist(product._id) ? 'currentColor' : 'none'} />
+                            <Heart className="transition-all duration-300" size={gridCols === 4 ? 10 : 14} strokeWidth={1.8} fill={product?._id && isInWishlist(product._id) ? 'currentColor' : 'none'} />
                           </button>
                         </div>
 
-                        {/* Hover Action - Add to Cart Button (Bottom) — disabled when sold out */}
-                        <div className="absolute bottom-4 left-0 right-0 flex justify-center opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 z-10">
+                        {/* Hover Action - Add to Cart Button (Bottom — desktop only) */}
+                        <div className="absolute bottom-4 left-0 right-0 hidden lg:flex justify-center opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 z-10">
                           {!isSoldOut ? (
                             <button
                               type="button"
@@ -856,12 +913,13 @@ const ProductListing = () => {
                         </div>
                       </div>
 
-                      {/* Product Info */}
-                      <div className="text-center px-2 flex flex-col flex-grow">
-                        <h3 className="text-[16px] font-heading font-semibold text-[#111] leading-[1.35] mb-1 hover:text-[#729855] transition-colors cursor-pointer inline-block mx-auto">
+                      {/* Product Info (Title always visible, price displays here on desktop only) */}
+                      <div className="text-center px-2 flex flex-col flex-grow mt-3">
+                        <h3 className={`font-heading font-semibold text-[#111] leading-[1.35] mb-1 hover:text-[#729855] transition-colors cursor-pointer inline-block mx-auto line-clamp-2 ${gridCols === 4 ? 'text-[10px]' : 'text-xs sm:text-[16px]'
+                          }`}>
                           <Link to={`/products/${product.slug}`} onClick={() => window.scrollTo(0, 0)}>{product.title}</Link>
                         </h3>
-                        <p className="text-[14px] text-[#555] font-body">
+                        <p className="text-[14px] text-[#555] font-body hidden lg:block">
                           Rs. {(product?.price ?? 0).toLocaleString('en-IN')}.00 INR
                         </p>
                       </div>
@@ -869,6 +927,55 @@ const ProductListing = () => {
                   );
                 })}
               </div>
+
+              {/* Pagination controls showing up to 16 products dynamically */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-12 font-heading text-xs font-bold uppercase tracking-widest no-print select-none">
+                  <button
+                    type="button"
+                    disabled={currentPage === 1}
+                    onClick={() => {
+                      setCurrentPage((prev) => Math.max(1, prev - 1));
+                      window.scrollTo(0, 0);
+                    }}
+                    className="px-4 py-3 border border-gray-200 hover:border-black text-black disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-gray-200 transition-colors bg-white font-bold cursor-pointer"
+                  >
+                    Prev
+                  </button>
+
+                  {[...Array(totalPages)].map((_, index) => {
+                    const pageNumber = index + 1;
+                    return (
+                      <button
+                        key={pageNumber}
+                        type="button"
+                        onClick={() => {
+                          setCurrentPage(pageNumber);
+                          window.scrollTo(0, 0);
+                        }}
+                        className={`w-11 h-11 border transition-colors cursor-pointer flex items-center justify-center ${currentPage === pageNumber
+                            ? 'border-black bg-black text-white'
+                            : 'border-gray-200 bg-white text-black hover:border-black'
+                          }`}
+                      >
+                        {pageNumber}
+                      </button>
+                    );
+                  })}
+
+                  <button
+                    type="button"
+                    disabled={currentPage === totalPages}
+                    onClick={() => {
+                      setCurrentPage((prev) => Math.min(totalPages, prev + 1));
+                      window.scrollTo(0, 0);
+                    }}
+                    className="px-4 py-3 border border-gray-200 hover:border-black text-black disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-gray-200 transition-colors bg-white font-bold cursor-pointer"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
 
               {/* Half Underline Scroll element below products */}
               <div className="w-full h-[2px] bg-gray-200 mt-14">
