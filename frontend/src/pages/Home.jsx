@@ -483,7 +483,7 @@ const Home = () => {
       <BeautyProductGrid setQuickViewProduct={setQuickViewProduct} />
 
       {/* AuraBloom Video Section */}
-      <section className="relative w-full h-[500px] lg:h-[650px] overflow-hidden my-12 bg-[#f6f5ea]">
+      <section className="relative w-full h-[350px] lg:h-[500px] overflow-hidden my-12 bg-[#f6f5ea]">
         <video
           ref={videoRef}
           src="/assets/WhatsApp Video 2026-06-21 at 11.32.21 AM.mp4"
