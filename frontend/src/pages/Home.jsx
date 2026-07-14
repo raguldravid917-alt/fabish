@@ -484,63 +484,65 @@ const Home = () => {
       <BeautyProductGrid setQuickViewProduct={setQuickViewProduct} />
 
       {/* AuraBloom Video Section - Optimized for perfect mobile responsiveness without covering the model's face */}
-      <section className="relative w-full h-[350px] lg:h-[500px] overflow-hidden my-12 bg-[#f6f5ea]">
-        <video
-          ref={videoRef}
-          src="/assets/WhatsApp Video 2026-06-21 at 11.32.21 AM.mp4"
-          className="absolute inset-0 w-full h-full object-cover object-center z-0"
-          autoPlay
-          muted
-          loop
-          playsInline
-        />
-        {/* Container aligned to the bottom on mobile, centered on desktop */}
-        <div className="absolute inset-0 z-10 w-full max-w-[1280px] mx-auto px-4 md:px-[60px] lg:px-[100px] flex items-end pb-8 sm:pb-12 lg:items-center lg:pb-0 pointer-events-none">
+      <section className="relative w-full flex flex-col lg:block lg:h-[500px] overflow-hidden my-12 bg-white lg:bg-[#f6f5ea]">
 
-          {/* Constrain text container width and sizes to keep model's face fully visible on mobile */}
-          <div className="w-[75%] sm:w-[65%] md:w-[60%] lg:w-[45%] text-left pointer-events-auto">
-            <h2 className="font-heading font-medium text-[18px] sm:text-[24px] md:text-[36px] lg:text-[40px] leading-[1.25] text-black mb-2 sm:mb-4 lg:mb-[20px]">
+        {/* 1. Text Container (Mobile: Top / Desktop: Overlay) */}
+        <div className="relative lg:absolute inset-0 z-10 w-full max-w-[1280px] mx-auto px-4 md:px-[60px] lg:px-[100px] flex flex-col lg:flex-row items-center lg:justify-between py-10 lg:py-0 pointer-events-none order-1 lg:order-none bg-white lg:bg-transparent">
+          <div className="w-full sm:w-[80%] md:w-[60%] lg:w-[45%] text-center lg:text-left pointer-events-auto">
+            <h2 className="font-heading font-medium text-[22px] sm:text-[24px] md:text-[36px] lg:text-[40px] leading-[1.25] text-black mb-3 sm:mb-4 lg:mb-[20px]">
               AuraBloom Beauty &amp; Personal Care
             </h2>
-            <p className="font-body text-[12px] sm:text-[14px] lg:text-[15px] leading-[1.6] text-[#111] mb-4 lg:mb-[20px] line-clamp-3 sm:line-clamp-4 lg:line-clamp-none">
+            {/* Removed mobile line-clamp to match the 1st image reference exactly */}
+            <p className="font-body text-[13px] sm:text-[14px] lg:text-[15px] leading-[1.6] text-[#111] mb-0 lg:mb-[20px] lg:line-clamp-none">
               Mollis Aliquam Ut Porttitor Leo A. Diam Quis Enim Lobortis Scelerisque Fermentum Dui. Turpis Tincidunt Id Aliquet Risus Feugiat In Ante. Luctus Venenatis Lectus Magna Fringilla Urna Porttitor. Venenatis A Condimentum Vitae Sapien Pellentesque Habitant. Odio Aenean Sed Adipiscing Diam Donec Adipiscing. Gravida Arcu Ac Tortor Dignissim Convallis Aenean Et Tortor.
             </p>
           </div>
 
+          {/* Desktop Play Button (Unchanged) */}
           <div className="hidden lg:flex pointer-events-auto">
             <button
               onClick={toggleVideoPlay}
               className="group w-[88px] h-[88px] rounded-full border-2 border-black hover:border-[#729855] flex items-center justify-center bg-transparent transition-all duration-300"
             >
               {isVideoPlaying ? (
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  className="text-black group-hover:text-[#729855] transition-colors duration-300"
-                >
+                <svg width="22" height="22" viewBox="0 0 24 24" className="text-black group-hover:text-[#729855] transition-colors duration-300">
                   <rect x="6" y="4" width="4" height="16" fill="currentColor" />
                   <rect x="14" y="4" width="4" height="16" fill="currentColor" />
                 </svg>
               ) : (
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  className="ml-1 text-black group-hover:text-[#729855] transition-colors duration-300"
-                >
-                  <path
-                    d="M6 4L19 12L6 20V4Z"
-                    fill="currentColor"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinejoin="round"
-                  />
+                <svg width="24" height="24" viewBox="0 0 24 24" className="ml-1 text-black group-hover:text-[#729855] transition-colors duration-300">
+                  <path d="M6 4L19 12L6 20V4Z" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
                 </svg>
               )}
             </button>
           </div>
         </div>
+
+        {/* 2. Video Container (Mobile: Bottom / Desktop: Background) */}
+        <div className="relative lg:absolute inset-0 w-full h-[280px] sm:h-[350px] lg:h-full z-0 order-2 lg:order-none flex items-center justify-center bg-black">
+          <video
+            ref={videoRef}
+            src="/assets/WhatsApp Video 2026-06-21 at 11.32.21 AM.mp4"
+            className="absolute inset-0 w-full h-full object-cover object-center z-0"
+            autoPlay
+            muted
+            loop
+            playsInline
+          />
+
+          {/* Mobile Play Button - Exact match to your 1st Image */}
+          <button
+            onClick={toggleVideoPlay}
+            className="lg:hidden relative z-10 w-[48px] h-[48px] rounded-full bg-[#dbe3d4] flex items-center justify-center text-black pointer-events-auto shadow-md"
+          >
+            {isVideoPlaying ? (
+              <svg width="18" height="18" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" fill="currentColor" /><rect x="14" y="4" width="4" height="16" fill="currentColor" /></svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" className="ml-1"><path d="M6 4L19 12L6 20V4Z" fill="currentColor" stroke="currentColor" strokeWidth="1" strokeLinejoin="round" /></svg>
+            )}
+          </button>
+        </div>
+
       </section>
 
       {/* TESTIMONIALS SECTION */}

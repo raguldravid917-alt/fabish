@@ -48,10 +48,10 @@ const productCreateSchema = Joi.object({
   variants: Joi.any().optional(),
   seoTitle: Joi.string().allow('').optional(),
   seoDescription: Joi.string().allow('').optional(),
-  featured: Joi.any().optional(),
-  bestSeller: Joi.any().optional(),
-  newArrival: Joi.any().optional(),
-  trending: Joi.any().optional(),
+  featured: Joi.boolean().default(false).optional(),
+  bestSeller: Joi.boolean().default(false).optional(),
+  newArrival: Joi.boolean().default(false).optional(),
+  trending: Joi.boolean().default(false).optional(),
 });
 
 const productUpdateSchema = Joi.object({
@@ -69,10 +69,10 @@ const productUpdateSchema = Joi.object({
   images: Joi.any().optional(), // allow list of already-uploaded images in updates
   existingImages: Joi.any().optional(),
   thumbnail: Joi.string().allow('').optional(),
-  featured: Joi.any().optional(),
-  bestSeller: Joi.any().optional(),
-  newArrival: Joi.any().optional(),
-  trending: Joi.any().optional(),
+  featured: Joi.boolean().optional(),
+  bestSeller: Joi.boolean().optional(),
+  newArrival: Joi.boolean().optional(),
+  trending: Joi.boolean().optional(),
 });
 
 const categorySchema = Joi.object({

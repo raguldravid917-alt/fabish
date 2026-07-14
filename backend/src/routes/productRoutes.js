@@ -17,6 +17,7 @@ router.use(authenticate, authorize(ROLES.ADMIN));
 router.post('/', upload.array('images', 10), validateProductCreate, productController.createProduct);
 router.route('/:id')
   .put(upload.array('images', 10), validateProductUpdate, productController.updateProduct)
+  .patch(upload.array('images', 10), validateProductUpdate, productController.updateProduct)
   .delete(productController.deleteProduct);
 
 // Status and metadata patch endpoints
