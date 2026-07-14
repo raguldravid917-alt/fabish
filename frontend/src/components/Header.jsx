@@ -339,6 +339,46 @@ const Header = () => {
             >
               <Search className="w-[20px] h-[20px]" strokeWidth={1.5} />
             </button>
+            <button
+              onClick={() => {
+                if (!user) {
+                  navigate('/account/profile?tab=wishlist');
+                } else {
+                  setIsWishlistOpen(true);
+                }
+              }}
+              className="w-11 h-11 flex items-center justify-center hover:text-[#729855] transition-colors bg-transparent border-none cursor-pointer"
+              aria-label="Wishlist"
+            >
+              <div className="relative">
+                <Heart className="w-[20px] h-[20px]" strokeWidth={1.5} />
+                {wishlistItems.length > 0 && (
+                  <span
+                    className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#729855] text-white flex items-center justify-center"
+                    style={{ fontSize: '9px', fontWeight: 700 }}
+                  >
+                    {wishlistItems.length}
+                  </span>
+                )}
+              </div>
+            </button>
+            <button
+              onClick={() => setIsCartOpen(true)}
+              className="w-11 h-11 flex items-center justify-center hover:text-[#729855] transition-colors animate-none bg-transparent border-none cursor-pointer"
+              aria-label="Cart"
+            >
+              <div className="relative">
+                <ShoppingBag className="w-[20px] h-[20px]" strokeWidth={1.5} />
+                {itemsCount > 0 && (
+                  <span
+                    className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#729855] text-white flex items-center justify-center"
+                    style={{ fontSize: '9px', fontWeight: 700 }}
+                  >
+                    {itemsCount}
+                  </span>
+                )}
+              </div>
+            </button>
             <div className="relative h-full flex items-center" ref={accountDropdownRef}>
               <button
                 onClick={() => {
@@ -556,46 +596,6 @@ const Header = () => {
                 )}
               </div>
             </div>
-            <button
-              onClick={() => {
-                if (!user) {
-                  navigate('/account/profile?tab=wishlist');
-                } else {
-                  setIsWishlistOpen(true);
-                }
-              }}
-              className="w-11 h-11 flex items-center justify-center hover:text-[#729855] transition-colors bg-transparent border-none cursor-pointer"
-              aria-label="Wishlist"
-            >
-              <div className="relative">
-                <Heart className="w-[20px] h-[20px]" strokeWidth={1.5} />
-                {wishlistItems.length > 0 && (
-                  <span
-                    className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#729855] text-white flex items-center justify-center"
-                    style={{ fontSize: '9px', fontWeight: 700 }}
-                  >
-                    {wishlistItems.length}
-                  </span>
-                )}
-              </div>
-            </button>
-            <button
-              onClick={() => setIsCartOpen(true)}
-              className="w-11 h-11 flex items-center justify-center hover:text-[#729855] transition-colors animate-none bg-transparent border-none cursor-pointer"
-              aria-label="Cart"
-            >
-              <div className="relative">
-                <ShoppingBag className="w-[20px] h-[20px]" strokeWidth={1.5} />
-                {itemsCount > 0 && (
-                  <span
-                    className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#729855] text-white flex items-center justify-center"
-                    style={{ fontSize: '9px', fontWeight: 700 }}
-                  >
-                    {itemsCount}
-                  </span>
-                )}
-              </div>
-            </button>
           </div>
         </div>
       </header>
