@@ -1,11 +1,12 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, Search, Heart, ShoppingBag, User as UserIcon, Trash2, ArrowRight, Eye } from 'lucide-react';
+import { Menu, X, Search, Heart, ShoppingBag, User as UserIcon, Trash2, ArrowRight, Eye, Home as HomeIcon } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
 import { WishlistContext } from '../context/WishlistContext';
 import { useToast } from '../context/ToastContext';
 import { getLocalImageUrl } from '../utils/imageMapper';
+import { api } from '../api/client'; // Added API import for fetching real products
 
 const NavLink = ({ to, label, active }) => (
   <Link
@@ -27,7 +28,7 @@ const Header = () => {
   const location = useLocation();
   const { user, logout } = useContext(AuthContext);
   const { cartItems, itemsCount, addToCart, removeFromCart, updateQty, totalPrice } = useContext(CartContext);
-  const { wishlistItems, toggleWishlist, removeFromWishlist } = useContext(WishlistContext);
+  const { wishlistItems, toggleWishlist, removeFromWishlist, isInWishlist } = useContext(WishlistContext);
   const { showToast } = useToast();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -37,9 +38,39 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [movingWishlistItems, setMovingWishlistItems] = useState(new Set());
 
+  // Dynamic Best Sellers State
+  const [bestSellers, setBestSellers] = useState([]);
+
   // Account Dropdown states & refs
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const accountDropdownRef = useRef(null);
+
+  // FETCH REAL PRODUCTS FROM DATABASE SO CART & WISHLIST WORKS PROPERLY
+  useEffect(() => {
+    const fetchBestSellers = async () => {
+      try {
+        const response = await api.get('/products');
+        if (response.success) {
+          const allProducts = Array.isArray(response.data) ? response.data : (response.data?.products || response.data?.data || []);
+
+          if (allProducts.length > 0) {
+            // Admin panel-la 'Best Seller' tick panna products-a mattum filter panrom
+            const actualBestSellers = allProducts.filter(p => p.isBestSeller === true || p.bestSeller === true);
+
+            // Best seller products irundha adhai display pannum, illana normal products-a kaatum
+            if (actualBestSellers.length > 0) {
+              setBestSellers(actualBestSellers.slice(0, 2));
+            } else {
+              setBestSellers(allProducts.slice(0, 2));
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch best sellers', err);
+      }
+    };
+    fetchBestSellers();
+  }, []);
 
   // Close all drawers on route change (navigation)
   useEffect(() => {
@@ -68,7 +99,6 @@ const Header = () => {
         if (removed) {
           showToast('Product moved to cart', 'success');
         } else {
-          // Transaction Rollback if wishlist remove fails
           await removeFromCart(item._id);
           showToast('Failed to remove item from wishlist. Operation cancelled.', 'error');
         }
@@ -96,7 +126,7 @@ const Header = () => {
     }
     return () => {
       document.body.classList.remove('body-scroll-lock');
-    };
+    }
   }, [isMobileMenuOpen, isCartOpen, isWishlistOpen, isSearchOpen]);
 
   useEffect(() => {
@@ -155,7 +185,7 @@ const Header = () => {
             height: '66px',
           }}
         >
-          {/* Left: Logo */}
+          {/* Left: Logo and Mobile Menu Button */}
           <div className="flex items-center gap-1 sm:gap-2 h-full">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -185,9 +215,7 @@ const Header = () => {
                 <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-300 group-hover:-scale-y-100 mt-0.5"><path d="M1 1L5 5L9 1" /></svg>
               </Link>
 
-              {/* Mega Menu Panel (Spans full 100vw width) */}
               <div className="absolute left-1/2 -translate-x-1/2 w-[100vw] bg-[#F9F9EB] shadow-[0_20px_30px_-10px_rgba(0,0,0,0.1)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 border-t border-[#eae8d8] cursor-default pb-20 pt-12 top-[66px]">
-                {/* Content spreads end-to-end using a wider max-width container */}
                 <div className="max-w-[1440px] w-full mx-auto px-6 lg:px-12 flex justify-between gap-6">
 
                   {/* Column 1: Cleansers */}
@@ -245,68 +273,84 @@ const Header = () => {
                     </ul>
                   </div>
 
-                  {/* Column 4: Best Sellers */}
+                  {/* Column 4: Best Sellers (DYNAMIC REAL PRODUCTS FETCHED FROM API) */}
                   <div className="w-[32%] pl-6">
                     <div className="flex items-center justify-between mb-8">
                       <h4 className="font-heading text-[13px] font-bold uppercase tracking-[0.1em] text-[#111]">Best Sellers</h4>
                       <Link to="/collections/all"><ArrowRight className="w-5 h-5 text-[#111] hover:text-[#729855] transition-colors" /></Link>
                     </div>
                     <div className="grid grid-cols-2 gap-6">
-                      {/* Product 1 */}
-                      <Link to="/collections/all" className="bg-white group/item cursor-pointer text-center flex flex-col h-full shadow-sm hover:shadow-lg transition-shadow">
-                        <div className="relative aspect-square bg-[#f0f2eb] flex items-center justify-center p-0 overflow-hidden">
-                          <img src="/assets/1.jpg" alt="Azalea Fields" className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-105" onError={(e) => { e.target.src = '/assets/14.jpg'; }} />
 
-                          {/* Hover Actions - Icons (Top Right) */}
-                          <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 translate-x-4 group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all duration-300">
-                            <button onClick={(e) => e.preventDefault()} className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-black hover:text-white transition-colors text-black">
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                            </button>
-                            <button onClick={(e) => e.preventDefault()} className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-black hover:text-white transition-colors text-black">
-                              <Heart className="w-4 h-4" />
-                            </button>
-                          </div>
+                      {bestSellers.length > 0 ? (
+                        bestSellers.map((product, idx) => {
+                          if (!product) return null;
+                          // Use dynamic image or fallback
+                          const prodImg = product.images && product.images[0] ? getLocalImageUrl(product.images[0]) : (idx === 0 ? '/assets/1.jpg' : '/assets/3.jpg');
 
-                          {/* Hover Action - Add to Cart Button (Bottom) */}
-                          <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 translate-y-4 group-hover/item:opacity-100 group-hover/item:translate-y-0 transition-all duration-300">
-                            <button onClick={(e) => e.preventDefault()} className="w-[78%] mx-auto py-3 bg-[#2f3e10] hover:bg-black text-white text-[11px] font-bold uppercase tracking-[0.15em] transition-colors">
-                              Add Cart
-                            </button>
-                          </div>
-                        </div>
-                        <div className="p-6 flex flex-col flex-grow justify-between">
-                          <h5 className="text-[15px] font-heading font-bold text-[#111] leading-[1.4] mb-3 group-hover/item:text-[#729855] transition-colors">Azalea Fields Soothing Cream</h5>
-                          <span className="text-[13px] text-[#555] font-body">Rs. 24,100.00 INR</span>
-                        </div>
-                      </Link>
+                          return (
+                            <Link key={product._id} to={`/products/${product.slug}`} className="bg-white group/item cursor-pointer text-center flex flex-col h-full shadow-sm hover:shadow-lg transition-shadow">
+                              <div className="relative aspect-square bg-[#f0f2eb] flex items-center justify-center p-0 overflow-hidden">
+                                <img src={prodImg} alt={product.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-105" onError={(e) => { e.target.src = '/assets/14.jpg'; }} />
 
-                      {/* Product 2 */}
-                      <Link to="/collections/all" className="bg-white group/item cursor-pointer text-center flex flex-col h-full shadow-sm hover:shadow-lg transition-shadow">
-                        <div className="relative aspect-square bg-[#f0f2eb] flex items-center justify-center p-0 overflow-hidden">
-                          <img src="/assets/3.jpg" alt="Bluebell Dream" className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-105" onError={(e) => { e.target.src = '/assets/14.jpg'; }} />
+                                {/* Hover Actions - Icons (Top Right) */}
+                                <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 translate-x-4 group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all duration-300">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      navigate(`/products/${product.slug}`);
+                                    }}
+                                    className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-black hover:text-white transition-colors text-black"
+                                    aria-label="Quick View"
+                                  >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={async (e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      await toggleWishlist(product);
+                                    }}
+                                    className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-colors ${isInWishlist(product._id) ? 'bg-black text-white' : 'bg-white text-black hover:bg-black hover:text-white'}`}
+                                    aria-label={isInWishlist(product._id) ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                                  >
+                                    <Heart className={`w-4 h-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
+                                  </button>
+                                </div>
 
-                          {/* Hover Actions - Icons (Top Right) */}
-                          <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 translate-x-4 group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all duration-300">
-                            <button onClick={(e) => e.preventDefault()} className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-black hover:text-white transition-colors text-black">
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                            </button>
-                            <button onClick={(e) => e.preventDefault()} className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-black hover:text-white transition-colors text-black">
-                              <Heart className="w-4 h-4" />
-                            </button>
-                          </div>
+                                {/* Hover Action - Add to Cart Button */}
+                                <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 translate-y-4 group-hover/item:opacity-100 group-hover/item:translate-y-0 transition-all duration-300">
+                                  <button
+                                    type="button"
+                                    onClick={async (e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      const success = await addToCart(product, 1);
+                                      if (success) {
+                                        showToast(`Added ${product.title} to cart!`, 'success');
+                                      } else {
+                                        showToast('Failed to add product to cart', 'error');
+                                      }
+                                    }}
+                                    className="w-[78%] mx-auto py-3 bg-[#2f3e10] hover:bg-black text-white text-[11px] font-bold uppercase tracking-[0.15em] transition-colors"
+                                  >
+                                    Add Cart
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="p-6 flex flex-col flex-grow justify-between">
+                                <h5 className="text-[15px] font-heading font-bold text-[#111] leading-[1.4] mb-3 group-hover/item:text-[#729855] transition-colors">{product.title}</h5>
+                                <span className="text-[13px] text-[#555] font-body">Rs. {Number(product.price || 0).toLocaleString('en-IN')}.00 INR</span>
+                              </div>
+                            </Link>
+                          );
+                        })
+                      ) : (
+                        <div className="col-span-2 text-center text-[13px] text-gray-500 py-10 font-body">Loading best sellers...</div>
+                      )}
 
-                          {/* Hover Action - Add to Cart Button (Bottom) */}
-                          <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 translate-y-4 group-hover/item:opacity-100 group-hover/item:translate-y-0 transition-all duration-300">
-                            <button onClick={(e) => e.preventDefault()} className="w-[78%] mx-auto py-3 bg-[#2f3e10] hover:bg-black text-white text-[11px] font-bold uppercase tracking-[0.15em] transition-colors">
-                              Add Cart
-                            </button>
-                          </div>
-                        </div>
-                        <div className="p-6 flex flex-col flex-grow justify-between">
-                          <h5 className="text-[15px] font-heading font-bold text-[#111] leading-[1.4] mb-3 group-hover/item:text-[#729855] transition-colors">Bluebell Dream Nourishing Cream</h5>
-                          <span className="text-[13px] text-[#555] font-body">Rs. 72,200.00 INR</span>
-                        </div>
-                      </Link>
                     </div>
                   </div>
                 </div>
@@ -330,8 +374,10 @@ const Header = () => {
             </div>
           </nav>
 
-          {/* Right: Icons */}
+          {/* Right: Icons (Hidden on mobile, only visible on Desktop) */}
           <div className="flex items-center h-full gap-2 min-[375px]:gap-3.5 sm:gap-[20px]" style={{ color: '#000000' }}>
+
+            {/* Search Icon (Visible on both Mobile and Desktop) */}
             <button
               onClick={() => setIsSearchOpen(true)}
               className="w-11 h-11 flex items-center justify-center hover:text-[#729855] transition-colors bg-transparent border-none cursor-pointer"
@@ -339,6 +385,8 @@ const Header = () => {
             >
               <Search className="w-[20px] h-[20px]" strokeWidth={1.5} />
             </button>
+
+            {/* Wishlist Icon (Hidden on Mobile) */}
             <button
               onClick={() => {
                 if (!user) {
@@ -347,7 +395,7 @@ const Header = () => {
                   setIsWishlistOpen(true);
                 }
               }}
-              className="w-11 h-11 flex items-center justify-center hover:text-[#729855] transition-colors bg-transparent border-none cursor-pointer"
+              className="hidden lg:flex w-11 h-11 items-center justify-center hover:text-[#729855] transition-colors bg-transparent border-none cursor-pointer"
               aria-label="Wishlist"
             >
               <div className="relative">
@@ -362,9 +410,11 @@ const Header = () => {
                 )}
               </div>
             </button>
+
+            {/* Cart Icon (Hidden on Mobile) */}
             <button
               onClick={() => setIsCartOpen(true)}
-              className="w-11 h-11 flex items-center justify-center hover:text-[#729855] transition-colors animate-none bg-transparent border-none cursor-pointer"
+              className="hidden lg:flex w-11 h-11 items-center justify-center hover:text-[#729855] transition-colors animate-none bg-transparent border-none cursor-pointer"
               aria-label="Cart"
             >
               <div className="relative">
@@ -379,7 +429,9 @@ const Header = () => {
                 )}
               </div>
             </button>
-            <div className="relative h-full flex items-center" ref={accountDropdownRef}>
+
+            {/* Account Icon (Hidden on Mobile) */}
+            <div className="relative h-full hidden lg:flex items-center" ref={accountDropdownRef}>
               <button
                 onClick={() => {
                   setIsAccountOpen(!isAccountOpen);
@@ -397,6 +449,8 @@ const Header = () => {
                   <UserIcon className="w-[20px] h-[20px]" strokeWidth={1.5} />
                 )}
               </button>
+
+              {/* Account Dropdown */}
               <div
                 className={`absolute right-0 top-[50px] w-48 bg-[#F9F9EB] border border-[#eae8d8] shadow-[0_10px_30px_rgba(0,0,0,0.06)] py-2 z-50 transition-all duration-300 transform origin-top-right ${isAccountOpen
                   ? 'opacity-100 scale-100 translate-y-0'
@@ -449,7 +503,6 @@ const Header = () => {
                     {user.isAdmin || user.role === 'Admin' ? (
                       // Admin Dropdown Items
                       <>
-                        {/* Shopping Section */}
                         <Link
                           to="/account/profile"
                           onClick={() => setIsAccountOpen(false)}
@@ -467,7 +520,7 @@ const Header = () => {
                           Orders
                         </Link>
                         <Link
-                          to="/account/profile?tab=addresses" // Pluralized to fix mapping issue
+                          to="/account/profile?tab=addresses"
                           onClick={() => setIsAccountOpen(false)}
                           className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium"
                           style={{ textDecoration: 'none' }}
@@ -541,7 +594,7 @@ const Header = () => {
                           Orders
                         </Link>
                         <Link
-                          to="/account/profile?tab=addresses" // Pluralized to fix mapping issue
+                          to="/account/profile?tab=addresses"
                           onClick={() => setIsAccountOpen(false)}
                           className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium"
                           style={{ textDecoration: 'none' }}
@@ -599,6 +652,143 @@ const Header = () => {
           </div>
         </div>
       </header>
+
+      {/* Mobile Bottom Navigation Bar */}
+      <nav className="lg:hidden fixed bottom-0 left-0 w-full h-16 bg-[#F9F9EB] border-t border-[#eae8d8] shadow-[0_-4px_16px_rgba(0,0,0,0.05)] z-50 flex items-center justify-around">
+        <Link
+          to="/"
+          className={`flex flex-col items-center justify-center gap-1 flex-1 h-full ${currentPath === '/' ? 'text-[#729855]' : 'text-black'}`}
+          style={{ textDecoration: 'none' }}
+        >
+          <HomeIcon className="w-5 h-5" strokeWidth={1.5} />
+          <span className="text-[11px] font-heading">Home</span>
+        </Link>
+        <Link
+          to="/collections"
+          className={`flex flex-col items-center justify-center gap-1 flex-1 h-full ${currentPath === '/collections' ? 'text-[#729855]' : 'text-black'}`}
+          style={{ textDecoration: 'none' }}
+        >
+          <ShoppingBag className="w-5 h-5" strokeWidth={1.5} />
+          <span className="text-[11px] font-heading">Shop</span>
+        </Link>
+        <button
+          type="button"
+          onClick={() => setIsCartOpen(true)}
+          className="flex flex-col items-center justify-center gap-1 flex-1 h-full text-black bg-transparent border-none cursor-pointer"
+        >
+          <div className="relative">
+            <ShoppingBag className="w-5 h-5" strokeWidth={1.5} />
+            {itemsCount > 0 && (
+              <span
+                className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#729855] text-white flex items-center justify-center"
+                style={{ fontSize: '9px', fontWeight: 700 }}
+              >
+                {itemsCount}
+              </span>
+            )}
+          </div>
+          <span className="text-[11px] font-heading">Cart</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (!user) {
+              navigate('/account/profile?tab=wishlist');
+            } else {
+              setIsWishlistOpen(true);
+            }
+          }}
+          className="flex flex-col items-center justify-center gap-1 flex-1 h-full text-black bg-transparent border-none cursor-pointer"
+        >
+          <div className="relative">
+            <Heart className="w-5 h-5" strokeWidth={1.5} />
+            {wishlistItems.length > 0 && (
+              <span
+                className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#729855] text-white flex items-center justify-center"
+                style={{ fontSize: '9px', fontWeight: 700 }}
+              >
+                {wishlistItems.length}
+              </span>
+            )}
+          </div>
+          <span className="text-[11px] font-heading">Wishlist</span>
+        </button>
+
+        {/* UPDATED: Mobile Account Button with Dropdown matching Desktop View */}
+        <div
+          className="relative flex-1 h-full flex justify-center"
+          onMouseDown={(e) => e.stopPropagation()} // Prevents desktop click-outside event from closing it
+        >
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!user) {
+                navigate('/account/login');
+              } else {
+                setIsAccountOpen(!isAccountOpen);
+              }
+            }}
+            className="flex flex-col items-center justify-center gap-1 w-full h-full text-black bg-transparent border-none cursor-pointer"
+          >
+            {user?.avatar ? (
+              <img
+                src={user.avatar.startsWith('http') ? user.avatar : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${user.avatar}`}
+                alt={user.name}
+                className="w-5 h-5 rounded-full object-cover border border-brand-border"
+              />
+            ) : (
+              <UserIcon className="w-5 h-5" strokeWidth={1.5} />
+            )}
+            <span className="text-[11px] font-heading">{user ? 'Account' : 'Login'}</span>
+          </button>
+
+          {/* Mobile Account Dropdown Panel (Opens Upwards) */}
+          <div
+            className={`absolute right-2 bottom-[70px] w-48 bg-[#F9F9EB] border border-[#eae8d8] shadow-[0_-10px_30px_rgba(0,0,0,0.06)] py-2 z-50 transition-all duration-300 transform origin-bottom-right ${isAccountOpen && user
+              ? 'opacity-100 scale-100 translate-y-0'
+              : 'opacity-0 scale-95 translate-y-2 pointer-events-none'
+              }`}
+            style={{ fontFamily: '"Outfit", sans-serif' }}
+          >
+            {user && (
+              <>
+                <div className="px-4 py-1.5 border-b border-[#eae8d8] mb-1 select-none text-left flex items-center gap-2">
+                  {user.avatar && (
+                    <img
+                      src={user.avatar.startsWith('http') ? user.avatar : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${user.avatar}`}
+                      alt={user.name}
+                      className="w-8 h-8 rounded-full object-cover border border-brand-border"
+                    />
+                  )}
+                  <div>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-0.5">Welcome,</p>
+                    <p className="text-[13px] text-black font-semibold truncate leading-tight">{user.name}</p>
+                  </div>
+                </div>
+
+                <Link to="/account/profile" onClick={() => setIsAccountOpen(false)} className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium" style={{ textDecoration: 'none' }}>My Account</Link>
+                <Link to="/account/profile?tab=orders" onClick={() => setIsAccountOpen(false)} className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium" style={{ textDecoration: 'none' }}>Orders</Link>
+                <Link to="/account/profile?tab=addresses" onClick={() => setIsAccountOpen(false)} className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium" style={{ textDecoration: 'none' }}>Address</Link>
+                <Link to="/account/profile?tab=rewards" onClick={() => setIsAccountOpen(false)} className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium" style={{ textDecoration: 'none' }}>Reward Points</Link>
+                <button onClick={() => { setIsAccountOpen(false); setIsWishlistOpen(true); }} className="w-full text-left block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors bg-transparent border-none cursor-pointer font-medium font-body">Wishlist</button>
+                <Link to="/cart" onClick={() => setIsAccountOpen(false)} className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium" style={{ textDecoration: 'none' }}>Cart</Link>
+                <Link to="/account/profile?tab=settings" onClick={() => setIsAccountOpen(false)} className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium" style={{ textDecoration: 'none' }}>Settings</Link>
+
+                {(user.isAdmin || user.role === 'Admin') && (
+                  <>
+                    <div className="border-t border-[#eae8d8] my-1" />
+                    <Link to="/admin/dashboard" onClick={() => setIsAccountOpen(false)} className="block px-4 py-2 text-[14px] text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-bold" style={{ textDecoration: 'none' }}>Admin Dashboard</Link>
+                  </>
+                )}
+
+                <div className="border-t border-[#eae8d8] my-1" />
+                <button onClick={() => { setIsAccountOpen(false); handleLogout(); }} className="w-full text-left block px-4 py-2 text-[14px] text-red-600 hover:text-red-800 hover:bg-[#eae8d8]/30 transition-colors bg-transparent border-none cursor-pointer font-medium">Logout</button>
+              </>
+            )}
+          </div>
+        </div>
+      </nav>
 
       {/* Mobile Drawer Navigation Menu */}
       {isMobileMenuOpen && (

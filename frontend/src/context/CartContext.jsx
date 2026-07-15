@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useRef } from 'react';
-import { api } from '../api/client'; // Imports your custom Axios api instance
+import { api } from '../api/client';
 
 export const CartContext = createContext();
 
@@ -13,7 +13,6 @@ export const CartProvider = ({ children }) => {
     cartItemsRef.current = cartItems;
   }, [cartItems]);
 
-  // Utility to map backend DB items to the flat structure expected by the existing UI views
   const mapBackendCartToFrontend = (backendCart) => {
     if (!backendCart || !backendCart.items) return [];
     return backendCart.items
@@ -27,14 +26,12 @@ export const CartProvider = ({ children }) => {
       .filter(Boolean);
   };
 
-  // Safe fetch helper that respects authorization tokens
   const fetchCart = async () => {
     let token = localStorage.getItem('token');
     if (token === 'undefined' || token === 'null') {
       token = null;
     }
     if (!token) {
-      // Guest Mode: Load safe, isolated local guest items
       const localData = localStorage.getItem('guest_cartItems');
       setCartItems(localData ? JSON.parse(localData) : []);
       return;
@@ -42,7 +39,7 @@ export const CartProvider = ({ children }) => {
 
     setLoading(true);
     try {
-      const result = await api.get('/cart'); // Uses your axios utility with auto-attached token and baseUrl
+      const result = await api.get('/cart');
       if (result.success && result.data) {
         setCartItems(mapBackendCartToFrontend(result.data));
       }
@@ -53,7 +50,6 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // Monitors the authentication status securely to trigger data loads and clear state on logout
   useEffect(() => {
     fetchCart();
 
@@ -63,7 +59,6 @@ export const CartProvider = ({ children }) => {
 
     window.addEventListener('storage', handleStorageChange);
 
-    // Dynamic session change monitor
     const interval = setInterval(() => {
       const currentToken = localStorage.getItem('token');
       if (currentToken !== prevToken.current) {
@@ -81,12 +76,11 @@ export const CartProvider = ({ children }) => {
   const addToCart = async (product, qty = 1) => {
     const token = localStorage.getItem('token');
     if (!token) {
-      // Guest mode update
       setCartItems((prevItems) => {
         const existItem = prevItems.find((x) => x._id === product._id);
         const newQty = existItem
-          ? Math.min(existItem.qty + qty, product.stock)
-          : Math.min(qty, product.stock);
+          ? Math.min(existItem.qty + qty, product.stock || Infinity) // Handled undefined stock gracefully
+          : Math.min(qty, product.stock || Infinity);
         const updated = existItem
           ? prevItems.map((x) => (x._id === product._id ? { ...x, qty: newQty } : x))
           : [...prevItems, { ...product, qty: newQty }];
@@ -99,17 +93,17 @@ export const CartProvider = ({ children }) => {
     try {
       const existItem = cartItemsRef.current.find((x) => x._id === product._id);
       const currentQty = existItem ? existItem.qty : 0;
-      const newQty = Math.min(currentQty + qty, product.stock);
+      const newQty = Math.min(currentQty + qty, product.stock || Infinity);
 
       const result = await api.put('/cart', { productId: product._id, quantity: newQty });
       if (result.success && result.data) {
         setCartItems(mapBackendCartToFrontend(result.data));
-        return true;
+        return true; // Send explicitly TRUE on success
       }
-      return false;
+      return false; // Send explicitly FALSE if API fails without crashing
     } catch (error) {
       console.error('Error adding to database cart:', error);
-      return false;
+      return false; // Crucial: Send explicitly FALSE to stop false positive UI toasts
     }
   };
 
@@ -121,16 +115,19 @@ export const CartProvider = ({ children }) => {
         localStorage.setItem('guest_cartItems', JSON.stringify(updated));
         return updated;
       });
-      return;
+      return true;
     }
 
     try {
       const result = await api.delete(`/cart/${id}`);
       if (result.success && result.data) {
         setCartItems(mapBackendCartToFrontend(result.data));
+        return true;
       }
+      return false;
     } catch (error) {
       console.error('Error removing item from database cart:', error);
+      return false;
     }
   };
 
@@ -139,21 +136,24 @@ export const CartProvider = ({ children }) => {
     if (!token) {
       setCartItems((prevItems) => {
         const updated = prevItems.map((x) =>
-          x._id === id ? { ...x, qty: Math.max(1, Math.min(qty, x.stock)) } : x
+          x._id === id ? { ...x, qty: Math.max(1, Math.min(qty, x.stock || Infinity)) } : x
         );
         localStorage.setItem('guest_cartItems', JSON.stringify(updated));
         return updated;
       });
-      return;
+      return true;
     }
 
     try {
       const result = await api.put('/cart', { productId: id, quantity: qty });
       if (result.success && result.data) {
         setCartItems(mapBackendCartToFrontend(result.data));
+        return true;
       }
+      return false;
     } catch (error) {
       console.error('Error updating cart quantity in database:', error);
+      return false;
     }
   };
 
@@ -162,16 +162,19 @@ export const CartProvider = ({ children }) => {
     if (!token) {
       setCartItems([]);
       localStorage.removeItem('guest_cartItems');
-      return;
+      return true;
     }
 
     try {
       const result = await api.delete('/cart');
       if (result.success) {
         setCartItems([]);
+        return true;
       }
+      return false;
     } catch (error) {
       console.error('Error clearing database cart:', error);
+      return false;
     }
   };
 
@@ -179,7 +182,6 @@ export const CartProvider = ({ children }) => {
   const [couponError, setCouponError] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
 
-  // Dynamic coupon validation effect: checks coupon status & minimumOrderAmount whenever cart items or subtotal changes
   useEffect(() => {
     const savedCode = localStorage.getItem('appliedCouponCode');
     if (savedCode && cartItems.length > 0) {
@@ -190,7 +192,6 @@ export const CartProvider = ({ children }) => {
           if (res.success && res.data) {
             setAppliedCoupon(res.data);
           } else {
-            // Remove coupon silently if subtotal falls below minimumOrderAmount or coupon is disabled
             setAppliedCoupon(null);
             localStorage.removeItem('appliedCouponCode');
           }
