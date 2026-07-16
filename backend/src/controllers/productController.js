@@ -8,7 +8,7 @@ class ProductController {
   async getProducts(req, res, next) {
     try {
       const result = await productService.getProducts(req.query);
-      
+
       res.status(HTTP_STATUS.OK).json({
         success: true,
         message: 'Products retrieved successfully',
@@ -71,7 +71,7 @@ class ProductController {
   async createProduct(req, res, next) {
     try {
       const files = req.files || (req.file ? [req.file] : []);
-      
+
       // Parse tags if sent as string
       if (req.body.tags && typeof req.body.tags === 'string') {
         req.body.tags = req.body.tags.split(',').map((t) => t.trim()).filter(Boolean);
@@ -96,9 +96,18 @@ class ProductController {
   async updateProduct(req, res, next) {
     try {
       const files = req.files || (req.file ? [req.file] : []);
-      
+
       if (req.body.tags && typeof req.body.tags === 'string') {
         req.body.tags = req.body.tags.split(',').map((t) => t.trim()).filter(Boolean);
+      }
+
+      // 🟩 FIX: Parse existingImages JSON string sent via multipart FormData
+      if (req.body.existingImages && typeof req.body.existingImages === 'string') {
+        try {
+          req.body.existingImages = JSON.parse(req.body.existingImages);
+        } catch (error) {
+          req.body.existingImages = []; // fallback if parsing fails
+        }
       }
 
       const updatedProduct = await productService.updateProduct(
@@ -273,6 +282,67 @@ class ProductController {
         data: result,
       });
     } catch (error) {
+      next(error);
+    }
+  }
+
+  // @desc    Get all available statuses
+  // @route   GET /api/products/statuses
+  // @access  Public
+  async getStatuses(req, res, next) {
+    try {
+      const statuses = Object.values(PRODUCT_STATUS).filter(s => s !== PRODUCT_STATUS.DELETED);
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        data: statuses,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // @desc    Check if a product name is duplicate
+  // @route   GET /api/products/check-name
+  // @access  Public
+  async checkName(req, res, next) {
+    try {
+      const { title, excludeId } = req.query;
+      if (!title) {
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'Title is required',
+        });
+      }
+      const isDuplicate = await productService.checkDuplicateName(title, excludeId);
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        data: { isDuplicate },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // @desc    Standalone image upload
+  // @route   POST /api/products/upload
+  // @access  Private/Admin
+  async uploadImage(req, res, next) {
+    try {
+      if (!req.file) {
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'No file provided',
+        });
+      }
+      const uploadService = require('../services/uploadService');
+      const uploadedFile = await uploadService.uploadFile(req.file, 'fabish/products');
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        message: 'Image uploaded successfully',
+        data: uploadedFile,
+      });
+    } catch (error) {
+      res.status(HTTP_STATUS.BAD_REQUEST);
       next(error);
     }
   }

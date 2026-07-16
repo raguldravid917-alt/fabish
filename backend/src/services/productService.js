@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const productRepository = require('../repositories/productRepository');
 const Product = require('../models/Product');
 const Category = require('../models/Category');
+const Badge = require('../models/Badge');
+const Variant = require('../models/Variant');
 const uploadService = require('./uploadService');
 const { PRODUCT_STATUS } = require('../constants');
 
@@ -81,23 +83,23 @@ class ProductService {
     }
 
     // Featured filter
-    if (queryParams.featured) {
-      filter.featured = queryParams.featured === 'true';
+    if (queryParams.featured !== undefined && queryParams.featured !== '') {
+      filter.featured = queryParams.featured === 'true' || queryParams.featured === true;
     }
 
     // BestSeller filter
-    if (queryParams.bestSeller) {
-      filter.bestSeller = queryParams.bestSeller === 'true';
+    if (queryParams.bestSeller !== undefined && queryParams.bestSeller !== '') {
+      filter.bestSeller = queryParams.bestSeller === 'true' || queryParams.bestSeller === true;
     }
 
     // NewArrival filter
-    if (queryParams.newArrival) {
-      filter.newArrival = queryParams.newArrival === 'true';
+    if (queryParams.newArrival !== undefined && queryParams.newArrival !== '') {
+      filter.newArrival = queryParams.newArrival === 'true' || queryParams.newArrival === true;
     }
 
     // Trending filter
-    if (queryParams.trending) {
-      filter.trending = queryParams.trending === 'true';
+    if (queryParams.trending !== undefined && queryParams.trending !== '') {
+      filter.trending = queryParams.trending === 'true' || queryParams.trending === true;
     }
 
     // Explicit status filter for admins
@@ -176,13 +178,23 @@ class ProductService {
     return product;
   }
 
+  async checkDuplicateName(title, excludeId) {
+    const slug = getSlug(title);
+    const filter = { slug, status: { $ne: PRODUCT_STATUS.DELETED } };
+    if (excludeId && mongoose.Types.ObjectId.isValid(excludeId)) {
+      filter._id = { $ne: excludeId };
+    }
+    const count = await Product.countDocuments(filter);
+    return count > 0;
+  }
+
   async createProduct(productData, files = [], userId) {
-    const slug = getSlug(productData.title);
-    
+    const slug = productData.slug ? getSlug(productData.slug) : getSlug(productData.title);
+
     // Check duplicate slug
     const existingProduct = await productRepository.findBySlug(slug);
     if (existingProduct) {
-      throw new Error('Product title already exists (slug conflict)');
+      throw new Error('Product slug already exists (conflict)');
     }
 
     // Resolve Category ID from slug or verify valid ObjectId
@@ -195,14 +207,37 @@ class ProductService {
       categoryId = cat._id;
     }
 
-    // Parse tag/variant arrays if sent as strings (typical in multipart FormDatas)
+    // Parse tags array
     let parsedTags = productData.tags || [];
     if (typeof parsedTags === 'string') {
-      parsedTags = parsedTags.split(',').map((t) => t.trim()).filter(Boolean);
+      try {
+        parsedTags = JSON.parse(parsedTags);
+      } catch (e) {
+        parsedTags = parsedTags.split(',').map((t) => t.trim()).filter(Boolean);
+      }
     }
+
+    // Parse badges array and resolve featured / bestseller / newarrival / trending flags
+    let parsedBadges = productData.badges || [];
+    if (typeof parsedBadges === 'string') {
+      try {
+        parsedBadges = JSON.parse(parsedBadges);
+      } catch (e) {
+        parsedBadges = parsedBadges.split(',').map((b) => b.trim()).filter(Boolean);
+      }
+    }
+
+    const badgeDocs = await Badge.find({ _id: { $in: parsedBadges } });
+    const badgeSlugs = badgeDocs.map(b => b.slug);
+
+    // Parse variants array
     let parsedVariants = productData.variants || [];
     if (typeof parsedVariants === 'string') {
-      parsedVariants = parsedVariants.split(',').map((v) => v.trim()).filter(Boolean);
+      try {
+        parsedVariants = JSON.parse(parsedVariants);
+      } catch (e) {
+        parsedVariants = [];
+      }
     }
 
     // Upload files to Cloudinary ('fabish/products' folder)
@@ -212,28 +247,59 @@ class ProductService {
     }
 
     const payload = {
-      ...productData,
       title: productData.title.trim(),
+      productName: productData.title.trim(),
       slug,
+      description: productData.description,
       category: categoryId,
       images: imageUrls,
       thumbnail: imageUrls[0]?.secure_url || '',
       tags: parsedTags,
-      variants: parsedVariants,
+      badges: parsedBadges,
+      variants: [], // Save variants references after they are created below
       comparePrice: Number(productData.comparePrice) || 0.0,
       price: Number(productData.price),
       stock: Number(productData.stock) || 0,
-      featured: productData.featured === true || productData.featured === 'true',
-      bestSeller: productData.bestSeller === true || productData.bestSeller === 'true',
-      newArrival: productData.newArrival === true || productData.newArrival === 'true',
-      trending: productData.trending === true || productData.trending === 'true',
+      featured: badgeSlugs.includes('featured'),
+      bestSeller: badgeSlugs.includes('bestseller'),
+      newArrival: badgeSlugs.includes('newarrival'),
+      trending: badgeSlugs.includes('trending'),
       seoTitle: productData.seoTitle || productData.title.trim(),
       seoDescription: productData.seoDescription || productData.description?.slice(0, 150),
       createdBy: userId,
       updatedBy: userId,
     };
 
-    return await productRepository.create(payload);
+    const newProduct = await Product.create(payload);
+
+    // Create variant documents referencing this product
+    const createdVariantIds = [];
+    if (Array.isArray(parsedVariants) && parsedVariants.length > 0) {
+      for (const v of parsedVariants) {
+        if (!v || (typeof v !== 'object' && typeof v !== 'string')) continue;
+
+        const variantName = typeof v === 'object' ? v.name : v;
+        const variantSku = typeof v === 'object' ? (v.sku || '') : '';
+        const variantPrice = typeof v === 'object' ? (Number(v.price) || payload.price || 0) : (payload.price || 0);
+        const variantStock = typeof v === 'object' ? (Number(v.stock) || 0) : 0;
+
+        const variantDoc = await Variant.create({
+          product: newProduct._id,
+          name: variantName,
+          sku: variantSku,
+          price: variantPrice,
+          stock: variantStock
+        });
+        createdVariantIds.push(variantDoc._id);
+      }
+    }
+
+    if (createdVariantIds.length > 0) {
+      newProduct.variants = createdVariantIds;
+      await newProduct.save();
+    }
+
+    return await productRepository.findById(newProduct._id);
   }
 
   async updateProduct(id, productData, files = [], userId) {
@@ -256,73 +322,179 @@ class ProductService {
       }
     }
 
-    // Parse tag/variant arrays
+    // Parse tags array
     let parsedTags = productData.tags;
     if (typeof parsedTags === 'string') {
-      parsedTags = parsedTags.split(',').map((t) => t.trim()).filter(Boolean);
-    }
-    let parsedVariants = productData.variants;
-    if (typeof parsedVariants === 'string') {
-      parsedVariants = parsedVariants.split(',').map((v) => v.trim()).filter(Boolean);
+      try {
+        parsedTags = JSON.parse(parsedTags);
+      } catch (e) {
+        parsedTags = parsedTags.split(',').map((t) => t.trim()).filter(Boolean);
+      }
     }
 
     // Handle kept images vs newly uploaded files
     let keptImages = [];
     const existingImagesData = productData.existingImages || productData.images;
+
+    // 🔍 DEBUG LOGS
+    console.log("--- UPDATE PRODUCT DEBUG START ---");
+    console.log("Raw existingImagesData from request:", existingImagesData);
+    console.log("Type of existingImagesData:", typeof existingImagesData);
+
     if (existingImagesData) {
-      keptImages = typeof existingImagesData === 'string' 
-        ? JSON.parse(existingImagesData) 
-        : existingImagesData;
+      if (typeof existingImagesData === 'string') {
+        try {
+          keptImages = JSON.parse(existingImagesData);
+        } catch (error) {
+          keptImages = [];
+        }
+      } else {
+        keptImages = existingImagesData;
+      }
     } else {
       keptImages = product.images || [];
     }
+
+    console.log("Parsed keptImages array:", keptImages);
 
     // Upload new files
     let newUploaded = [];
     if (files && files.length) {
       newUploaded = await uploadService.uploadMultiple(files, 'fabish/products');
     }
+    console.log("Newly uploaded files (if any):", newUploaded);
 
     const finalImages = [...keptImages, ...newUploaded];
+    console.log("Combined Final Images:", finalImages);
 
-    // Automatical deletion of removed/unused images from Cloudinary
+    // 🟩 Robust helper to extract unique ID
+    const getImgId = (img) => {
+      if (!img) return null;
+      if (typeof img === 'string') return img;
+      return img.public_id || img.secure_url || img.url;
+    };
+
+    // 🟩 Safety Filter: Only delete images that were actually removed by user in frontend
     const originalImages = product.images || [];
-    const removedImages = originalImages.filter(orig => 
-      !finalImages.some(fin => fin.public_id === orig.public_id)
-    );
+    const removedImages = originalImages.filter(orig => {
+      const origId = getImgId(orig);
+      return !finalImages.some(fin => getImgId(fin) === origId);
+    });
+
+    console.log("Images scheduled for actual deletion:", removedImages);
 
     for (const img of removedImages) {
-      await uploadService.deleteImage(img.public_id);
+      if (img && img.public_id) {
+        await uploadService.deleteImage(img.public_id);
+      }
     }
 
     const payload = {
-      ...productData,
+      description: productData.description,
       category: categoryId,
       images: finalImages,
-      thumbnail: finalImages[0]?.secure_url || '',
+      thumbnail: (finalImages[0]?.secure_url || finalImages[0] || ''),
       updatedBy: userId,
     };
 
     if (parsedTags) payload.tags = parsedTags;
-    if (parsedVariants) payload.variants = parsedVariants;
+
+    // Resolve dynamic badges and their boolean flags
+    let parsedBadges = productData.badges;
+    if (parsedBadges !== undefined) {
+      if (typeof parsedBadges === 'string') {
+        try {
+          parsedBadges = JSON.parse(parsedBadges);
+        } catch (e) {
+          parsedBadges = parsedBadges.split(',').map((b) => b.trim()).filter(Boolean);
+        }
+      }
+      const badgeDocs = await Badge.find({ _id: { $in: parsedBadges } });
+      const badgeSlugs = badgeDocs.map(b => b.slug);
+      payload.badges = parsedBadges;
+      payload.featured = badgeSlugs.includes('featured');
+      payload.bestSeller = badgeSlugs.includes('bestseller');
+      payload.newArrival = badgeSlugs.includes('newarrival');
+      payload.trending = badgeSlugs.includes('trending');
+    }
+
+    // Resolve variants updates
+    let parsedVariants = productData.variants;
+    if (typeof parsedVariants === 'string') {
+      try {
+        parsedVariants = JSON.parse(parsedVariants);
+      } catch (e) {
+        parsedVariants = undefined;
+      }
+    }
+    if (Array.isArray(parsedVariants)) {
+      const existingVariants = await Variant.find({ product: id });
+      const updatedVariantIds = [];
+      for (const v of parsedVariants) {
+        if (!v || (typeof v !== 'object' && typeof v !== 'string')) continue;
+
+        const variantId = typeof v === 'object' ? v._id : null;
+        const variantName = typeof v === 'object' ? v.name : v;
+        const variantSku = typeof v === 'object' ? (v.sku || '') : '';
+        const variantPrice = typeof v === 'object' ? (Number(v.price) || payload.price || product.price || 0) : (payload.price || product.price || 0);
+        const variantStock = typeof v === 'object' ? (Number(v.stock) || 0) : 0;
+
+        if (variantId && mongoose.Types.ObjectId.isValid(variantId)) {
+          // Update existing variant
+          await Variant.findByIdAndUpdate(variantId, {
+            name: variantName,
+            sku: variantSku,
+            price: variantPrice,
+            stock: variantStock
+          });
+          updatedVariantIds.push(variantId);
+        } else {
+          // Create new variant
+          const newVar = await Variant.create({
+            product: id,
+            name: variantName,
+            sku: variantSku,
+            price: variantPrice,
+            stock: variantStock
+          });
+          updatedVariantIds.push(newVar._id);
+        }
+      }
+      const removedVariantIds = existingVariants
+        .map(ev => ev._id.toString())
+        .filter(evId => !updatedVariantIds.map(vid => vid.toString()).includes(evId));
+      await Variant.deleteMany({ _id: { $in: removedVariantIds } });
+      payload.variants = updatedVariantIds;
+    }
+
     if (productData.price !== undefined) payload.price = Number(productData.price);
     if (productData.comparePrice !== undefined) payload.comparePrice = Number(productData.comparePrice);
     if (productData.stock !== undefined) payload.stock = Number(productData.stock);
-    if (productData.featured !== undefined) payload.featured = productData.featured === true || productData.featured === 'true';
-    if (productData.bestSeller !== undefined) payload.bestSeller = productData.bestSeller === true || productData.bestSeller === 'true';
-    if (productData.newArrival !== undefined) payload.newArrival = productData.newArrival === true || productData.newArrival === 'true';
-    if (productData.trending !== undefined) payload.trending = productData.trending === true || productData.trending === 'true';
 
-    if (productData.title && productData.title.trim() !== product.title) {
-      payload.title = productData.title.trim();
-      payload.slug = getSlug(payload.title);
-      const existing = await productRepository.findBySlug(payload.slug);
-      if (existing && existing._id.toString() !== id) {
-        throw new Error('Product title already exists (slug conflict)');
+    // Resolve title / productName / slug updates
+    if (productData.slug) {
+      payload.slug = getSlug(productData.slug);
+      const existing = await Product.findOne({ slug: payload.slug, _id: { $ne: id } });
+      if (existing) {
+        throw new Error('Product slug already exists (conflict)');
       }
+    } else if (productData.title && productData.title.trim() !== product.title) {
+      payload.title = productData.title.trim();
+      payload.productName = payload.title;
+      payload.slug = getSlug(payload.title);
+      const existing = await Product.findOne({ slug: payload.slug, _id: { $ne: id } });
+      if (existing) {
+        throw new Error('Product slug already exists (conflict)');
+      }
+    } else if (productData.title) {
+      payload.title = productData.title.trim();
+      payload.productName = payload.title;
     }
 
-    return await productRepository.update(id, payload);
+    const updated = await productRepository.update(id, payload);
+    console.log("Successfully saved product in DB:", updated);
+    console.log("--- UPDATE PRODUCT DEBUG END ---");
+    return updated;
   }
 
   async deleteProduct(id) {
@@ -338,6 +510,9 @@ class ProductService {
     for (const img of product.images || []) {
       await uploadService.deleteImage(img.public_id);
     }
+
+    // Delete associated variants
+    await Variant.deleteMany({ product: id });
 
     // Absolute hard delete of record from Mongo
     return await Product.findByIdAndDelete(id);
@@ -382,6 +557,10 @@ class ProductService {
         await uploadService.deleteImage(img.public_id);
       }
     }
+
+    // Delete associated variants
+    await Variant.deleteMany({ product: { $in: ids } });
+
     return await Product.deleteMany({ _id: { $in: ids } });
   }
 

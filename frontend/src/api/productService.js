@@ -59,4 +59,24 @@ export const productService = {
    */
   delete: (id) =>
     api.delete(ENDPOINTS.PRODUCT_BY_ID(id), { auth: true }),
+
+  /**
+   * Check if product name already exists (admin only).
+   * @param {string} title
+   * @param {string} [excludeId]
+   * @returns {Promise<{ success, data, message }>}
+   */
+  checkName: (title, excludeId) => {
+    const params = { title };
+    if (excludeId) params.excludeId = excludeId;
+    const queryString = new URLSearchParams(params).toString();
+    return api.get(`${ENDPOINTS.PRODUCTS}/check-name?${queryString}`);
+  },
+
+  /**
+   * Get all available product statuses.
+   * @returns {Promise<{ success, data, message }>}
+   */
+  getStatuses: () =>
+    api.get(`${ENDPOINTS.PRODUCTS}/statuses`),
 };

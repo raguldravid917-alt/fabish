@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useContext } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Search, Heart, Eye } from 'lucide-react';
 import { api } from '../api/client';
+import { productService } from '../api/productService';
 import Loader from '../components/ui/Loader';
 import { getLocalImageUrl } from '../utils/imageMapper';
 import { WishlistContext } from '../context/WishlistContext'; // Ensure this path matches your folder structure
@@ -74,14 +75,18 @@ const Blog = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await api.get('/products?limit=8');
-        if (response.success) {
-          const fetchedData = Array.isArray(response.data) ? response.data : (response.data?.products || response.data?.data || []);
-          setProducts(fetchedData);
-          setNewArrivals(fetchedData);
+        const response = await productService.getAll({ newArrival: true, limit: 8 });
+        if (response.success && response.data) {
+          setProducts(response.data);
+          setNewArrivals(response.data);
+        } else {
+          setProducts([]);
+          setNewArrivals([]);
         }
       } catch (err) {
         console.error('Error fetching recommended products:', err);
+        setProducts([]);
+        setNewArrivals([]);
       }
     };
     fetchProducts();
@@ -395,11 +400,11 @@ const Blog = () => {
               </div>
 
               {/* New Arrivals - Integrated with Global Context */}
-              {Array.isArray(newArrivals) && newArrivals.length > 0 && (
-                <div>
-                  <h3 className="text-[24px] font-heading font-semibold text-[#111] mb-8">
-                    New Arrivals
-                  </h3>
+              <div className="text-left mt-8">
+                <h3 className="text-[24px] font-heading font-semibold text-[#111] mb-8">
+                  New Arrivals
+                </h3>
+                {Array.isArray(newArrivals) && newArrivals.length > 0 ? (
                   <div className="flex flex-col items-center text-center">
                     <div className="w-full aspect-square bg-[#f0f2eb] mb-6 relative flex items-center justify-center group cursor-pointer overflow-hidden">
                       <img
@@ -427,7 +432,14 @@ const Blog = () => {
                               }`}
                           />
                         </button>
-                        <button className="w-[34px] h-[34px] bg-white rounded-full flex items-center justify-center shadow-sm hover:bg-black hover:text-white transition-colors text-[#111] border-none cursor-pointer">
+                        <button 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            navigate(`/products/${currentArrival?.slug || '#'}`);
+                          }}
+                          className="w-[34px] h-[34px] bg-white rounded-full flex items-center justify-center shadow-sm hover:bg-black hover:text-white transition-colors text-[#111] border-none cursor-pointer"
+                        >
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
                         </button>
                       </div>
@@ -439,7 +451,7 @@ const Blog = () => {
                       </h4>
                     </Link>
 
-                    <span className="text-[13px] text-[#555] font-body mb-6">
+                    <span className="text-[13px] text-[#555] font-body mb-6 block">
                       Rs. {Number(currentArrival?.price || 0).toLocaleString('en-IN')}.00 INR
                     </span>
 
@@ -458,8 +470,12 @@ const Blog = () => {
                       </button>
                     </div>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="text-center py-6 text-xs text-gray-400 italic">
+                    No products available
+                  </div>
+                )}
+              </div>
 
               {/* Tags Section */}
               <div>

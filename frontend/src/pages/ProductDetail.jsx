@@ -27,7 +27,8 @@ const ProductDetail = () => {
   // Gallery and Detail options
   const [mainImage, setMainImage] = useState('');
   const [quantity, setQuantity] = useState(1);
-  const [selectedSize, setSelectedSize] = useState('50 ml');
+  const [selectedVariant, setSelectedVariant] = useState(null);
+  const [selectedSize, setSelectedSize] = useState('');
 
   // Magnifier zoom states
   const [zoomStyle, setZoomStyle] = useState({ transformOrigin: 'center' });
@@ -56,8 +57,16 @@ const ProductDetail = () => {
         }
         const pData = pRes.data;
         setProduct(pData);
-        setMainImage(pData.images?.[0] || 'https://via.placeholder.com/500x625');
+        setMainImage(pData.images?.[0]?.secure_url || pData.images?.[0] || 'https://via.placeholder.com/500x625');
         setQuantity(1);
+
+        if (pData.variants && pData.variants.length > 0) {
+          setSelectedVariant(pData.variants[0]);
+          setSelectedSize(pData.variants[0].name);
+        } else {
+          setSelectedVariant(null);
+          setSelectedSize('');
+        }
 
         const rRes = await reviewService.getByProduct(pData._id);
         if (rRes.success) {
@@ -137,8 +146,17 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = () => {
-    addToCart(product, quantity);
-    showToast(`${quantity}x ${product.title} added to cart`, 'success');
+    const productWithVariant = selectedVariant && typeof selectedVariant === 'object'
+      ? { 
+          ...product, 
+          price: selectedVariant.price, 
+          stock: selectedVariant.stock, 
+          selectedSize: selectedSize || selectedVariant.name, 
+          sku: selectedVariant.sku || product.sku 
+        }
+      : product;
+    addToCart(productWithVariant, quantity);
+    showToast(`${quantity}x ${product.title} (${selectedSize || 'Default'}) added to cart`, 'success');
   };
 
   if (loading) {
@@ -161,7 +179,7 @@ const ProductDetail = () => {
   const isSoldOut = product.stock === 0;
 
   return (
-    <div className="bg-[#ffffff] pt-[50px] pb-[80px] min-h-screen font-body select-none">
+    <div className="bg-[#ffffff] pt-[50px] pb-[140px] md:pb-[80px] min-h-screen font-body select-none">
       <div className="max-w-[1280px] mx-auto px-6 md:px-12">
         
         {/* Breadcrumbs */}
@@ -244,67 +262,78 @@ const ProductDetail = () => {
 
             {/* Price */}
             <div className="font-sans text-lg text-black mt-2 mb-6 border-b border-[#eae8d8] pb-6 flex items-baseline gap-3">
-              {product.comparePrice > product.price && (
+              {product.comparePrice > (selectedVariant && typeof selectedVariant === 'object' ? selectedVariant.price : product.price) && (
                 <span className="text-gray-400 line-through text-base">
                   Rs. {product.comparePrice.toLocaleString('en-IN')}.00
                 </span>
               )}
               <span className="font-semibold text-xl">
-                Rs. {product.price.toLocaleString('en-IN')}.00 INR
+                Rs. {(selectedVariant && typeof selectedVariant === 'object' ? selectedVariant.price : product.price).toLocaleString('en-IN')}.00 INR
               </span>
             </div>
 
             {/* Short Description */}
-            <p className="font-body text-base leading-relaxed text-[#333] mb-6">
-              {product.description}
-            </p>
+            <div 
+              className="font-body text-base leading-relaxed text-[#333] mb-6 prose max-w-none"
+              dangerouslySetInnerHTML={{ __html: product.description }}
+            />
 
             {/* Variant Selector */}
-            <div className="space-y-6 mb-8 select-none border-t border-[#eae8d8] pt-6">
-              <div>
-                <h4 className="font-heading text-xs font-bold uppercase tracking-wider text-black mb-3">
-                  Volume Options
-                </h4>
-                <div className="flex gap-3 text-xs font-heading font-bold uppercase tracking-wider">
-                  {['50 ml', '100 ml'].map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={`px-5 py-3 font-body text-sm cursor-pointer border transition-all ${
-                        selectedSize === size 
-                          ? 'border-black bg-black text-white' 
-                          : 'border-[#eae8d8] bg-[#fcfcfa] text-black hover:border-black'
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
+            {product.variants && product.variants.length > 0 && (
+              <div className="space-y-6 mb-8 select-none border-t border-[#eae8d8] pt-6">
+                <div>
+                  <h4 className="font-heading text-xs font-bold uppercase tracking-wider text-black mb-3">
+                    Volume Options
+                  </h4>
+                  <div className="flex gap-3 text-xs font-heading font-bold uppercase tracking-wider flex-wrap">
+                    {product.variants.map((v) => {
+                      const name = typeof v === 'object' ? v.name : v;
+                      return (
+                        <button
+                          key={typeof v === 'object' ? v._id : v}
+                          type="button"
+                          onClick={() => {
+                            setSelectedVariant(v);
+                            setSelectedSize(name);
+                          }}
+                          className={`px-5 py-3 font-body text-sm cursor-pointer border transition-all ${
+                            selectedSize === name 
+                              ? 'border-black bg-black text-white font-bold' 
+                              : 'border-[#eae8d8] bg-[#fcfcfa] text-black hover:border-black'
+                          }`}
+                        >
+                          {name}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
+            )}
 
-              {/* Quantity Selector & Actions Wrapper */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mt-6">
-                {!isSoldOut && (
-                  <div className="flex items-center border border-[#eae8d8] h-11 select-none bg-[#fcfcfa] w-full sm:w-32 justify-between flex-shrink-0">
-                    <button 
-                      type="button"
-                      onClick={() => setQuantity(q => Math.max(1, q - 1))} 
-                      className="w-10 h-full flex items-center justify-center font-semibold text-lg border-none bg-transparent cursor-pointer hover:bg-gray-100"
-                    >
-                      -
-                    </button>
-                    <span className="font-sans text-sm font-semibold">
-                      {quantity}
-                    </span>
-                    <button 
-                      type="button"
-                      onClick={() => setQuantity(q => Math.min(product.stock, q + 1))} 
-                      className="w-10 h-full flex items-center justify-center font-semibold text-lg border-none bg-transparent cursor-pointer hover:bg-gray-100"
-                    >
-                      +
-                    </button>
-                  </div>
-                )}
+            {/* Quantity Selector & Actions Wrapper */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mt-6">
+              {!isSoldOut && (
+                <div className="flex items-center border border-[#eae8d8] h-11 select-none bg-[#fcfcfa] w-full sm:w-32 justify-between flex-shrink-0">
+                  <button 
+                    type="button"
+                    onClick={() => setQuantity(q => Math.max(1, q - 1))} 
+                    className="w-10 h-full flex items-center justify-center font-semibold text-lg border-none bg-transparent cursor-pointer hover:bg-gray-100"
+                  >
+                    -
+                  </button>
+                  <span className="font-sans text-sm font-semibold">
+                    {quantity}
+                  </span>
+                  <button 
+                    type="button"
+                    onClick={() => setQuantity(q => Math.min(product.stock, q + 1))} 
+                    className="w-10 h-full flex items-center justify-center font-semibold text-lg border-none bg-transparent cursor-pointer hover:bg-gray-100"
+                  >
+                    +
+                  </button>
+                </div>
+              )}
 
                 {/* Add to Cart / Wishlist buttons */}
                 <div className="flex gap-3 flex-grow items-center">
@@ -337,7 +366,6 @@ const ProductDetail = () => {
                   </button>
                 </div>
               </div>
-            </div>
 
             {/* Shipping & Return info */}
             <div className="text-[13px] text-gray-500 mt-2 pb-6 border-b border-[#eae8d8] flex items-center gap-2">
@@ -376,7 +404,7 @@ const ProductDetail = () => {
 
               <div className="py-6 text-sm text-[#444] leading-relaxed">
                 {activeTab === 'description' && (
-                  <p>{product.description}</p>
+                  <div dangerouslySetInnerHTML={{ __html: product.description }} />
                 )}
                 {activeTab === 'specifications' && (
                   <div className="space-y-2.5">
@@ -505,7 +533,7 @@ const ProductDetail = () => {
               <span className="text-xs font-heading font-bold tracking-widest text-[#729855] uppercase block">Recommended Products</span>
               <h2 className="serif-title text-2xl text-black uppercase">Related Collection Items</h2>
             </div>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 min-[360px]:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {relatedProducts.map((p) => (
                 <ProductCard key={p._id} product={p} />
               ))}

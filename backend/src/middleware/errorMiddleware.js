@@ -22,6 +22,12 @@ const errorHandler = (err, req, res, next) => {
   let errors = err.errors || null;
   let message = err.message || 'Internal Server Error';
 
+  // Log the error for diagnostic tracking
+  console.error(`[ERROR LOG] Name: ${err.name} | Status: ${statusCode} | Msg: ${message}`);
+  if (err.stack && process.env.NODE_ENV !== 'production') {
+    console.error(err.stack);
+  }
+
   // Format Mongoose validation errors to return key-value pairs of field: error_message
   if (err.name === 'ValidationError') {
     statusCode = HTTP_STATUS.BAD_REQUEST;
@@ -30,6 +36,14 @@ const errorHandler = (err, req, res, next) => {
     for (const key in err.errors) {
       errors[key] = err.errors[key].message;
     }
+  } else if (err.name === 'CastError') {
+    statusCode = HTTP_STATUS.BAD_REQUEST;
+    message = `Cast failed: Invalid format for value '${err.value}' at field path '${err.path}'`;
+    errors = {
+      [err.path]: message
+    };
+  } else if (err.message && (err.message.includes('duplicate') || err.message.includes('exists') || err.message.includes('conflict'))) {
+    statusCode = HTTP_STATUS.BAD_REQUEST;
   }
 
   res.status(statusCode).json({

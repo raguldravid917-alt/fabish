@@ -130,6 +130,8 @@ if (process.env.NODE_ENV === 'production') {
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // 9. API route mappings
+app.use('/api/badges', require('./src/routes/badgeRoutes'));
+app.get('/api/product/:id', require('./src/controllers/productController').getProductById);
 app.use('/api/profile', profileRoutes);
 app.use('/api/auth/profile', profileRoutes);
 app.use('/api/auth', authRoutes);

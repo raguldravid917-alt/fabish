@@ -19,6 +19,11 @@ import { useCart } from '../hooks/useCart';
 import { useWishlist } from '../hooks/useWishlist';
 import { slugify } from '../utils/slugify';
 
+const stripHtml = (html) => {
+  if (!html) return '';
+  return html.replace(/<[^>]*>/g, '');
+};
+
 const HERO_SLIDES = [
   {
     tag: 'HEALTHY SKIN',
@@ -196,9 +201,16 @@ const Home = () => {
               <div className="absolute inset-0 z-10 w-full h-full flex items-end pb-12 lg:items-center lg:pb-0">
                 <div className="w-full max-w-[1280px] mx-auto px-[24px] md:px-[64px] lg:px-[100px] flex">
                   {/* Narrow text containers to allow model's face to be clear on mobile viewports */}
-                  <div className={`w-[85%] sm:w-[70%] md:w-[60%] lg:w-1/2 flex flex-col justify-end lg:justify-center text-left ${slide.position === 'right' ? 'ml-auto' : 'mr-auto'}`}>
+                  <div
+                    className={`w-[90%] sm:w-[80%] md:w-[70%] lg:w-[65%] xl:w-[60%] flex flex-col justify-end lg:justify-center text-left ${slide.position === 'right' ? 'ml-auto' : 'mr-auto'
+                      }`}
+                  >
                     <span className="block font-body font-normal text-[12px] uppercase text-[#000] mb-[12px]" style={{ letterSpacing: '0.4em' }}>{slide.tag}</span>
-                    <h1 className="font-serif text-[32px] md:text-[48px] lg:text-[52px] font-semibold leading-[1.1] text-[#000] mb-[16px]">{slide.heading}</h1>
+                    <h1
+                      className="font-serif text-[32px] md:text-[42px] lg:text-[48px] xl:text-[52px] font-semibold leading-tight text-[#000] mb-4 lg:whitespace-nowrap"
+                    >
+                      {slide.heading}
+                    </h1>
                     <p className="font-body text-[16px] leading-[1.8] text-[#333333] mb-[24px] max-w-[440px]">{slide.body}</p>
                     <div>
                       <Link to={slide.ctaTo} className="inline-flex items-center justify-center bg-[#2f3e10] hover:bg-[#1f2a0a] text-white font-body font-bold text-[12px] tracking-[0.18em] uppercase transition-colors duration-200" style={{ width: '142px', height: '48px', textDecoration: 'none' }}>
@@ -732,7 +744,7 @@ const Home = () => {
                 <span className="text-xl font-semibold text-brand-charcoal">Rs. {quickViewProduct.price.toLocaleString('en-IN')}.00 INR</span>
                 {quickViewProduct.comparePrice > quickViewProduct.price && <span className="text-sm line-through text-brand-muted">Rs. {quickViewProduct.comparePrice.toLocaleString('en-IN')}.00 INR</span>}
               </div>
-              <p className="text-sm text-brand-muted leading-relaxed mb-6 line-clamp-3 md:line-clamp-4">{quickViewProduct.description}</p>
+              <p className="text-sm text-brand-muted leading-relaxed mb-6 line-clamp-3 md:line-clamp-4">{stripHtml(quickViewProduct.description)}</p>
               {quickViewProduct.stock > 0 ? (
                 <div className="space-y-4">
                   <div className="flex flex-wrap items-center gap-4">

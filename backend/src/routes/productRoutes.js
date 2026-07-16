@@ -8,7 +8,10 @@ const { ROLES } = require('../constants');
 
 // Public routes
 router.get('/', productController.getProducts);
+router.get('/statuses', productController.getStatuses);
+router.get('/check-name', productController.checkName);
 router.get('/slug/:slug', productController.getProductBySlug);
+router.post('/upload', upload.single('image'), productController.uploadImage);
 router.get('/:id', productController.getProductById);
 
 // Protected admin routes

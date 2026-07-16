@@ -7,6 +7,7 @@ import { WishlistContext } from '../context/WishlistContext';
 import { useToast } from '../context/ToastContext';
 import { getLocalImageUrl } from '../utils/imageMapper';
 import { api } from '../api/client'; // Added API import for fetching real products
+import { productService } from '../api/productService';
 
 const NavLink = ({ to, label, active }) => (
   <Link
@@ -49,24 +50,15 @@ const Header = () => {
   useEffect(() => {
     const fetchBestSellers = async () => {
       try {
-        const response = await api.get('/products');
-        if (response.success) {
-          const allProducts = Array.isArray(response.data) ? response.data : (response.data?.products || response.data?.data || []);
-
-          if (allProducts.length > 0) {
-            // Admin panel-la 'Best Seller' tick panna products-a mattum filter panrom
-            const actualBestSellers = allProducts.filter(p => p.isBestSeller === true || p.bestSeller === true);
-
-            // Best seller products irundha adhai display pannum, illana normal products-a kaatum
-            if (actualBestSellers.length > 0) {
-              setBestSellers(actualBestSellers.slice(0, 2));
-            } else {
-              setBestSellers(allProducts.slice(0, 2));
-            }
-          }
+        const response = await productService.getAll({ bestSeller: true, limit: 2 });
+        if (response.success && response.data) {
+          setBestSellers(response.data.slice(0, 2));
+        } else {
+          setBestSellers([]);
         }
       } catch (err) {
         console.error('Failed to fetch best sellers', err);
+        setBestSellers([]);
       }
     };
     fetchBestSellers();

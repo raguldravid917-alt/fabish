@@ -193,69 +193,41 @@ const ProductListing = () => {
     let isMounted = true;
 
     const fetchSideData = async () => {
-      // 1. Fetch Best Sellers with automated fallback logic
+      // 1. Fetch Best Sellers
       try {
-        const bsRes = await fetchWithRetry(() => productService.getAll({ bestSeller: true, limit: 10 }), {
-          label: 'best sellers list fetch',
-        });
-
-        if (isMounted && bsRes?.success && bsRes.data?.length > 0) {
-          setBestSellers(bsRes.data);
-          setBestSeller(bsRes.data[0]);
-        } else if (isMounted) {
-          // Smart fallback: fetch top 5 generic products if no 'bestSeller: true' flag exists
-          const fallbackBs = await productService.getAll({ limit: 5 });
-          if (fallbackBs?.success && fallbackBs.data?.length > 0) {
-            setBestSellers(fallbackBs.data);
-            setBestSeller(fallbackBs.data[0]);
+        const bsRes = await productService.getAll({ bestSeller: true, limit: 5 });
+        if (isMounted) {
+          if (bsRes?.success && bsRes.data?.length > 0) {
+            setBestSellers(bsRes.data);
+            setBestSeller(bsRes.data[0]);
+          } else {
+            setBestSellers([]);
+            setBestSeller(null);
           }
         }
       } catch (err) {
-        console.error('[ProductListing] Error fetching best sellers, trying fallback:', err);
-        try {
-          const fallbackBs = await productService.getAll({ limit: 5 });
-          if (isMounted && fallbackBs?.success && fallbackBs.data?.length > 0) {
-            setBestSellers(fallbackBs.data);
-            setBestSeller(fallbackBs.data[0]);
-          }
-        } catch (fbErr) {
-          console.error('[ProductListing] Best seller fallback fetch failed:', fbErr);
+        console.error('[ProductListing] Error fetching best sellers:', err);
+        if (isMounted) {
+          setBestSellers([]);
+          setBestSeller(null);
         }
       }
 
       // 2. Fetch New Arrivals
       try {
-        const naRes = await fetchWithRetry(
-          () => productService.getAll({ newArrival: true, limit: MIN_NEW_ARRIVALS }),
-          { label: 'new arrivals fetch' }
-        );
-
-        if (!isMounted) return;
-
-        let arrivals = naRes?.success ? naRes.data || [] : [];
-
-        if (arrivals.length < MIN_NEW_ARRIVALS) {
-          const excludeIds = new Set(arrivals.map((p) => p._id));
-          try {
-            const fallbackRes = await fetchWithRetry(
-              () => productService.getAll({ sort: 'newest', limit: MIN_NEW_ARRIVALS + excludeIds.size }),
-              { label: 'new arrivals fallback fetch' }
-            );
-
-            if (fallbackRes?.success) {
-              const fillers = (fallbackRes.data || []).filter((p) => !excludeIds.has(p._id));
-              arrivals = [...arrivals, ...fillers].slice(0, MIN_NEW_ARRIVALS);
-            }
-          } catch (fallbackErr) {
-            // Non-fatal
-          }
-        }
-
+        const naRes = await productService.getAll({ newArrival: true, limit: MIN_NEW_ARRIVALS });
         if (isMounted) {
-          setNewArrivals(arrivals);
+          if (naRes?.success && naRes.data?.length > 0) {
+            setNewArrivals(naRes.data);
+          } else {
+            setNewArrivals([]);
+          }
         }
       } catch (err) {
         console.error('[ProductListing] Error fetching new arrivals:', err);
+        if (isMounted) {
+          setNewArrivals([]);
+        }
       }
     };
 
@@ -548,11 +520,11 @@ const ProductListing = () => {
             </div>
 
             {/* Best Seller Section - Styled exactly like the Xerox reference image layout */}
-            {currentBestSeller && (
-              <div className="border-b border-[#eae8d8] pb-8 mb-6 pt-4">
-                <h3 className="text-[22px] font-heading font-semibold text-[#111] mb-6">
-                  Best Seller
-                </h3>
+            <div className="border-b border-[#eae8d8] pb-8 mb-6 pt-4 text-left">
+              <h3 className="text-[22px] font-heading font-semibold text-[#111] mb-6">
+                Best Seller
+              </h3>
+              {currentBestSeller ? (
                 <div
                   onClick={() => {
                     navigate(`/products/${currentBestSeller?.slug}`);
@@ -620,36 +592,40 @@ const ProductListing = () => {
                   <p className="text-[14px] text-[#555] font-body text-center">
                     Rs. {(currentBestSeller?.price ?? 0).toLocaleString('en-IN')}.00 INR
                   </p>
-                </div>
 
-                {/* Navigation pagination controls below the best seller metadata */}
-                <div className="flex items-center justify-center gap-6 mt-4 text-black">
-                  <button
-                    type="button"
-                    onClick={handlePrevBestSeller}
-                    className="bg-transparent border-none cursor-pointer px-3 py-1 text-lg font-bold hover:text-[#729855] transition-colors"
-                    aria-label="Previous Best Seller"
-                  >
-                    ←
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleNextBestSeller}
-                    className="bg-transparent border-none cursor-pointer px-3 py-1 text-lg font-bold hover:text-[#729855] transition-colors"
-                    aria-label="Next Best Seller"
-                  >
-                    →
-                  </button>
+                  {/* Navigation pagination controls below the best seller metadata */}
+                  <div className="flex items-center justify-center gap-6 mt-4 text-black font-semibold">
+                    <button
+                      type="button"
+                      onClick={handlePrevBestSeller}
+                      className="bg-transparent border-none cursor-pointer px-3 py-1 text-lg font-bold hover:text-[#729855] transition-colors"
+                      aria-label="Previous Best Seller"
+                    >
+                      ←
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleNextBestSeller}
+                      className="bg-transparent border-none cursor-pointer px-3 py-1 text-lg font-bold hover:text-[#729855] transition-colors"
+                      aria-label="Next Best Seller"
+                    >
+                      →
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="text-center py-6 text-xs text-gray-400 italic">
+                  No products available
+                </div>
+              )}
+            </div>
 
             {/* New Arrivals */}
-            {newArrivals.length > 0 && (
-              <div className="pt-4">
-                <h3 className="text-[22px] font-heading font-semibold text-[#111] mb-6">
-                  New Arrivals
-                </h3>
+            <div className="pt-4 text-left">
+              <h3 className="text-[22px] font-heading font-semibold text-[#111] mb-6">
+                New Arrivals
+              </h3>
+              {newArrivals.length > 0 ? (
                 <div className="flex flex-col gap-6">
                   {newArrivals.slice(0, MIN_NEW_ARRIVALS).map((item) => (
                     <Link
@@ -676,8 +652,12 @@ const ProductListing = () => {
                     </Link>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="text-center py-6 text-xs text-gray-400 italic">
+                  No products available
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Star, Eye, ArrowLeftRight } from 'lucide-react';
+import { Heart, Eye } from 'lucide-react';
 import { CartContext } from '../context/CartContext';
 import { WishlistContext } from '../context/WishlistContext';
 import { getLocalImageUrl } from '../utils/imageMapper';
@@ -26,23 +26,36 @@ const ProductCard = ({ product, onQuickView }) => {
     : 0;
 
   return (
-    <div className="group relative bg-white border border-transparent rounded-none p-0 transition-all duration-300 flex flex-col h-full">
-      {/* Product Badges */}
-      <div className="absolute top-3 left-3 z-10 flex flex-col gap-2 pointer-events-none">
+    <div className="group relative bg-[#fcfcfa] border border-[#eae8d8] rounded-none p-3 transition-all duration-300 flex flex-col h-full hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] select-none">
+      {/* Product Badges (Top Left) */}
+      <div className="absolute top-4 left-4 z-10 flex flex-col gap-1.5 pointer-events-none">
         {isSoldOut && (
-          <span className="bg-black text-white text-[10px] font-heading font-bold uppercase tracking-widest px-2.5 py-1">
+          <span className="bg-black text-white text-[9px] font-heading font-bold uppercase tracking-widest px-2 py-0.5">
             Sold Out
           </span>
         )}
         {!isSoldOut && discount > 0 && (
-          <span className="bg-[#729855] text-white text-[10px] font-heading font-bold uppercase tracking-widest px-2.5 py-1">
-            {discount}%
+          <span className="bg-[#729855] text-white text-[9px] font-heading font-bold uppercase tracking-widest px-2 py-0.5">
+            {discount}% OFF
           </span>
         )}
       </div>
 
-      {/* Image Gallery Container */}
-      <div className="relative overflow-hidden aspect-[4/5] bg-[#f6f5ea] mb-[16px] select-none flex items-center justify-center">
+      {/* Wishlist Button (Top Right) */}
+      <button
+        onClick={() => toggleWishlist(product)}
+        className={`absolute top-4 right-4 z-10 w-9 h-9 rounded-full flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all duration-300 cursor-pointer border-none ${
+          isWishlisted 
+            ? 'bg-black text-white' 
+            : 'bg-white text-black hover:bg-[#729855] hover:text-white'
+        }`}
+        title="Add to Wishlist"
+      >
+        <Heart className="w-4 h-4" strokeWidth={1.5} fill={isWishlisted ? 'currentColor' : 'none'} />
+      </button>
+
+      {/* Image Gallery Container with fixed aspect ratio */}
+      <div className="relative overflow-hidden aspect-[4/5] bg-[#f6f5ea] mb-4 flex items-center justify-center">
         <Link to={`/products/${product.slug}`} className="block w-full h-full">
           <img
             src={mainImage}
@@ -56,85 +69,56 @@ const ProductCard = ({ product, onQuickView }) => {
           />
         </Link>
 
-        {/* Quick Action Overlay Icons */}
-        <div className="absolute top-[10px] right-[10px] w-11 lg:w-[36px] flex flex-col gap-[8px] opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300 z-10">
+        {/* Hover Quick View icon (Desktop only) */}
+        <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden lg:flex items-center justify-center gap-2 z-10">
           <button
             onClick={() => {
-              if (onQuickView) {
-                onQuickView(product);
-              } else {
-                window.location.href = `/products/${product.slug}`;
-              }
+              if (onQuickView) onQuickView(product);
+              else window.location.href = `/products/${product.slug}`;
             }}
-            className="w-11 h-11 lg:w-[36px] lg:h-[36px] rounded-full bg-white flex items-center justify-center text-black hover:bg-[#729855] hover:text-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 cursor-pointer border-none"
+            className="w-9 h-9 rounded-full bg-white text-black hover:bg-[#729855] hover:text-white flex items-center justify-center shadow-sm transition-all duration-300 cursor-pointer border-none"
             title="Quick View"
           >
-            <Eye className="w-[16px] h-[16px]" strokeWidth={1.5} />
-          </button>
-          <button
-            onClick={() => toggleWishlist(product)}
-            className={`w-11 h-11 lg:w-[36px] lg:h-[36px] rounded-full flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 cursor-pointer border-none ${
-              isWishlisted 
-                ? 'bg-black text-white hover:bg-[#729855] hover:text-white' 
-                : 'bg-white text-black hover:bg-[#729855] hover:text-white'
-            }`}
-            title="Add to Wishlist"
-          >
-            <Heart className="w-[16px] h-[16px]" strokeWidth={1.5} fill={isWishlisted ? 'currentColor' : 'none'} />
-          </button>
-          <button
-            onClick={() => {}}
-            className="w-11 h-11 lg:w-[36px] lg:h-[36px] rounded-full bg-white flex items-center justify-center text-black hover:bg-[#729855] hover:text-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-300 cursor-pointer border-none"
-            title="Compare"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-[16px] h-[16px]">
-              <path d="M3 7V5a2 2 0 0 1 2-2h2" />
-              <path d="M17 3h2a2 2 0 0 1 2 2v2" />
-              <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
-              <path d="M3 17v2a2 2 0 0 1 2 2h2" />
-              <circle cx="12" cy="12" r="3" />
-              <path d="M16 16v.01" strokeWidth="2.5" />
-            </svg>
+            <Eye className="w-4 h-4" strokeWidth={1.5} />
           </button>
         </div>
-
-        {/* Add to Cart overlay */}
-        {!isSoldOut ? (
-          <div className="absolute bottom-0 left-0 right-0 h-[48px] opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300 z-10">
-            <button
-              onClick={() => addToCart(product, 1)}
-              className="w-full h-full bg-[#2f3e10] hover:bg-[#729855] text-white text-center font-heading text-[12px] font-bold tracking-[3px] uppercase cursor-pointer border-none rounded-none transition-colors"
-            >
-              ADD CART
-            </button>
-          </div>
-        ) : (
-          <div className="absolute bottom-0 left-0 right-0 h-[48px] opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300 z-10">
-            <button
-              disabled
-              className="w-full h-full bg-[#5a5a5a] text-white text-center font-heading text-[12px] font-bold tracking-[3px] uppercase cursor-not-allowed border-none rounded-none"
-            >
-              SOLD OUT
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* Product Info */}
+      {/* Product Details Section */}
       <div className="flex flex-col flex-grow text-center">
-        <h3 className="font-heading font-medium text-[18px] leading-[24px] text-black hover:text-[#729855] text-center mb-[10px] h-[48px] overflow-hidden line-clamp-2 block transition-colors">
-          <Link to={`/products/${product.slug}`}>{product.title}</Link>
+        {/* Title */}
+        <h3 className="font-heading font-medium text-xs sm:text-sm leading-tight text-black hover:text-[#729855] mb-2 line-clamp-2 min-h-[32px] sm:min-h-[40px] overflow-hidden transition-colors">
+          <Link to={`/products/${product.slug}`} className="block">{product.title}</Link>
         </h3>
         
         {/* Prices */}
-        <div className="flex flex-row items-center justify-center gap-2 mt-auto font-body whitespace-nowrap">
-          <span className="text-[16px] font-medium text-black">
-            Rs. {product.price.toLocaleString('en-IN')}.00 INR
+        <div className="flex flex-col min-[380px]:flex-row items-center justify-center gap-1 sm:gap-2 mb-3 mt-auto font-body text-center">
+          <span className="text-xs sm:text-sm font-bold text-black whitespace-nowrap">
+            Rs. {product.price.toLocaleString('en-IN')}.00
           </span>
           {product.comparePrice > product.price && (
-            <span className="text-[14px] line-through text-gray-400">
-              Rs. {product.comparePrice.toLocaleString('en-IN')}.00 INR
+            <span className="text-[10px] sm:text-xs line-through text-gray-400 whitespace-nowrap">
+              Rs. {product.comparePrice.toLocaleString('en-IN')}.00
             </span>
+          )}
+        </div>
+
+        {/* Add to Cart Button */}
+        <div className="mt-auto">
+          {!isSoldOut ? (
+            <button
+              onClick={() => addToCart(product, 1)}
+              className="w-full py-2.5 sm:py-3 bg-[#2f3e10] hover:bg-[#729855] text-white text-center font-heading text-[10px] sm:text-xs font-bold tracking-widest uppercase cursor-pointer border-none rounded-none transition-colors min-h-[40px] flex items-center justify-center"
+            >
+              ADD TO CART
+            </button>
+          ) : (
+            <button
+              disabled
+              className="w-full py-2.5 sm:py-3 bg-gray-400 text-white text-center font-heading text-[10px] sm:text-xs font-bold tracking-widest uppercase cursor-not-allowed border-none rounded-none min-h-[40px] flex items-center justify-center"
+            >
+              SOLD OUT
+            </button>
           )}
         </div>
       </div>

@@ -5,7 +5,7 @@ const sanitizeString = (str) => {
   if (typeof str !== 'string') return str;
   return str
     .replace(/<[^>]*>/g, '') // Strip HTML tags
-    .replace(/\$|\./g, '');   // Strip NoSQL injection chars if needed
+    .replace(/\$/g, '');     // Strip NoSQL operator prefix $ if needed
 };
 
 const sanitizeObject = (obj) => {
@@ -13,6 +13,7 @@ const sanitizeObject = (obj) => {
   
   for (const key in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      if (key === 'description') continue; // Don't strip HTML from rich text description
       if (typeof obj[key] === 'string') {
         obj[key] = sanitizeString(obj[key]);
       } else if (Array.isArray(obj[key])) {
@@ -26,6 +27,22 @@ const sanitizeObject = (obj) => {
 };
 
 // Joi schemas
+const variantValidationSchema = Joi.object({
+  _id: Joi.string().optional(),
+  name: Joi.string().required().messages({
+    'any.required': 'Variant name is required',
+  }),
+  sku: Joi.string().allow('').optional(),
+  price: Joi.number().min(0.01).required().messages({
+    'number.min': 'Variant price must be greater than zero',
+    'any.required': 'Variant price is required',
+  }),
+  stock: Joi.number().integer().min(0).required().messages({
+    'number.min': 'Variant stock cannot be negative',
+    'any.required': 'Variant stock is required',
+  }),
+});
+
 const productCreateSchema = Joi.object({
   title: Joi.string().min(3).required().messages({
     'string.min': 'Product title must be at least 3 characters',
@@ -45,7 +62,10 @@ const productCreateSchema = Joi.object({
   stock: Joi.number().integer().min(0).default(10).optional(),
   status: Joi.string().valid('Published', 'Draft', 'Hidden').default('Published').optional(),
   tags: Joi.any().optional(),
-  variants: Joi.any().optional(),
+  variants: Joi.array().items(variantValidationSchema).optional(),
+  badges: Joi.any().optional(),
+  slug: Joi.string().optional(),
+  productName: Joi.string().optional(),
   seoTitle: Joi.string().allow('').optional(),
   seoDescription: Joi.string().allow('').optional(),
   featured: Joi.boolean().default(false).optional(),
@@ -63,7 +83,10 @@ const productUpdateSchema = Joi.object({
   stock: Joi.number().integer().min(0).optional(),
   status: Joi.string().valid('Published', 'Draft', 'Hidden').optional(),
   tags: Joi.any().optional(),
-  variants: Joi.any().optional(),
+  variants: Joi.array().items(variantValidationSchema).optional(),
+  badges: Joi.any().optional(),
+  slug: Joi.string().optional(),
+  productName: Joi.string().optional(),
   seoTitle: Joi.string().allow('').optional(),
   seoDescription: Joi.string().allow('').optional(),
   images: Joi.any().optional(), // allow list of already-uploaded images in updates
@@ -95,11 +118,30 @@ const validate = (schema) => {
     // Sanitize request body inputs first
     req.body = sanitizeObject(req.body);
 
+    // Try parsing variants/tags/badges if they are sent as JSON strings via Multipart Form Data
+    if (req.body.variants && typeof req.body.variants === 'string') {
+      try {
+        req.body.variants = JSON.parse(req.body.variants);
+      } catch (e) {
+        // Leave as string to let Joi handle invalid type
+      }
+    }
+    if (req.body.tags && typeof req.body.tags === 'string') {
+      try {
+        req.body.tags = JSON.parse(req.body.tags);
+      } catch (e) {}
+    }
+    if (req.body.badges && typeof req.body.badges === 'string') {
+      try {
+        req.body.badges = JSON.parse(req.body.badges);
+      } catch (e) {}
+    }
+
     const { error, value } = schema.validate(req.body, { abortEarly: false, allowUnknown: true });
 
     if (error) {
       const errors = error.details.map((detail) => ({
-        field: detail.path[0],
+        field: detail.path.join('.'),
         message: detail.message.replace(/['"]/g, ''),
       }));
 

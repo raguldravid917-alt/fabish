@@ -16,6 +16,9 @@ export const ENDPOINTS = {
   // Categories
   CATEGORIES: '/categories',
 
+  // Badges
+  BADGES: '/badges',
+
   // Orders
   ORDERS: '/orders',
   ORDER_BY_ID: (id) => `/orders/${id}`,

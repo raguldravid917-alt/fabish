@@ -84,9 +84,18 @@ const productSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
-    variants: {
-      type: [String],
-      default: [],
+    variants: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Variant',
+    }],
+    badges: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Badge',
+    }],
+    productName: {
+      type: String,
+      trim: true,
+      index: true,
     },
     featured: {
       type: Boolean,
@@ -147,5 +156,14 @@ const productSchema = new mongoose.Schema(
 // Create compound and text indexes for search optimizations
 productSchema.index({ title: 'text', description: 'text', tags: 'text' });
 productSchema.index({ price: 1, ratings: -1 });
+
+
+// Pre-save middleware to sync productName with title
+productSchema.pre('save', function (next) {
+  if (this.title) {
+    this.productName = this.title;
+  }
+  next();
+});
 
 module.exports = mongoose.model('Product', productSchema);

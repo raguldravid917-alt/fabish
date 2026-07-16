@@ -1,7 +1,11 @@
-import React, { useState, useMemo, useCallback, useRef } from 'react';
-import { Edit, Trash2, Search, ArrowUpDown, ChevronLeft, ChevronRight, Upload, X, ShieldAlert, ArrowLeft, ArrowRight, Star, AlertCircle, Eye, EyeOff, Save, Check } from 'lucide-react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Edit, Trash2, Search, ArrowUpDown, ChevronLeft, ChevronRight, Upload, X, ShieldAlert, ArrowLeft, ArrowRight, Star, AlertCircle, Save, Check } from 'lucide-react';
 import Loader from '../../components/ui/Loader';
 import { productService } from '../../api/productService';
+import { categoryService } from '../../api/categoryService';
+import { badgeService } from '../../api/badgeService';
+import RichTextEditor from '../../components/ui/RichTextEditor';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import ErrorAlert from '../../components/ui/ErrorAlert';
 import { useToast } from '../../context/ToastContext';
@@ -15,32 +19,86 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
   const [view, setView] = useState('list'); // 'list' | 'form'
   const [editingProduct, setEditingProduct] = useState(null);
 
-  // Search, Filter & Pagination state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCat, setSelectedCat] = useState('all');
-  const [sortBy, setSortBy] = useState('titleAsc'); // titleAsc | titleDesc | priceAsc | priceDesc | stockLow
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  // Search, Filter & Pagination state synced with React Router URL Search Params
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const currentPage = Number(searchParams.get('page')) || 1;
+  const itemsPerPage = Number(searchParams.get('limit')) || 10;
+  const searchQuery = searchParams.get('search') || '';
+  const selectedCat = searchParams.get('category') || 'all';
+  const selectedStatus = searchParams.get('status') || 'all';
+  const sortBy = searchParams.get('sort') || 'titleAsc';
+
+  const updateParams = useCallback((newParams) => {
+    setSearchParams(prev => {
+      const updated = new URLSearchParams(prev);
+      Object.entries(newParams).forEach(([key, val]) => {
+        if (val === undefined || val === null || val === '') {
+          updated.delete(key);
+        } else {
+          updated.set(key, String(val));
+        }
+      });
+      return updated;
+    }, { replace: false }); // keep browser history stack clean and support back/forward
+  }, [setSearchParams]);
+
+  const handleSearchChange = (val) => {
+    updateParams({ search: val, page: 1 });
+  };
+
+  const handleCategoryChange = (val) => {
+    updateParams({ category: val, page: 1 });
+  };
+
+  const handleStatusChange = (val) => {
+    updateParams({ status: val, page: 1 });
+  };
+
+  const handleSortChange = (val) => {
+    updateParams({ sort: val, page: 1 });
+  };
+
+  const handlePageChange = (newPage) => {
+    updateParams({ page: newPage });
+  };
+
+  const handleLimitChange = (newLimit) => {
+    updateParams({ limit: newLimit, page: 1 });
+  };
+
+  // Smooth scroll container/page to the top after every page/filter/sort change
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  }, [currentPage, itemsPerPage, searchQuery, selectedCat, selectedStatus, sortBy]);
 
   // Bulk Actions
   const [selectedIds, setSelectedIds] = useState([]);
 
   // Form states
   const [title, setTitle] = useState('');
+  const [slug, setSlug] = useState('');
+  const [isSlugOverridden, setIsSlugOverridden] = useState(false);
   const [price, setPrice] = useState('');
   const [comparePrice, setComparePrice] = useState('');
   const [category, setCategory] = useState('');
   const [stock, setStock] = useState('10');
   const [description, setDescription] = useState('');
-  const [tags, setTags] = useState('');
+  const [tagInput, setTagInput] = useState('');
+  const [tagList, setTagList] = useState([]);
   const [status, setStatus] = useState('Published'); // Published | Draft | Hidden
   const [metaTitle, setMetaTitle] = useState('');
   const [metaDescription, setMetaDescription] = useState('');
-  const [variants, setVariants] = useState('');
-  const [featured, setFeatured] = useState(false);
-  const [bestSeller, setBestSeller] = useState(false);
-  const [newArrival, setNewArrival] = useState(false);
-  const [trending, setTrending] = useState(false);
+  const [variantsList, setVariantsList] = useState([]);
+  const [selectedBadges, setSelectedBadges] = useState([]);
+
+  // Form data fetched dynamically from API
+  const [availableCategories, setAvailableCategories] = useState(categories);
+  const [availableBadges, setAvailableBadges] = useState([]);
+  const [availableStatuses, setAvailableStatuses] = useState(['Published', 'Draft', 'Hidden']);
 
   // Media Manager state
   const [existingImages, setExistingImages] = useState([]); // Kept images { secure_url, public_id, ... }
@@ -50,55 +108,78 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+  const [validationErrors, setValidationErrors] = useState({});
+
   // Drag and drop dropzone ref
   const dropzoneRef = useRef(null);
+
+  // Fetch collections, statuses and badges dynamically on mount
+  useEffect(() => {
+    const fetchFormDropdowns = async () => {
+      try {
+        const [catRes, badgeRes, statusRes] = await Promise.all([
+          categoryService.getAll(),
+          badgeService.getAll(),
+          productService.getStatuses()
+        ]);
+        if (catRes.success) setAvailableCategories(catRes.data || []);
+        if (badgeRes.success) setAvailableBadges(badgeRes.data || []);
+        if (statusRes.success) setAvailableStatuses(statusRes.data || []);
+      } catch (err) {
+        console.error('Failed to load dynamic product creation parameters:', err);
+      }
+    };
+    fetchFormDropdowns();
+  }, []);
 
   const resetForm = () => {
     setEditingProduct(null);
     setTitle('');
+    setSlug('');
+    setIsSlugOverridden(false);
     setPrice('');
     setComparePrice('');
-    setCategory(categories[0]?._id || categories[0]?.slug || '');
+    setCategory(availableCategories[0]?._id || '');
     setStock('10');
     setDescription('');
-    setTags('');
+    setTagInput('');
+    setTagList([]);
     setStatus('Published');
     setMetaTitle('');
     setMetaDescription('');
-    setVariants('');
-    setFeatured(false);
-    setBestSeller(false);
-    setNewArrival(false);
-    setTrending(false);
+    setVariantsList([]);
+    setSelectedBadges([]);
     setExistingImages([]);
     setStagedFiles([]);
     setStagedPreviews([]);
     setMessage('');
     setError('');
+    setValidationErrors({});
   };
 
   const handleEditClick = (prod) => {
     setEditingProduct(prod);
     setTitle(prod.title);
+    setSlug(prod.slug || '');
+    setIsSlugOverridden(true);
     setPrice(prod.price);
     setComparePrice(prod.comparePrice || '');
-    // Category reference could be ObjectId or nested Category object
     setCategory(typeof prod.category === 'object' ? prod.category._id : prod.category);
     setStock(prod.stock);
     setDescription(prod.description);
-    setTags(prod.tags?.join(', ') || '');
+    setTagList(prod.tags || []);
+    setTagInput('');
     setStatus(prod.status || 'Published');
     setMetaTitle(prod.seoTitle || '');
     setMetaDescription(prod.seoDescription || '');
-    setVariants(prod.variants?.join(', ') || '');
-    setFeatured(prod.featured || false);
-    setBestSeller(prod.bestSeller || false);
-    setNewArrival(prod.newArrival || false);
-    setTrending(prod.trending || false);
+    setVariantsList(prod.variants?.map(v => ({ _id: v._id, name: v.name, sku: v.sku || '', price: v.price, stock: v.stock })) || []);
+    setSelectedBadges(prod.badges?.map(b => typeof b === 'object' ? b._id : b) || []);
     setExistingImages(prod.images || []);
     setStagedFiles([]);
     setStagedPreviews([]);
+    setMessage('');
+    setError('');
+    setValidationErrors({});
     setView('form');
   };
 
@@ -120,17 +201,18 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
   // High Fidelity Media Upload Handlers
   const processFiles = (files) => {
     files.forEach(file => {
-      if (!file.type.startsWith('image/')) {
-        showToast('Only image files are allowed', 'error');
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        showToast('Only image files (PNG, JPG, JPEG, WEBP) are allowed', 'error');
         return;
       }
 
       const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const url = URL.createObjectURL(file);
-      
+
       // Stage the raw file
       setStagedFiles(prev => [...prev, file]);
-      
+
       // Stage preview with simulated progress
       const newPreview = { id, file, url, progress: 0, status: 'uploading' };
       setStagedPreviews(prev => [...prev, newPreview]);
@@ -142,11 +224,11 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
         if (progress >= 100) {
           progress = 100;
           clearInterval(interval);
-          setStagedPreviews(prev => 
+          setStagedPreviews(prev =>
             prev.map(p => p.id === id ? { ...p, progress: 100, status: 'ready' } : p)
           );
         } else {
-          setStagedPreviews(prev => 
+          setStagedPreviews(prev =>
             prev.map(p => p.id === id ? { ...p, progress } : p)
           );
         }
@@ -264,40 +346,210 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
     showToast('Existing image marked as primary', 'success');
   };
 
-  const removeExistingImage = (publicId) => {
-    setExistingImages(prev => prev.filter(img => img.public_id !== publicId));
+  const removeExistingImage = (idxToRemove) => {
+    setExistingImages(prev => prev.filter((_, idx) => idx !== idxToRemove));
     showToast('Image scheduled for automatic purge on save', 'info');
   };
 
+  // Unsaved changes confirmation dialog
+  const hasUnsavedChanges = () => {
+    if (editingProduct) {
+      const originalTitle = editingProduct.title || '';
+      const originalPrice = String(editingProduct.price || '');
+      const originalComparePrice = String(editingProduct.comparePrice || '');
+      const originalCategory = typeof editingProduct.category === 'object' ? editingProduct.category._id : (editingProduct.category || '');
+      const originalStock = String(editingProduct.stock || '0');
+      const originalDescription = editingProduct.description || '';
+      const originalStatus = editingProduct.status || 'Published';
+      const originalMetaTitle = editingProduct.seoTitle || '';
+      const originalMetaDescription = editingProduct.seoDescription || '';
+
+      if (stagedFiles.length > 0) return true;
+      if (existingImages.length !== (editingProduct.images || []).length) return true;
+
+      // Tags comparison
+      const originalTags = editingProduct.tags || [];
+      if (tagList.length !== originalTags.length) return true;
+      for (let i = 0; i < tagList.length; i++) {
+        if (tagList[i] !== originalTags[i]) return true;
+      }
+
+      // Variants comparison
+      const originalVariants = editingProduct.variants || [];
+      if (variantsList.length !== originalVariants.length) return true;
+      for (let i = 0; i < variantsList.length; i++) {
+        const v = variantsList[i];
+        const orig = originalVariants[i] || {};
+        if (v.name !== orig.name || v.sku !== (orig.sku || '') || String(v.price) !== String(orig.price) || String(v.stock) !== String(orig.stock)) {
+          return true;
+        }
+      }
+
+      // Badges comparison
+      const originalBadges = (editingProduct.badges || []).map(b => typeof b === 'object' ? b._id : b);
+      if (selectedBadges.length !== originalBadges.length) return true;
+      for (const id of selectedBadges) {
+        if (!originalBadges.includes(id)) return true;
+      }
+
+      return (
+        title.trim() !== originalTitle.trim() ||
+        slug.trim() !== (editingProduct.slug || '').trim() ||
+        String(price) !== originalPrice ||
+        String(comparePrice) !== originalComparePrice ||
+        category !== originalCategory ||
+        String(stock) !== originalStock ||
+        description.trim() !== originalDescription.trim() ||
+        status !== originalStatus ||
+        metaTitle.trim() !== originalMetaTitle.trim() ||
+        metaDescription.trim() !== originalMetaDescription.trim()
+      );
+    } else {
+      return (
+        title.trim() !== '' ||
+        slug.trim() !== '' ||
+        price !== '' ||
+        comparePrice !== '' ||
+        category !== (availableCategories[0]?._id || '') ||
+        stock !== '10' ||
+        description.trim() !== '' ||
+        tagList.length > 0 ||
+        variantsList.length > 0 ||
+        selectedBadges.length > 0 ||
+        stagedFiles.length > 0
+      );
+    }
+  };
+
+  const handleCancelClick = () => {
+    if (hasUnsavedChanges()) {
+      const confirmDiscard = window.confirm('You have unsaved changes. Are you sure you want to discard them?');
+      if (!confirmDiscard) return;
+    }
+    resetForm();
+    setView('list');
+  };
+
+  // Controlled title & automatic slug generator
+  const handleTitleChange = (val) => {
+    setTitle(val);
+    if (!isSlugOverridden) {
+      setSlug(val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''));
+    }
+  };
+
+  // Tags chip handlers
+  const handleTagKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const cleanTag = tagInput.trim();
+      if (cleanTag && !tagList.includes(cleanTag)) {
+        setTagList(prev => [...prev, cleanTag]);
+        setTagInput('');
+      }
+    }
+  };
+
+  const handleRemoveTag = (idxToRemove) => {
+    setTagList(prev => prev.filter((_, idx) => idx !== idxToRemove));
+  };
+
+  // Variant CRUD handlers
+  const handleAddVariant = () => {
+    setVariantsList(prev => [...prev, { name: '', sku: '', price: price || '', stock: '10' }]);
+  };
+
+  const handleRemoveVariant = (idxToRemove) => {
+    setVariantsList(prev => prev.filter((_, idx) => idx !== idxToRemove));
+  };
+
+  const handleUpdateVariant = (index, field, val) => {
+    setVariantsList(prev => prev.map((v, idx) => idx === index ? { ...v, [field]: val } : v));
+  };
+
+  // Submit flow
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setMessage('');
     setLoading(true);
 
-    if (!title.trim() || !price || !category || !description.trim()) {
-      setError('Please fill out all required fields (Title, Price, Category, Description).');
+    // Form validation
+    const newErrors = {};
+    if (!title.trim()) {
+      newErrors.title = 'Product title is required';
+    } else if (title.trim().length < 3) {
+      newErrors.title = 'Product title must be at least 3 characters';
+    }
+
+    if (!category) {
+      newErrors.category = 'Category collection is required';
+    }
+
+    if (!price || Number(price) <= 0) {
+      newErrors.price = 'Price must be greater than zero';
+    }
+
+    if (comparePrice && Number(comparePrice) < Number(price)) {
+      newErrors.comparePrice = 'Compare price must be >= retail price';
+    }
+
+    if (stock === '' || Number(stock) < 0) {
+      newErrors.stock = 'Stock count must be 0 or more';
+    }
+
+    if (!description.trim() || description.trim() === '<p></p>' || description.trim() === '<br>') {
+      newErrors.description = 'Product description is required';
+    }
+
+    // Validate variants
+    variantsList.forEach((v, idx) => {
+      if (!v.name.trim()) {
+        newErrors[`variant_${idx}_name`] = 'Variant name is required';
+      }
+      if (!v.price || Number(v.price) <= 0) {
+        newErrors[`variant_${idx}_price`] = 'Price must be > 0';
+      }
+      if (v.stock === '' || Number(v.stock) < 0) {
+        newErrors[`variant_${idx}_stock`] = 'Stock cannot be negative';
+      }
+    });
+
+    if (Object.keys(newErrors).length > 0) {
+      setValidationErrors(newErrors);
+      setError('Please fix all form validation errors before saving.');
       setLoading(false);
       return;
+    }
+
+    // Check duplicate name on backend
+    try {
+      const checkRes = await productService.checkName(title.trim(), editingProduct?._id);
+      if (checkRes.success && checkRes.data?.isDuplicate) {
+        setValidationErrors(prev => ({ ...prev, title: 'Product title must be unique' }));
+        setError('A product with this title already exists. Please choose a unique name.');
+        setLoading(false);
+        return;
+      }
+    } catch (err) {
+      console.error('Error checking duplicate name:', err);
     }
 
     // Compile values into a FormData object
     const formData = new FormData();
     formData.append('title', title.trim());
+    formData.append('slug', slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''));
     formData.append('price', price);
     formData.append('comparePrice', comparePrice || '0');
     formData.append('category', category);
     formData.append('stock', stock || '0');
     formData.append('description', description.trim());
     formData.append('status', status);
-    formData.append('tags', tags);
-    formData.append('variants', variants);
+    formData.append('tags', JSON.stringify(tagList));
+    formData.append('variants', JSON.stringify(variantsList));
+    formData.append('badges', JSON.stringify(selectedBadges));
     formData.append('seoTitle', metaTitle || title.trim());
-    formData.append('seoDescription', metaDescription || description.trim().slice(0, 150));
-    formData.append('featured', featured);
-    formData.append('bestSeller', bestSeller);
-    formData.append('newArrival', newArrival);
-    formData.append('trending', trending);
+    formData.append('seoDescription', metaDescription || description.replace(/<[^>]*>/g, '').trim().slice(0, 150));
 
     // Append newly uploaded files
     stagedFiles.forEach(file => {
@@ -348,8 +600,7 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
         const failedCount = results.filter(r => !r.success).length;
         res = { success: failedCount === 0, message: failedCount > 0 ? `${failedCount} items failed to delete` : '' };
       } else {
-        // Bulk Draft / Bulk Publish status updates
-        // Let's call patchStatus iteratively or bulk status endpoint
+        // Bulk status updates
         const statusVal = action === 'publish' ? 'Published' : 'Draft';
         const updatePromises = selectedIds.map(id => productService.update(id, { status: statusVal }));
         const results = await Promise.all(updatePromises);
@@ -373,12 +624,14 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
       const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || p.description.toLowerCase().includes(searchQuery.toLowerCase());
-      
+
       const catSlug = typeof p.category === 'object' ? p.category?.slug : p.category;
       const catId = typeof p.category === 'object' ? p.category?._id : p.category;
       const matchesCategory = selectedCat === 'all' || catSlug === selectedCat || catId === selectedCat;
-      
-      return matchesSearch && matchesCategory;
+
+      const matchesStatus = selectedStatus === 'all' || p.status === selectedStatus;
+
+      return matchesSearch && matchesCategory && matchesStatus;
     }).sort((a, b) => {
       if (sortBy === 'titleAsc') return a.title.localeCompare(b.title);
       if (sortBy === 'titleDesc') return b.title.localeCompare(a.title);
@@ -387,19 +640,26 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
       if (sortBy === 'stockLow') return a.stock - b.stock;
       return 0;
     });
-  }, [products, searchQuery, selectedCat, sortBy]);
+  }, [products, searchQuery, selectedCat, selectedStatus, sortBy]);
 
   const paginatedProducts = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredProducts.slice(start, start + itemsPerPage);
-  }, [filteredProducts, currentPage]);
+  }, [filteredProducts, currentPage, itemsPerPage]);
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage) || 1;
 
+  // Auto-redirect if page parameter exceeds total pages (e.g. after deletion or query change)
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      updateParams({ page: totalPages });
+    }
+  }, [totalPages, currentPage, updateParams]);
+
+  // Render list view
   if (view === 'list') {
     return (
       <div className="space-y-6 select-none animate-fade-in text-left">
-        
         {/* Top Header */}
         <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between bg-white border border-[#eae8d8] p-5">
           <div className="flex flex-wrap items-center gap-3">
@@ -408,7 +668,7 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
                 type="text"
                 placeholder="Search catalog title, tags..."
                 value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full pl-9 pr-4 py-2.5 border border-[#eae8d8] text-xs font-semibold text-black focus:outline-none focus:border-[#729855] rounded-none bg-[#fcfcfa]"
               />
               <Search className="absolute left-3 top-3 w-3.5 h-3.5 text-gray-400" />
@@ -416,18 +676,29 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
 
             <select
               value={selectedCat}
-              onChange={(e) => { setSelectedCat(e.target.value); setCurrentPage(1); }}
+              onChange={(e) => handleCategoryChange(e.target.value)}
               className="px-3.5 py-2.5 border border-[#eae8d8] text-xs font-semibold text-black bg-[#fcfcfa] focus:outline-none rounded-none cursor-pointer"
             >
               <option value="all">All Collections</option>
-              {categories.map(c => (
+              {availableCategories.map(c => (
                 <option key={c._id} value={c.slug || c._id}>{c.name}</option>
               ))}
             </select>
 
             <select
+              value={selectedStatus}
+              onChange={(e) => handleStatusChange(e.target.value)}
+              className="px-3.5 py-2.5 border border-[#eae8d8] text-xs font-semibold text-black bg-[#fcfcfa] focus:outline-none rounded-none cursor-pointer"
+            >
+              <option value="all">All Statuses</option>
+              <option value="Published">Published</option>
+              <option value="Draft">Draft</option>
+              <option value="Hidden">Hidden</option>
+            </select>
+
+            <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
+              onChange={(e) => handleSortChange(e.target.value)}
               className="px-3.5 py-2.5 border border-[#eae8d8] text-xs font-semibold text-black bg-[#fcfcfa] focus:outline-none rounded-none cursor-pointer"
             >
               <option value="titleAsc">Title: Alphabetical (A-Z)</option>
@@ -473,7 +744,6 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
         )}
 
         {/* Table List View */}
-        {/* Table List View */}
         <div className="bg-[#f7f6f0] md:bg-white md:border md:border-[#eae8d8] overflow-x-auto shadow-sm">
           {/* Mobile Card Grid View */}
           <div className="md:hidden space-y-4">
@@ -501,13 +771,12 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
                         <span className="text-gray-500 font-semibold capitalize mt-1 block">{collectionName || 'General'}</span>
                       </div>
                     </div>
-                    <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
-                      prod.status === 'Published' 
-                        ? 'bg-green-50 text-[#729855]' 
-                        : prod.status === 'Draft' 
-                        ? 'bg-amber-50 text-amber-700' 
+                    <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${prod.status === 'Published'
+                      ? 'bg-green-50 text-[#729855]'
+                      : prod.status === 'Draft'
+                        ? 'bg-amber-50 text-amber-700'
                         : 'bg-gray-100 text-gray-500'
-                    }`}>
+                      }`}>
                       {prod.status || 'Published'}
                     </span>
                   </div>
@@ -582,7 +851,7 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
               {paginatedProducts.map((prod) => {
                 const imageSrc = getLocalImageUrl(prod.images?.[0] || prod.image || '/assets/14.jpg');
                 const collectionName = typeof prod.category === 'object' ? prod.category?.name : prod.category;
-                
+
                 return (
                   <tr key={prod._id} className="hover:bg-[#eae8d8]/20 transition-colors">
                     <td className="p-4 text-center">
@@ -610,13 +879,12 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
                       </span>
                     </td>
                     <td className="p-4 select-none">
-                      <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
-                        prod.status === 'Published' 
-                          ? 'bg-green-50 text-[#729855]' 
-                          : prod.status === 'Draft' 
-                          ? 'bg-amber-50 text-amber-700' 
+                      <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${prod.status === 'Published'
+                        ? 'bg-green-50 text-[#729855]'
+                        : prod.status === 'Draft'
+                          ? 'bg-amber-50 text-amber-700'
                           : 'bg-gray-100 text-gray-500'
-                      }`}>
+                        }`}>
                         {prod.status || 'Published'}
                       </span>
                     </td>
@@ -653,20 +921,35 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
         </div>
 
         {/* Pagination Bar */}
-        {totalPages > 1 && (
+        {filteredProducts.length > 0 && (
           <div className="flex justify-between items-center bg-white border border-[#eae8d8] p-4 text-xs font-semibold text-black select-none">
-            <span className="text-gray-500">Showing {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredProducts.length)} of {filteredProducts.length} items</span>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <span className="text-gray-400 font-semibold">Show:</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => handleLimitChange(Number(e.target.value))}
+                  className="border border-[#eae8d8] text-xs font-semibold text-black bg-[#fcfcfa] focus:outline-none py-1 px-1.5 cursor-pointer rounded-none"
+                >
+                  <option value="5">5</option>
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                  <option value="50">50</option>
+                </select>
+              </div>
+              <span className="text-gray-500">Showing {Math.min(filteredProducts.length, (currentPage - 1) * itemsPerPage + 1)}-{Math.min(currentPage * itemsPerPage, filteredProducts.length)} of {filteredProducts.length} items</span>
+            </div>
             <div className="flex items-center gap-1">
-              <button 
-                onClick={() => setCurrentPage(c => Math.max(1, c - 1))} 
+              <button
+                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
                 className="w-8 h-8 flex items-center justify-center border border-[#eae8d8] bg-[#fcfcfa] hover:border-black cursor-pointer disabled:opacity-50"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <span className="px-3">Page {currentPage} of {totalPages}</span>
-              <button 
-                onClick={() => setCurrentPage(c => Math.min(totalPages, c + 1))} 
+              <button
+                onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
                 className="w-8 h-8 flex items-center justify-center border border-[#eae8d8] bg-[#fcfcfa] hover:border-black cursor-pointer disabled:opacity-50"
               >
@@ -675,22 +958,22 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
             </div>
           </div>
         )}
-
       </div>
     );
   }
 
   // Shopify-style Create/Edit Product Form
+  const discountPercent = comparePrice && Number(comparePrice) > Number(price) ? Math.round(((Number(comparePrice) - Number(price)) / Number(comparePrice)) * 100) : 0;
+
   return (
     <div className="bg-white border border-[#eae8d8] p-8 md:p-14 max-w-4xl mx-auto shadow-sm text-left animate-fade-in">
-      
       {/* Form Header */}
       <div className="flex justify-between items-center border-b border-[#eae8d8] pb-4 mb-8">
         <h3 className="serif-title text-2xl text-black uppercase font-medium tracking-wide">
           {editingProduct ? `Edit: ${editingProduct.title}` : 'Create New Product'}
         </h3>
         <button
-          onClick={() => { resetForm(); setView('list'); }}
+          onClick={handleCancelClick}
           className="text-gray-500 hover:text-black font-heading text-[10px] font-bold uppercase tracking-widest bg-transparent border-none cursor-pointer"
         >
           ← Cancel
@@ -700,33 +983,38 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
       {error && <ErrorAlert type="error" message={error} />}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        
         {/* Core Product Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555] mb-2 block">Product Title *</label>
-            <input 
-              type="text" 
-              required 
-              value={title} 
-              onChange={(e) => setTitle(e.target.value)} 
-              className="w-full bg-[#fcfcfa] border border-[#eae8d8] px-4 py-3.5 font-body text-sm text-black focus:outline-none focus:border-[#729855] rounded-none" 
+            <input
+              type="text"
+              required
+              value={title}
+              onChange={(e) => handleTitleChange(e.target.value)}
+              className={`w-full bg-[#fcfcfa] border ${validationErrors.title ? 'border-red-500' : 'border-[#eae8d8]'} px-4 py-3.5 font-body text-sm text-black focus:outline-none focus:border-[#729855] rounded-none`}
             />
+            {validationErrors.title && (
+              <span className="text-red-500 text-xs mt-1 block">{validationErrors.title}</span>
+            )}
           </div>
-          
+
           <div>
             <label className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555] mb-2 block">Category Collection *</label>
-            <select 
-              value={category} 
+            <select
+              value={category}
               required
-              onChange={(e) => setCategory(e.target.value)} 
-              className="w-full border border-[#eae8d8] bg-white px-4 py-3.5 text-xs font-semibold uppercase tracking-wider focus:outline-none rounded-none cursor-pointer"
+              onChange={(e) => setCategory(e.target.value)}
+              className={`w-full border ${validationErrors.category ? 'border-red-500' : 'border-[#eae8d8]'} bg-white px-4 py-3.5 text-xs font-semibold uppercase tracking-wider focus:outline-none rounded-none cursor-pointer`}
             >
               <option value="" disabled>Select collection...</option>
-              {categories.map(c => (
+              {availableCategories.map(c => (
                 <option key={c._id} value={c._id}>{c.name}</option>
               ))}
             </select>
+            {validationErrors.category && (
+              <span className="text-red-500 text-xs mt-1 block">{validationErrors.category}</span>
+            )}
           </div>
         </div>
 
@@ -734,50 +1022,66 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div>
             <label className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555] mb-2 block">Retail Price (Rs.) *</label>
-            <input 
-              type="number" 
-              required 
-              min="0"
-              value={price} 
-              onChange={(e) => setPrice(e.target.value)} 
-              className="w-full bg-[#fcfcfa] border border-[#eae8d8] px-4 py-3.5 font-body text-sm text-black focus:outline-none focus:border-[#729855] rounded-none" 
+            <input
+              type="number"
+              required
+              min="0.01"
+              step="0.01"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              className={`w-full bg-[#fcfcfa] border ${validationErrors.price ? 'border-red-500' : 'border-[#eae8d8]'} px-4 py-3.5 font-body text-sm text-black focus:outline-none focus:border-[#729855] rounded-none`}
             />
+            {validationErrors.price && (
+              <span className="text-red-500 text-xs mt-1 block">{validationErrors.price}</span>
+            )}
           </div>
-          
+
           <div>
-            <label className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555] mb-2 block">Compare Price (Rs.)</label>
-            <input 
-              type="number" 
+            <div className="flex justify-between items-center mb-2">
+              <label className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555] block">Compare Price (Rs.)</label>
+              {discountPercent > 0 && (
+                <span className="text-[10px] text-green-600 font-bold uppercase tracking-wider">({discountPercent}% off)</span>
+              )}
+            </div>
+            <input
+              type="number"
               min="0"
+              step="0.01"
               placeholder="Original Price"
-              value={comparePrice} 
-              onChange={(e) => setComparePrice(e.target.value)} 
-              className="w-full bg-[#fcfcfa] border border-[#eae8d8] px-4 py-3.5 font-body text-sm text-black focus:outline-none focus:border-[#729855] rounded-none" 
+              value={comparePrice}
+              onChange={(e) => setComparePrice(e.target.value)}
+              className={`w-full bg-[#fcfcfa] border ${validationErrors.comparePrice ? 'border-red-500' : 'border-[#eae8d8]'} px-4 py-3.5 font-body text-sm text-black focus:outline-none focus:border-[#729855] rounded-none`}
             />
+            {validationErrors.comparePrice && (
+              <span className="text-red-500 text-xs mt-1 block">{validationErrors.comparePrice}</span>
+            )}
           </div>
-          
+
           <div>
             <label className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555] mb-2 block">Stock Count *</label>
-            <input 
-              type="number" 
+            <input
+              type="number"
               required
               min="0"
-              value={stock} 
-              onChange={(e) => setStock(e.target.value)} 
-              className="w-full bg-[#fcfcfa] border border-[#eae8d8] px-4 py-3.5 font-body text-sm text-black focus:outline-none focus:border-[#729855] rounded-none" 
+              value={stock}
+              onChange={(e) => setStock(e.target.value)}
+              className={`w-full bg-[#fcfcfa] border ${validationErrors.stock ? 'border-red-500' : 'border-[#eae8d8]'} px-4 py-3.5 font-body text-sm text-black focus:outline-none focus:border-[#729855] rounded-none`}
             />
+            {validationErrors.stock && (
+              <span className="text-red-500 text-xs mt-1 block">{validationErrors.stock}</span>
+            )}
           </div>
-          
+
           <div>
             <label className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555] mb-2 block">Publish Status</label>
-            <select 
-              value={status} 
-              onChange={(e) => setStatus(e.target.value)} 
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
               className="w-full border border-[#eae8d8] bg-white px-4 py-3.5 text-xs font-semibold uppercase tracking-wider focus:outline-none rounded-none cursor-pointer"
             >
-              <option value="Published">Published</option>
-              <option value="Draft">Draft</option>
-              <option value="Hidden">Hidden</option>
+              {availableStatuses.map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -785,9 +1089,7 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
         {/* HIGH FIDELITY MEDIA UPLOADER */}
         <div className="space-y-4">
           <label className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555] block">Product Media</label>
-          
-          {/* Dropzone Container */}
-          <div 
+          <div
             ref={dropzoneRef}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
@@ -796,88 +1098,88 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
             <input
               type="file"
               multiple
-              accept="image/*"
+              accept="image/png, image/jpeg, image/jpg, image/webp"
               onChange={handleFileChange}
               className="absolute inset-0 opacity-0 cursor-pointer"
             />
             <Upload className="w-8 h-8 text-gray-400 group-hover:text-[#729855] transition-colors mb-3" />
-            <p className="text-xs font-semibold text-black">Drag and drop file here, or click to upload</p>
-            <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold tracking-wider">PNG, JPG, WEBP up to 5MB</p>
+            <p className="text-xs font-semibold text-black">Drag and drop files here, or click to upload</p>
+            <p className="text-[10px] text-gray-400 mt-1 uppercase font-bold tracking-wider">PNG, JPG, JPEG, WEBP up to 5MB</p>
           </div>
 
           {/* Staged & Existing Images Manager Grid */}
           {(existingImages.length > 0 || stagedPreviews.length > 0) && (
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4 pt-2">
-              
               {/* Existing Images */}
-              {existingImages.map((img, idx) => (
-                <div 
-                  key={img.public_id} 
-                  className={`group/card relative aspect-[3/4] border ${
-                    idx === 0 ? 'border-[#729855] ring-2 ring-[#729855]/20' : 'border-[#eae8d8]'
-                  } bg-gray-50 flex flex-col items-center justify-center p-1 select-none`}
-                >
-                  <img src={getLocalImageUrl(img)} alt="" className="w-full h-full object-cover mix-blend-darken" />
-                  
-                  {idx === 0 && (
-                    <span className="absolute top-1 left-1 bg-[#729855] text-white text-[8px] font-bold px-1 py-0.5 uppercase tracking-wider z-10">Primary</span>
-                  )}
+              {existingImages.map((img, idx) => {
+                const uniqueKey = typeof img === 'object' && img !== null
+                  ? (img.public_id || img.secure_url || idx)
+                  : (img || idx);
 
-                  {/* Actions overlay */}
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/card:opacity-100 transition-opacity flex flex-col justify-between p-2 z-10">
-                    <button
-                      type="button"
-                      onClick={() => removeExistingImage(img.public_id)}
-                      className="absolute -top-1.5 -right-1.5 bg-red-600 hover:bg-red-800 text-white rounded-full p-1 border-none cursor-pointer transition-colors shadow-sm"
-                      title="Remove image"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
+                return (
+                  <div
+                    key={uniqueKey}
+                    className={`group/card relative aspect-[3/4] border ${idx === 0 ? 'border-[#729855] ring-2 ring-[#729855]/20' : 'border-[#eae8d8]'
+                      } bg-gray-50 flex flex-col items-center justify-center p-1 select-none`}
+                  >
+                    <img src={getLocalImageUrl(img)} alt="" className="w-full h-full object-cover mix-blend-darken" />
+                    {idx === 0 && (
+                      <span className="absolute top-1 left-1 bg-[#729855] text-white text-[8px] font-bold px-1 py-0.5 uppercase tracking-wider z-10">Primary</span>
+                    )}
 
-                    <div className="flex gap-1 justify-center mt-auto w-full">
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/card:opacity-100 transition-opacity flex flex-col justify-between p-2 z-10">
                       <button
                         type="button"
-                        disabled={idx === 0}
-                        onClick={() => moveExistingLeft(idx)}
-                        className="p-1 border border-white/50 text-white bg-transparent hover:bg-white hover:text-black cursor-pointer rounded-none disabled:opacity-30"
+                        onClick={() => removeExistingImage(idx)}
+                        className="absolute -top-1.5 -right-1.5 bg-red-600 hover:bg-red-800 text-white rounded-full p-1 border-none cursor-pointer transition-colors shadow-sm"
+                        title="Remove image"
                       >
-                        <ArrowLeft className="w-3 h-3" />
+                        <X className="w-3.5 h-3.5" />
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => setExistingPrimary(idx)}
-                        className="text-[9px] font-heading font-bold uppercase tracking-wider bg-white text-black hover:bg-black hover:text-white px-2 py-1 cursor-pointer rounded-none"
-                      >
-                        Main
-                      </button>
-                      <button
-                        type="button"
-                        disabled={idx === existingImages.length - 1}
-                        onClick={() => moveExistingRight(idx)}
-                        className="p-1 border border-white/50 text-white bg-transparent hover:bg-white hover:text-black cursor-pointer rounded-none disabled:opacity-30"
-                      >
-                        <ArrowRight className="w-3 h-3" />
-                      </button>
+
+                      <div className="flex gap-1 justify-center mt-auto w-full">
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={() => moveExistingLeft(idx)}
+                          className="p-1 border border-white/50 text-white bg-transparent hover:bg-white hover:text-black cursor-pointer rounded-none disabled:opacity-30"
+                        >
+                          <ArrowLeft className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setExistingPrimary(idx)}
+                          className="text-[9px] font-heading font-bold uppercase tracking-wider bg-white text-black hover:bg-black hover:text-white px-2 py-1 cursor-pointer rounded-none"
+                        >
+                          Main
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === existingImages.length - 1}
+                          onClick={() => moveExistingRight(idx)}
+                          className="p-1 border border-white/50 text-white bg-transparent hover:bg-white hover:text-black cursor-pointer rounded-none disabled:opacity-30"
+                        >
+                          <ArrowRight className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               {/* Staged New Previews */}
               {stagedPreviews.map((p, idx) => (
-                <div 
-                  key={p.id} 
-                  className={`group/card relative aspect-[3/4] border ${
-                    (existingImages.length === 0 && idx === 0) ? 'border-[#729855] ring-2 ring-[#729855]/20' : 'border-[#eae8d8]'
-                  } bg-gray-50 flex flex-col items-center justify-center p-1 select-none`}
+                <div
+                  key={p.id}
+                  className={`group/card relative aspect-[3/4] border ${(existingImages.length === 0 && idx === 0) ? 'border-[#729855] ring-2 ring-[#729855]/20' : 'border-[#eae8d8]'
+                    } bg-gray-50 flex flex-col items-center justify-center p-1 select-none`}
                 >
                   <img src={p.url} alt="" className="w-full h-full object-cover mix-blend-darken opacity-75" />
-                  
+
                   {existingImages.length === 0 && idx === 0 && (
                     <span className="absolute top-1 left-1 bg-[#729855] text-white text-[8px] font-bold px-1 py-0.5 uppercase tracking-wider z-10">Primary</span>
                   )}
 
-                  {/* Progress Bar overlay */}
                   {p.status === 'uploading' && (
                     <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center p-3 select-none">
                       <span className="text-[10px] font-bold text-[#729855] animate-pulse uppercase tracking-wider mb-2">Staging File</span>
@@ -888,7 +1190,6 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
                     </div>
                   )}
 
-                  {/* Staged actions overlay */}
                   {p.status === 'ready' && (
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/card:opacity-100 transition-opacity flex flex-col justify-between p-2 z-10">
                       <button
@@ -929,76 +1230,143 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
                   )}
                 </div>
               ))}
-
             </div>
           )}
         </div>
 
-        {/* Variants and Tags Inputs */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555] mb-2 block">Variants (comma-separated)</label>
-            <input 
-              type="text" 
-              placeholder="50 ml, 100 ml, 200 ml" 
-              value={variants} 
-              onChange={(e) => setVariants(e.target.value)} 
-              className="w-full bg-[#fcfcfa] border border-[#eae8d8] px-4 py-3.5 font-body text-sm text-black focus:outline-none focus:border-[#729855] rounded-none" 
-            />
+        {/* Dynamic Variants Management Section */}
+        <div className="border-t border-[#eae8d8] pt-6 space-y-4">
+          <div className="flex justify-between items-center">
+            <label className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555] block">Product Variants</label>
+            <button
+              type="button"
+              onClick={handleAddVariant}
+              className="border border-[#729855] text-[#729855] hover:bg-[#729855] hover:text-white px-3.5 py-2 text-[10px] font-heading font-bold uppercase tracking-wider transition-colors cursor-pointer bg-white rounded-none flex items-center gap-1"
+            >
+              + Add Variant
+            </button>
           </div>
-          
-          <div>
-            <label className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555] mb-2 block">Tags (comma-separated)</label>
-            <input 
-              type="text" 
-              placeholder="organic, skincare, serum" 
-              value={tags} 
-              onChange={(e) => setTags(e.target.value)} 
-              className="w-full bg-[#fcfcfa] border border-[#eae8d8] px-4 py-3.5 font-body text-sm text-black focus:outline-none focus:border-[#729855] rounded-none" 
+
+          <div className="space-y-4">
+            {variantsList.map((variant, index) => (
+              <div key={index} className="grid grid-cols-1 sm:grid-cols-4 gap-4 border border-[#eae8d8] p-4 relative bg-[#fcfcfa]">
+                <div>
+                  <label className="font-heading text-[9px] font-bold uppercase tracking-[0.1em] text-[#555] mb-1 block">Variant Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={variant.name}
+                    placeholder="e.g. 50 ml"
+                    onChange={(e) => handleUpdateVariant(index, 'name', e.target.value)}
+                    className={`w-full bg-white border ${validationErrors[`variant_${index}_name`] ? 'border-red-500' : 'border-[#eae8d8]'} px-3 py-2 font-body text-xs text-black focus:outline-none focus:border-[#729855] rounded-none`}
+                  />
+                  {validationErrors[`variant_${index}_name`] && (
+                    <span className="text-red-500 text-[10px] mt-0.5 block">{validationErrors[`variant_${index}_name`]}</span>
+                  )}
+                </div>
+                <div>
+                  <label className="font-heading text-[9px] font-bold uppercase tracking-[0.1em] text-[#555] mb-1 block">SKU</label>
+                  <input
+                    type="text"
+                    value={variant.sku}
+                    placeholder="e.g. SKU-50ML"
+                    onChange={(e) => handleUpdateVariant(index, 'sku', e.target.value)}
+                    className="w-full bg-white border border-[#eae8d8] px-3 py-2 font-body text-xs text-black focus:outline-none focus:border-[#729855] rounded-none"
+                  />
+                </div>
+                <div>
+                  <label className="font-heading text-[9px] font-bold uppercase tracking-[0.1em] text-[#555] mb-1 block">Price *</label>
+                  <input
+                    type="number"
+                    required
+                    min="0.01"
+                    step="0.01"
+                    value={variant.price}
+                    onChange={(e) => handleUpdateVariant(index, 'price', e.target.value)}
+                    className={`w-full bg-white border ${validationErrors[`variant_${index}_price`] ? 'border-red-500' : 'border-[#eae8d8]'} px-3 py-2 font-body text-xs text-black focus:outline-none focus:border-[#729855] rounded-none`}
+                  />
+                  {validationErrors[`variant_${index}_price`] && (
+                    <span className="text-red-500 text-[10px] mt-0.5 block">{validationErrors[`variant_${index}_price`]}</span>
+                  )}
+                </div>
+                <div>
+                  <label className="font-heading text-[9px] font-bold uppercase tracking-[0.1em] text-[#555] mb-1 block">Stock *</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    value={variant.stock}
+                    onChange={(e) => handleUpdateVariant(index, 'stock', e.target.value)}
+                    className={`w-full bg-white border ${validationErrors[`variant_${index}_stock`] ? 'border-red-500' : 'border-[#eae8d8]'} px-3 py-2 font-body text-xs text-black focus:outline-none focus:border-[#729855] rounded-none`}
+                  />
+                  {validationErrors[`variant_${index}_stock`] && (
+                    <span className="text-red-500 text-[10px] mt-0.5 block">{validationErrors[`variant_${index}_stock`]}</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveVariant(index)}
+                  className="absolute top-2 right-2 text-gray-400 hover:text-red-600 bg-transparent border-none cursor-pointer"
+                  title="Remove Variant"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+            {variantsList.length === 0 && (
+              <p className="text-xs text-gray-400 italic">No variants added. This product will default to using the main retail price and stock count.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Dynamic Tags chips input */}
+        <div className="space-y-2 border-t border-[#eae8d8] pt-6">
+          <label className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555] block">Tags</label>
+          <div className="flex flex-wrap gap-2 border border-[#eae8d8] bg-[#fcfcfa] p-3 focus-within:border-[#729855] min-h-[46px] items-center">
+            {tagList.map((tag, idx) => (
+              <span key={idx} className="flex items-center gap-1.5 bg-[#eae8d8]/60 text-black px-2.5 py-1 text-xs font-semibold uppercase tracking-wider rounded-none select-none">
+                {tag}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveTag(idx)}
+                  className="text-gray-500 hover:text-black hover:bg-gray-200/50 rounded-full p-0.5 border-none cursor-pointer flex items-center justify-center bg-transparent"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+            <input
+              type="text"
+              placeholder={tagList.length === 0 ? "Press Enter to add tag chips" : "Add tag..."}
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={handleTagKeyDown}
+              className="flex-grow bg-transparent border-none focus:outline-none font-body text-sm text-black p-1"
             />
           </div>
         </div>
 
-        {/* Product Badges */}
+        {/* Dynamic Product Badges Checkboxes */}
         <div className="border-t border-[#eae8d8] pt-6 space-y-4">
           <label className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555] block">Product Badges / Sections</label>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <label className="flex items-center space-x-2.5 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={featured}
-                onChange={(e) => setFeatured(e.target.checked)}
-                className="w-4 h-4 accent-[#729855] border-[#eae8d8] cursor-pointer"
-              />
-              <span className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555]">Featured</span>
-            </label>
-            <label className="flex items-center space-x-2.5 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={bestSeller}
-                onChange={(e) => setBestSeller(e.target.checked)}
-                className="w-4 h-4 accent-[#729855] border-[#eae8d8] cursor-pointer"
-              />
-              <span className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555]">Best Seller</span>
-            </label>
-            <label className="flex items-center space-x-2.5 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={newArrival}
-                onChange={(e) => setNewArrival(e.target.checked)}
-                className="w-4 h-4 accent-[#729855] border-[#eae8d8] cursor-pointer"
-              />
-              <span className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555]">New Arrival</span>
-            </label>
-            <label className="flex items-center space-x-2.5 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={trending}
-                onChange={(e) => setTrending(e.target.checked)}
-                className="w-4 h-4 accent-[#729855] border-[#eae8d8] cursor-pointer"
-              />
-              <span className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555]">Trending</span>
-            </label>
+            {availableBadges.map(badge => (
+              <label key={badge._id} className="flex items-center space-x-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={selectedBadges.includes(badge._id)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedBadges(prev => [...prev, badge._id]);
+                    } else {
+                      setSelectedBadges(prev => prev.filter(id => id !== badge._id));
+                    }
+                  }}
+                  className="w-4 h-4 accent-[#729855] border-[#eae8d8] cursor-pointer"
+                />
+                <span className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555]">{badge.name}</span>
+              </label>
+            ))}
           </div>
         </div>
 
@@ -1011,70 +1379,88 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
 
           {/* Live Search Engine Snippet Preview */}
           <div className="bg-[#f9f9f9] border border-[#eae8d8] p-5 font-sans text-left space-y-1 rounded-none select-none max-w-2xl">
-            <span className="text-xs text-[#202124] block truncate">https://fabish.com/products/{(title ? title.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'product-slug')}</span>
-            <span className="text-xl text-[#1a0dab] hover:underline block truncate font-medium">{metaTitle || title || 'SEO Custom Search Result Title'}</span>
+            <span className="text-xs text-[#202124] block truncate">
+              https://fabish.com/products/{slug || 'product-slug'}
+            </span>
+            <span className="text-xl text-[#1a0dab] hover:underline block truncate font-medium">
+              {metaTitle || title || 'SEO Custom Search Result Title'}
+            </span>
             <p className="text-sm text-[#4d5156] leading-relaxed line-clamp-2">
-              {metaDescription || description?.slice(0, 155) || 'SEO Snippet description preview. Add meta descriptions below to hook search engine click pools.'}
+              {metaDescription || description?.replace(/<[^>]*>/g, '').slice(0, 155) || 'SEO Snippet description preview. Add meta descriptions below to hook search engine click pools.'}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555] mb-2 block">Meta Title</label>
-              <input 
-                type="text" 
-                placeholder={title || "SEO Custom Title"} 
-                value={metaTitle} 
-                onChange={(e) => setMetaTitle(e.target.value)} 
-                className="w-full bg-[#fcfcfa] border border-[#eae8d8] px-4 py-3.5 font-body text-sm text-black focus:outline-none focus:border-[#729855] rounded-none" 
+              <label className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555] mb-2 block">Product Slug / URL *</label>
+              <input
+                type="text"
+                required
+                value={slug}
+                onChange={(e) => {
+                  setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-'));
+                  setIsSlugOverridden(true);
+                }}
+                className="w-full bg-[#fcfcfa] border border-[#eae8d8] px-4 py-3.5 font-body text-sm text-[#555] focus:outline-none focus:border-[#729855] rounded-none font-mono"
               />
             </div>
-            
+
+            <div>
+              <label className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555] mb-2 block">Meta Title</label>
+              <input
+                type="text"
+                placeholder={title || "SEO Custom Title"}
+                value={metaTitle}
+                onChange={(e) => setMetaTitle(e.target.value)}
+                className="w-full bg-[#fcfcfa] border border-[#eae8d8] px-4 py-3.5 font-body text-sm text-black focus:outline-none focus:border-[#729855] rounded-none"
+              />
+            </div>
+
             <div>
               <label className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555] mb-2 block">Meta Description</label>
-              <textarea 
-                placeholder={description?.slice(0, 150) || "SEO Description preview..."} 
-                rows={2} 
-                value={metaDescription} 
-                onChange={(e) => setMetaDescription(e.target.value)} 
-                className="w-full bg-[#fcfcfa] border border-[#eae8d8] px-4 py-3 font-body text-sm text-black focus:outline-none focus:border-[#729855] rounded-none" 
+              <textarea
+                placeholder={description?.replace(/<[^>]*>/g, '').slice(0, 150) || "SEO Description preview..."}
+                rows={2}
+                value={metaDescription}
+                onChange={(e) => setMetaDescription(e.target.value)}
+                className="w-full bg-[#fcfcfa] border border-[#eae8d8] px-4 py-3 font-body text-sm text-black focus:outline-none focus:border-[#729855] rounded-none"
               />
             </div>
           </div>
         </div>
 
-        {/* Product Description */}
+        {/* Product Description Rich Text Editor */}
         <div>
           <label className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555] mb-2 block">Product Description *</label>
-          <textarea 
-            required 
-            rows={6} 
-            value={description} 
-            onChange={(e) => setDescription(e.target.value)} 
-            className="w-full bg-[#fcfcfa] border border-[#eae8d8] px-4 py-3.5 font-body text-sm text-black focus:outline-none focus:border-[#729855] rounded-none"
-          ></textarea>
+          <RichTextEditor
+            value={description}
+            onChange={(val) => setDescription(val)}
+            placeholder="Write product description using bold, italics, lists or links..."
+          />
+          {validationErrors.description && (
+            <span className="text-red-500 text-xs mt-1 block">{validationErrors.description}</span>
+          )}
         </div>
 
         {/* Submission / Cancel controls */}
         <div className="flex gap-4 pt-6 border-t border-[#eae8d8]">
-          <button 
-            type="submit" 
-            disabled={loading} 
+          <button
+            type="submit"
+            disabled={loading}
             className="flex-grow bg-[#2f3e10] hover:bg-black text-white py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer border-none rounded-none shadow-sm flex items-center justify-center gap-1.5"
           >
             {loading ? <Loader size="small" /> : <Save className="w-4 h-4" />}
             {editingProduct ? 'Save Product Changes' : 'Publish Product'}
           </button>
-          
-          <button 
-            type="button" 
-            onClick={() => { resetForm(); setView('list'); }} 
+
+          <button
+            type="button"
+            onClick={handleCancelClick}
             className="border border-black text-black hover:bg-black hover:text-white px-8 py-4 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer bg-white rounded-none"
           >
             Cancel
           </button>
         </div>
-
       </form>
     </div>
   );
