@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
 import { ChevronDown, ChevronUp, Eye, Heart, Menu, X } from 'lucide-react';
 import { productService } from '../api/productService';
@@ -8,6 +8,7 @@ import { getLocalImageUrl } from '../utils/imageMapper';
 import Loader from '../components/ui/Loader';
 import { useCategories } from '../context/CategoryContext';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { useMobileCardActive } from '../hooks/useMobileCardActive';
 /**
  * Converts a product title into a URL-safe slug.
  */
@@ -76,6 +77,171 @@ const ensureAbsolutePath = (path) => {
     return '/' + pathStr;
   }
   return pathStr;
+};
+
+const ListingProductCard = ({
+  product,
+  gridCols,
+  cardWidthClass,
+  isInWishlist,
+  toggleWishlist,
+  addToCart,
+  handleImageError
+}) => {
+  const cardRef = useRef(null);
+  const { isActiveMobile, useMobileInteraction, handleCardInteraction, cardId } = useMobileCardActive(product._id, cardRef);
+
+  const localEnsureAbsolutePath = (path) => {
+    if (!path) return '';
+    let pathStr = '';
+    if (typeof path === 'string') {
+      pathStr = path;
+    } else if (typeof path === 'object' && path !== null) {
+      pathStr = path.url || path.secure_url || '';
+    }
+    if (!pathStr || typeof pathStr !== 'string') return '';
+
+    if (pathStr.includes('via.placeholder.com')) {
+      pathStr = pathStr.replace('via.placeholder.com', 'placehold.co');
+    }
+
+    if (!pathStr.startsWith('/') && !pathStr.startsWith('http')) {
+      return '/' + pathStr;
+    }
+    return pathStr;
+  };
+
+  const mainImg = getLocalImageUrl(localEnsureAbsolutePath(product.images?.[0] || product.image || '/assets/14.jpg'));
+  const discount = product.comparePrice > product.price
+    ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
+    : 0;
+  const isSoldOut = product.stock === 0;
+
+  return (
+    <div
+      ref={cardRef}
+      data-card-id={cardId}
+      onClickCapture={handleCardInteraction}
+      className={`flex flex-col ${cardWidthClass}`}
+    >
+      {/* Image Container with Hover Effects */}
+      <div className="group relative aspect-[3/4] bg-[#f2f3ee] flex items-center justify-center overflow-hidden mb-5 cursor-pointer">
+
+        {/* Sold Out / Discount Badge — top-left, responsive sizing */}
+        {isSoldOut ? (
+          <span className={`absolute top-2 left-2 sm:top-4 sm:left-4 z-10 bg-black text-white font-bold uppercase tracking-[0.15em] ${gridCols === 4 ? 'text-[7px] px-1.5 py-0.5' : 'text-[9px] sm:text-[10px] px-2 py-1 sm:px-3 sm:py-1.5'}`}>
+            Sold Out
+          </span>
+        ) : discount > 0 ? (
+          <span className={`absolute top-2 left-2 sm:top-4 sm:left-4 z-10 bg-[#5b8a72] text-white font-bold uppercase tracking-[0.15em] ${gridCols === 4 ? 'text-[7px] px-1.5 py-0.5' : 'text-[9px] sm:text-[10px] px-2 py-1 sm:px-3 sm:py-1.5'}`}>
+            {discount}% OFF
+          </span>
+        ) : null}
+
+        <Link to={`/products/${product.slug}`} onClick={() => window.scrollTo(0, 0)} className="w-full h-full block">
+          <img
+            src={mainImg}
+            alt={product.title}
+            className="w-full h-full object-cover mix-blend-multiply transition-transform duration-700 group-hover:scale-105"
+            onError={handleImageError}
+            loading="lazy"
+          />
+        </Link>
+
+        {/* Floating Price Badge (Mobile Only — renders inside card boundaries) */}
+        <div className={`absolute bottom-2 left-2 bg-[#2f3e10]/95 text-white font-medium z-10 lg:hidden ${gridCols === 4 ? 'text-[8px] px-1 py-0.5' : 'text-[11px] px-2 py-1'}`}>
+          Rs. {(product?.price ?? 0).toLocaleString('en-IN')}
+        </div>
+
+        {/* Actions Overlay */}
+        <div className={useMobileInteraction
+          ? `absolute top-2 right-2 sm:top-4 sm:right-4 flex flex-col z-20 transition-all duration-[250ms] ease-in-out ${gridCols === 4 ? 'gap-1' : 'gap-1.5 sm:gap-2'} ${
+              isActiveMobile
+                ? 'opacity-100 pointer-events-auto translate-y-0'
+                : 'opacity-0 pointer-events-none translate-y-[10px]'
+            }`
+          : `absolute top-2 right-2 sm:top-4 sm:right-4 flex flex-col z-20 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:translate-x-4 lg:group-hover:translate-x-0 transition-all duration-300 ${gridCols === 4 ? 'gap-1' : 'gap-1.5 sm:gap-2'}`
+        }>
+          <Link
+            to={`/products/${product.slug}`}
+            onClick={() => window.scrollTo(0, 0)}
+            aria-label={`Quick view ${product.title}`}
+            className={`rounded-full bg-white flex items-center justify-center shadow-md hover:bg-[#729855] hover:text-white transition-all duration-300 hover:scale-105 text-[#111] ${gridCols === 4 ? 'w-6 h-6' : 'w-8 h-8 sm:w-9 sm:h-9'}`}
+          >
+            <Eye size={gridCols === 4 ? 10 : 14} strokeWidth={1.8} />
+          </Link>
+          <button
+            type="button"
+            onClick={() => toggleWishlist(product)}
+            aria-label={`Add ${product.title} to wishlist`}
+            className={`rounded-full flex items-center justify-center shadow-md transition-all duration-300 hover:scale-105 border-none cursor-pointer ${gridCols === 4 ? 'w-6 h-6' : 'w-8 h-8 sm:w-9 sm:h-9'} ${product?._id && isInWishlist(product._id)
+              ? 'bg-black text-white hover:bg-[#729855]'
+              : 'bg-white text-black hover:bg-[#729855] hover:text-white'
+            }`}
+          >
+            <Heart className="transition-all duration-300" size={gridCols === 4 ? 10 : 14} strokeWidth={1.8} fill={product?._id && isInWishlist(product._id) ? 'currentColor' : 'none'} />
+          </button>
+        </div>
+
+        {/* Add to Cart Button */}
+        {useMobileInteraction ? (
+          <div className={`absolute bottom-4 left-0 right-0 flex justify-center z-10 transition-all duration-[250ms] ease-in-out ${
+            isActiveMobile
+              ? 'opacity-100 translate-y-0 pointer-events-auto'
+              : 'opacity-0 translate-y-[10px] pointer-events-none'
+          }`}>
+            {!isSoldOut ? (
+              <button
+                type="button"
+                onClick={() => addToCart(product, 1)}
+                className="w-[68%] h-[40px] bg-[#3e4e20] hover:bg-black text-white text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-300 shadow-md border-none cursor-pointer"
+              >
+                Add Cart
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="w-[68%] h-[40px] bg-gray-400 text-white text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-300 shadow-md border-none cursor-not-allowed"
+              >
+                Sold Out
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="absolute bottom-4 left-0 right-0 hidden lg:flex justify-center opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 z-10">
+            {!isSoldOut ? (
+              <button
+                type="button"
+                onClick={() => addToCart(product, 1)}
+                className="w-[68%] h-[40px] bg-[#3e4e20] hover:bg-black text-white text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-300 shadow-md border-none cursor-pointer"
+              >
+                Add Cart
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="w-[68%] h-[40px] bg-gray-400 text-white text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-300 shadow-md border-none cursor-not-allowed"
+              >
+                Sold Out
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Product Info */}
+      <div className="text-center px-2 flex flex-col flex-grow mt-3">
+        <h3 className={`font-heading font-semibold text-[#111] leading-[1.35] mb-1 hover:text-[#729855] transition-colors cursor-pointer inline-block mx-auto line-clamp-2 ${gridCols === 4 ? 'text-[10px]' : 'text-xs sm:text-[16px]'}`}>
+          <Link to={`/products/${product.slug}`} onClick={() => window.scrollTo(0, 0)}>{product.title}</Link>
+        </h3>
+        <p className="text-[14px] text-[#555] font-body hidden lg:block">
+          Rs. {(product?.price ?? 0).toLocaleString('en-IN')}.00 INR
+        </p>
+      </div>
+    </div>
+  );
 };
 
 const ProductListing = () => {
@@ -832,130 +998,18 @@ const ProductListing = () => {
           ) : (
             <>
               <div className={`grid ${gridClass} gap-6`}>
-                {displayedProducts.map((product) => {
-                  // Safe helper to handle paths, Cloudinary objects, and nested routes
-                  const ensureAbsolutePath = (path) => {
-                    if (!path) return '';
-                    let pathStr = '';
-                    if (typeof path === 'string') {
-                      pathStr = path;
-                    } else if (typeof path === 'object' && path !== null) {
-                      pathStr = path.url || path.secure_url || '';
-                    }
-                    if (!pathStr || typeof pathStr !== 'string') return '';
-
-                    // ERR_CONNECTION_CLOSED 
-                    if (pathStr.includes('via.placeholder.com')) {
-                      pathStr = pathStr.replace('via.placeholder.com', 'placehold.co');
-                    }
-
-                    if (!pathStr.startsWith('/') && !pathStr.startsWith('http')) {
-                      return '/' + pathStr;
-                    }
-                    return pathStr;
-                  };
-
-                  const mainImg = getLocalImageUrl(ensureAbsolutePath(product.images?.[0] || product.image || '/assets/14.jpg'));
-                  const discount = product.comparePrice > product.price
-                    ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
-                    : 0;
-                  const isSoldOut = product.stock === 0;
-
-                  return (
-                    <div key={product._id} className={`flex flex-col ${cardWidthClass}`}>
-                      {/* Image Container with Hover Effects */}
-                      <div className="group relative aspect-[3/4] bg-[#f2f3ee] flex items-center justify-center overflow-hidden mb-5 cursor-pointer">
-
-                        {/* Sold Out / Discount Badge — top-left, responsive sizing */}
-                        {isSoldOut ? (
-                          <span className={`absolute top-2 left-2 sm:top-4 sm:left-4 z-10 bg-black text-white font-bold uppercase tracking-[0.15em] ${gridCols === 4 ? 'text-[7px] px-1.5 py-0.5' : 'text-[9px] sm:text-[10px] px-2 py-1 sm:px-3 sm:py-1.5'
-                            }`}>
-                            Sold Out
-                          </span>
-                        ) : discount > 0 ? (
-                          <span className={`absolute top-2 left-2 sm:top-4 sm:left-4 z-10 bg-[#5b8a72] text-white font-bold uppercase tracking-[0.15em] ${gridCols === 4 ? 'text-[7px] px-1.5 py-0.5' : 'text-[9px] sm:text-[10px] px-2 py-1 sm:px-3 sm:py-1.5'
-                            }`}>
-                            {discount}% OFF
-                          </span>
-                        ) : null}
-
-                        <Link to={`/products/${product.slug}`} onClick={() => window.scrollTo(0, 0)} className="w-full h-full block">
-                          <img
-                            src={mainImg}
-                            alt={product.title}
-                            className="w-full h-full object-cover mix-blend-multiply transition-transform duration-700 group-hover:scale-105"
-                            onError={handleImageError}
-                            loading="lazy"
-                          />
-                        </Link>
-
-                        {/* Floating Price Badge (Mobile Only — renders inside card boundaries) */}
-                        <div className={`absolute bottom-2 left-2 bg-[#2f3e10]/95 text-white font-medium z-10 lg:hidden ${gridCols === 4 ? 'text-[8px] px-1 py-0.5' : 'text-[11px] px-2 py-1'
-                          }`}>
-                          Rs. {(product?.price ?? 0).toLocaleString('en-IN')}
-                        </div>
-
-                        {/* Actions Overlay - Always visible on mobile, hover-only on desktop */}
-                        <div className={`absolute top-2 right-2 sm:top-4 sm:right-4 flex flex-col z-20 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:translate-x-4 lg:group-hover:translate-x-0 transition-all duration-300 ${gridCols === 4 ? 'gap-1' : 'gap-1.5 sm:gap-2'
-                          }`}>
-                          <Link
-                            to={`/products/${product.slug}`}
-                            onClick={() => window.scrollTo(0, 0)}
-                            aria-label={`Quick view ${product.title}`}
-                            className={`rounded-full bg-white flex items-center justify-center shadow-md hover:bg-[#729855] hover:text-white transition-all duration-300 hover:scale-105 text-[#111] ${gridCols === 4 ? 'w-6 h-6' : 'w-8 h-8 sm:w-9 sm:h-9'
-                              }`}
-                          >
-                            <Eye size={gridCols === 4 ? 10 : 14} strokeWidth={1.8} />
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={() => toggleWishlist(product)}
-                            aria-label={`Add ${product.title} to wishlist`}
-                            className={`rounded-full flex items-center justify-center shadow-md transition-all duration-300 hover:scale-105 border-none cursor-pointer ${gridCols === 4 ? 'w-6 h-6' : 'w-8 h-8 sm:w-9 sm:h-9'
-                              } ${product?._id && isInWishlist(product._id)
-                                ? 'bg-black text-white hover:bg-[#729855]'
-                                : 'bg-white text-black hover:bg-[#729855] hover:text-white'
-                              }`}
-                          >
-                            <Heart className="transition-all duration-300" size={gridCols === 4 ? 10 : 14} strokeWidth={1.8} fill={product?._id && isInWishlist(product._id) ? 'currentColor' : 'none'} />
-                          </button>
-                        </div>
-
-                        {/* Hover Action - Add to Cart Button (Bottom — desktop only) */}
-                        <div className="absolute bottom-4 left-0 right-0 hidden lg:flex justify-center opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 z-10">
-                          {!isSoldOut ? (
-                            <button
-                              type="button"
-                              onClick={() => addToCart(product, 1)}
-                              className="w-[68%] h-[40px] bg-[#3e4e20] hover:bg-black text-white text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-300 shadow-md border-none cursor-pointer"
-                            >
-                              Add Cart
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              disabled
-                              className="w-[68%] h-[40px] bg-gray-400 text-white text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-300 shadow-md border-none cursor-not-allowed"
-                            >
-                              Sold Out
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Product Info (Title always visible, price displays here on desktop only) */}
-                      <div className="text-center px-2 flex flex-col flex-grow mt-3">
-                        <h3 className={`font-heading font-semibold text-[#111] leading-[1.35] mb-1 hover:text-[#729855] transition-colors cursor-pointer inline-block mx-auto line-clamp-2 ${gridCols === 4 ? 'text-[10px]' : 'text-xs sm:text-[16px]'
-                          }`}>
-                          <Link to={`/products/${product.slug}`} onClick={() => window.scrollTo(0, 0)}>{product.title}</Link>
-                        </h3>
-                        <p className="text-[14px] text-[#555] font-body hidden lg:block">
-                          Rs. {(product?.price ?? 0).toLocaleString('en-IN')}.00 INR
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
+                {displayedProducts.map((product) => (
+                  <ListingProductCard
+                    key={product._id}
+                    product={product}
+                    gridCols={gridCols}
+                    cardWidthClass={cardWidthClass}
+                    isInWishlist={isInWishlist}
+                    toggleWishlist={toggleWishlist}
+                    addToCart={addToCart}
+                    handleImageError={handleImageError}
+                  />
+                ))}
               </div>
 
               {/* Pagination controls showing up to 16 products dynamically */}

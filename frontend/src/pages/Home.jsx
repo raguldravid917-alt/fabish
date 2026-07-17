@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Autoplay } from 'swiper/modules';
@@ -7,6 +7,7 @@ import { getLocalImageUrl } from '../utils/imageMapper';
 import FaceCreamBanner from '../components/FaceCreamBanner';
 import BeautyProductGrid from '../components/BeautyProductGrid';
 import { motion } from 'framer-motion';
+import { useMobileCardActive } from '../hooks/useMobileCardActive';
 
 // Import Swiper styles
 import 'swiper/css';
@@ -59,6 +60,95 @@ const HERO_SLIDES = [
     objectPosition: 'object-[80%_top]',
   },
 ];
+
+const PopularProductCard = ({ product, addToCart, toggleWishlist, isInWishlist, setQuickViewProduct }) => {
+  const cardRef = useRef(null);
+  const { isActiveMobile, useMobileInteraction, handleCardInteraction, cardId } = useMobileCardActive(product._id, cardRef);
+
+  const discount = product.comparePrice > product.price ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100) : 0;
+  const imageSrc = getLocalImageUrl(product.images?.[0] || product.image || '/assets/14.jpg');
+
+  return (
+    <div
+      ref={cardRef}
+      data-card-id={cardId}
+      onClickCapture={handleCardInteraction}
+      className="group flex flex-col w-full relative"
+    >
+      <div className="relative overflow-hidden w-full aspect-[4/5] bg-[#f6f5ea] flex items-center justify-center mb-4 cursor-pointer p-0 transition-colors group/imgbox">
+        {/* Full fit image using object-cover */}
+        <img src={imageSrc} alt={product.title} className="w-full h-full object-cover mix-blend-darken transition-transform duration-500 ease-out group-hover/imgbox:scale-105" />
+
+        {discount > 0 && <span className="absolute top-3 left-3 bg-[#598e6a] text-white text-[10px] font-bold px-[8px] py-[4px] tracking-widest z-10">-{discount}%</span>}
+
+        {/* Actions Overlay */}
+        <div className={useMobileInteraction
+          ? `absolute top-2 right-2 flex flex-col gap-2 z-20 transition-all duration-[250ms] ease-in-out ${
+              isActiveMobile
+                ? 'opacity-100 pointer-events-auto translate-y-0'
+                : 'opacity-0 pointer-events-none translate-y-[10px]'
+            }`
+          : "absolute top-2 right-2 flex flex-col gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 ease-out z-20"
+        }>
+          {/* Quick View */}
+          <button
+            onClick={() => setQuickViewProduct(product)}
+            className="w-11 h-11 lg:w-9 lg:h-9 rounded-full bg-white flex items-center justify-center shadow-md transition-all duration-300 hover:scale-105 border-none cursor-pointer"
+          >
+            <Eye
+              size={18}
+              strokeWidth={1.8}
+              className="text-black hover:text-[#729855] transition-colors duration-300"
+            />
+          </button>
+
+          {/* Wishlist */}
+          <button
+            onClick={() => toggleWishlist(product)}
+            className="w-11 h-11 lg:w-9 lg:h-9 rounded-full bg-white flex items-center justify-center shadow-md transition-all duration-300 hover:scale-105 border-none cursor-pointer"
+          >
+            <Heart
+              size={18}
+              strokeWidth={1.8}
+              className={`transition-colors duration-300 ${isInWishlist(product._id)
+                ? "fill-red-500 text-red-500"
+                : "text-black hover:text-[#729855]"
+                }`}
+            />
+          </button>
+        </div>
+
+        {/* Add to Cart Button */}
+        <div className={useMobileInteraction
+          ? `absolute bottom-[20px] left-1/2 -translate-x-1/2 w-[85%] max-w-[160px] z-10 transition-all duration-[250ms] ease-in-out ${
+              isActiveMobile
+                ? 'opacity-100 pointer-events-auto translate-y-0'
+                : 'opacity-0 pointer-events-none translate-y-[10px]'
+            }`
+          : "absolute bottom-[20px] left-1/2 -translate-x-1/2 w-[85%] max-w-[160px] translate-y-0 lg:translate-y-4 lg:group-hover:translate-y-0 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 ease-out z-10"
+        }>
+          <button
+            onClick={() => addToCart(product)}
+            className="w-full bg-[#3a4d23] hover:bg-black text-white text-[10px] font-bold tracking-[0.2em] py-[12px] md:py-[14px] uppercase cursor-pointer border-none rounded-none transition-colors duration-300 h-11 flex items-center justify-center"
+          >
+            ADD CART
+          </button>
+        </div>
+      </div>
+
+      <Link to={`/products/${product.slug || slugify(product.title)}`}>
+        <h3 className="text-center font-medium text-[16px] text-black leading-[1.4] mt-[4px] mb-[4px] px-1 hover:text-[#729855] transition-colors line-clamp-2 cursor-pointer">
+          {product.title}
+        </h3>
+      </Link>
+
+      <div className="flex flex-col items-center justify-center gap-1 font-sans text-center mt-1">
+        <span className="text-[14px] font-normal text-[#222]">Rs. {product.price.toLocaleString('en-IN')}.00 INR</span>
+        {discount > 0 && <span className="text-[13px] font-normal text-[#999] line-through">Rs. {product.comparePrice.toLocaleString('en-IN')}.00 INR</span>}
+      </div>
+    </div>
+  );
+};
 
 const Home = () => {
   const [quickViewProduct, setQuickViewProduct] = useState(null);
@@ -381,72 +471,16 @@ const Home = () => {
           <div className="flex-grow flex flex-col w-full">
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[20px] md:gap-[30px] w-full">
-              {popularProducts.map((product) => {
-                const discount = product.comparePrice > product.price ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100) : 0;
-                const imageSrc = getLocalImageUrl(product.images?.[0] || product.image || '/assets/14.jpg');
-                return (
-                  <div key={product._id} className="group flex flex-col w-full relative">
-                    <div className="relative overflow-hidden w-full aspect-[4/5] bg-[#f6f5ea] flex items-center justify-center mb-4 cursor-pointer p-0 transition-colors group/imgbox">
-
-                      {/* Full fit image using object-cover */}
-                      <img src={imageSrc} alt={product.title} className="w-full h-full object-cover mix-blend-darken transition-transform duration-500 ease-out group-hover/imgbox:scale-105" />
-
-                      {discount > 0 && <span className="absolute top-3 left-3 bg-[#598e6a] text-white text-[10px] font-bold px-[8px] py-[4px] tracking-widest z-10">-{discount}%</span>}
-
-                      <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 ease-out z-20">
-
-                        {/* Quick View */}
-                        <button
-                          onClick={() => setQuickViewProduct(product)}
-                          className="w-11 h-11 lg:w-9 lg:h-9 rounded-full bg-white flex items-center justify-center shadow-md transition-all duration-300 hover:scale-105 border-none cursor-pointer"
-                        >
-                          <Eye
-                            size={18}
-                            strokeWidth={1.8}
-                            className="text-black hover:text-[#729855] transition-colors duration-300"
-                          />
-                        </button>
-
-                        {/* Wishlist */}
-                        <button
-                          onClick={() => toggleWishlist(product)}
-                          className="w-11 h-11 lg:w-9 lg:h-9 rounded-full bg-white flex items-center justify-center shadow-md transition-all duration-300 hover:scale-105 border-none cursor-pointer"
-                        >
-                          <Heart
-                            size={18}
-                            strokeWidth={1.8}
-                            className={`transition-colors duration-300 ${isInWishlist(product._id)
-                              ? "fill-red-500 text-red-500"
-                              : "text-black hover:text-[#729855]"
-                              }`}
-                          />
-                        </button>
-
-                      </div>
-
-                      <div className="absolute bottom-[20px] left-1/2 -translate-x-1/2 w-[85%] max-w-[160px] translate-y-0 lg:translate-y-4 lg:group-hover:translate-y-0 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 ease-out z-10">
-                        <button
-                          onClick={() => addToCart(product)}
-                          className="w-full bg-[#3a4d23] hover:bg-black text-white text-[10px] font-bold tracking-[0.2em] py-[12px] md:py-[14px] uppercase cursor-pointer border-none rounded-none transition-colors duration-300 h-11 flex items-center justify-center"
-                        >
-                          ADD CART
-                        </button>
-                      </div>
-                    </div>
-
-                    <Link to={`/products/${product.slug || slugify(product.title)}`}>
-                      <h3 className="text-center font-medium text-[16px] text-black leading-[1.4] mt-[4px] mb-[4px] px-1 hover:text-[#729855] transition-colors line-clamp-2 cursor-pointer">
-                        {product.title}
-                      </h3>
-                    </Link>
-
-                    <div className="flex flex-col items-center justify-center gap-1 font-sans text-center mt-1">
-                      <span className="text-[14px] font-normal text-[#222]">Rs. {product.price.toLocaleString('en-IN')}.00 INR</span>
-                      {discount > 0 && <span className="text-[13px] font-normal text-[#999] line-through">Rs. {product.comparePrice.toLocaleString('en-IN')}.00 INR</span>}
-                    </div>
-                  </div>
-                );
-              })}
+              {popularProducts.map((product) => (
+                <PopularProductCard
+                  key={product._id}
+                  product={product}
+                  addToCart={addToCart}
+                  toggleWishlist={toggleWishlist}
+                  isInWishlist={isInWishlist}
+                  setQuickViewProduct={setQuickViewProduct}
+                />
+              ))}
             </div>
 
             {/* FIX: Half Underline (Scroll/Progress bar) moved exactly below the products */}
