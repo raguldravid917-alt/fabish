@@ -6,6 +6,8 @@ import { useCart } from '../hooks/useCart';
 import { useWishlist } from '../hooks/useWishlist';
 import { getLocalImageUrl } from '../utils/imageMapper';
 import Loader from '../components/ui/Loader';
+import { useCategories } from '../context/CategoryContext';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 /**
  * Converts a product title into a URL-safe slug.
  */
@@ -80,6 +82,35 @@ const ProductListing = () => {
   const { categorySlug } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const { categories, loading: categoriesLoading } = useCategories();
+
+  const isValidCategory = useMemo(() => {
+    if (!categorySlug || categorySlug === 'all') return true;
+    if (categoriesLoading) return true;
+
+    return categories.some(cat => {
+      const slug = cat.slug || slugify(cat.name);
+      return slug === categorySlug || 
+             (categorySlug === 'lotion' && slug === 'body-lotion') ||
+             (categorySlug === 'cleanse' && slug === 'cleanser') ||
+             (categorySlug === 'serums' && slug === 'serum');
+    });
+  }, [categorySlug, categories, categoriesLoading]);
+
+  const displayTitle = useMemo(() => {
+    if (!categorySlug || categorySlug === 'all') return 'All Products';
+    const cat = categories.find(c => {
+      const slug = c.slug || slugify(c.name);
+      return slug === categorySlug || 
+             (categorySlug === 'lotion' && slug === 'body-lotion') ||
+             (categorySlug === 'cleanse' && slug === 'cleanser') ||
+             (categorySlug === 'serums' && slug === 'serum');
+    });
+    return cat ? cat.name : categorySlug.replace(/-/g, ' ').toUpperCase();
+  }, [categorySlug, categories]);
+
+  useDocumentTitle(displayTitle);
 
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [activeSort, setActiveSort] = useState("BEST SELLING");
@@ -399,6 +430,25 @@ const ProductListing = () => {
     }
   }, []);
 
+  if (!categoriesLoading && !isValidCategory) {
+    return (
+      <div className="w-full min-h-[60vh] flex flex-col items-center justify-center bg-white px-6">
+        <h1 className="text-[60px] font-heading font-bold text-[#2f3e10] mb-2">404</h1>
+        <h2 className="text-[24px] font-heading font-semibold text-black mb-4">Collection Not Found</h2>
+        <p className="text-[#666] mb-8 text-center max-w-md font-body leading-relaxed">
+          The collection you are looking for does not exist or has been removed.
+        </p>
+        <Link 
+          to="/collections/all" 
+          className="bg-[#2f3e10] hover:bg-black text-white px-8 py-4 font-heading font-bold text-xs uppercase tracking-widest transition-all text-center inline-block"
+          style={{ textDecoration: 'none' }}
+        >
+          Back to Shop
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full bg-white font-body min-h-screen">
 
@@ -410,12 +460,12 @@ const ProductListing = () => {
         <div className="absolute inset-0 bg-[#faf9f5]/50"></div>
         <div className="relative z-10 text-center mt-6">
           <h1 className="text-[40px] md:text-[50px] font-heading font-semibold text-[#555] mb-3 tracking-tight">
-            {categorySlug ? categorySlug.replace(/-/g, ' ').toUpperCase() : 'Face Cream'}
+            {displayTitle}
           </h1>
           <p className="text-[10px] font-heading font-bold uppercase tracking-widest text-[#729855]">
             <Link to="/" onClick={() => window.scrollTo(0, 0)} className="hover:text-black transition-colors">Home</Link>
             <span className="mx-2 text-gray-400">/</span>
-            <span className="text-black">{categorySlug || 'Catalog'}</span>
+            <span className="text-black">{displayTitle}</span>
           </p>
         </div>
       </div>

@@ -286,6 +286,23 @@ class ProductController {
     }
   }
 
+  // @desc    Get related products with smart fallback
+  // @route   GET /api/products/:id/related
+  // @access  Public
+  async getRelatedProducts(req, res, next) {
+    try {
+      const { id } = req.params;
+      const limit = Math.min(Number(req.query.limit) || 8, 16);
+      const related = await productService.getRelatedProducts(id, limit, 4);
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        data: related,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // @desc    Get all available statuses
   // @route   GET /api/products/statuses
   // @access  Public

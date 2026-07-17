@@ -6,16 +6,23 @@ const { authenticate, authorize } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 const { ROLES } = require('../constants');
 
+const productContentController = require('../controllers/productContentController');
+
 // Public routes
 router.get('/', productController.getProducts);
 router.get('/statuses', productController.getStatuses);
 router.get('/check-name', productController.checkName);
 router.get('/slug/:slug', productController.getProductBySlug);
 router.post('/upload', upload.single('image'), productController.uploadImage);
+router.get('/:productId/content', productContentController.getProductContent);
+router.get('/:id/related', productController.getRelatedProducts);
 router.get('/:id', productController.getProductById);
+
 
 // Protected admin routes
 router.use(authenticate, authorize(ROLES.ADMIN));
+
+router.put('/:productId/content', productContentController.updateProductContent);
 
 router.post('/', upload.array('images', 10), validateProductCreate, productController.createProduct);
 router.route('/:id')

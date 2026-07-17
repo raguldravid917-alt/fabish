@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Eye } from 'lucide-react';
 import { CartContext } from '../context/CartContext';
@@ -44,14 +44,28 @@ const ProductCard = ({ product, onQuickView }) => {
       {/* Wishlist Button (Top Right) */}
       <button
         onClick={() => toggleWishlist(product)}
-        className={`absolute top-4 right-4 z-10 w-9 h-9 rounded-full flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all duration-300 cursor-pointer border-none ${
+        className={`absolute top-4 right-4 z-10 w-9 h-9 rounded-full flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all duration-[250ms] ease-in-out active:scale-90 cursor-pointer border-none opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto focus:opacity-100 focus:pointer-events-auto translate-y-[6px] group-hover:translate-y-0 group-focus-within:translate-y-0 focus:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#729855] focus-visible:ring-offset-2 ${
           isWishlisted 
             ? 'bg-black text-white' 
             : 'bg-white text-black hover:bg-[#729855] hover:text-white'
         }`}
-        title="Add to Wishlist"
+        title={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
+        aria-label={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
       >
         <Heart className="w-4 h-4" strokeWidth={1.5} fill={isWishlisted ? 'currentColor' : 'none'} />
+      </button>
+
+      {/* View Button — hidden by default, slides and fades in on hover of the entire card */}
+      <button
+        onClick={() => {
+          if (onQuickView) onQuickView(product);
+          else window.location.href = `/products/${product.slug}`;
+        }}
+        className="absolute top-16 right-4 z-10 w-9 h-9 rounded-full bg-white text-black hover:bg-[#2f3e10] hover:text-white active:scale-90 flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all duration-[250ms] ease-in-out cursor-pointer border-none opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto focus:opacity-100 focus:pointer-events-auto translate-y-[6px] group-hover:translate-y-0 group-focus-within:translate-y-0 focus:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#729855] focus-visible:ring-offset-2"
+        title="Quick View"
+        aria-label="Quick View"
+      >
+        <Eye className="w-4 h-4" strokeWidth={1.5} />
       </button>
 
       {/* Image Gallery Container with fixed aspect ratio */}
@@ -68,20 +82,6 @@ const ProductCard = ({ product, onQuickView }) => {
             className="absolute top-0 left-0 w-full h-full object-cover transition-transform duration-700 ease-out scale-100 opacity-0 group-hover:scale-105 group-hover:opacity-100"
           />
         </Link>
-
-        {/* Hover Quick View icon (Desktop only) */}
-        <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden lg:flex items-center justify-center gap-2 z-10">
-          <button
-            onClick={() => {
-              if (onQuickView) onQuickView(product);
-              else window.location.href = `/products/${product.slug}`;
-            }}
-            className="w-9 h-9 rounded-full bg-white text-black hover:bg-[#729855] hover:text-white flex items-center justify-center shadow-sm transition-all duration-300 cursor-pointer border-none"
-            title="Quick View"
-          >
-            <Eye className="w-4 h-4" strokeWidth={1.5} />
-          </button>
-        </div>
       </div>
 
       {/* Product Details Section */}

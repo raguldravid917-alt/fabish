@@ -66,6 +66,8 @@ export const AuthProvider = ({ children }) => {
         setToken(actualToken);
         setUser(data.user || data);
         setLoading(false);
+        // Notify WishlistContext to sync guest items after login
+        window.dispatchEvent(new CustomEvent('wishlist-auth-change', { detail: { type: 'login' } }));
         return { success: true, user: data.user || data };
       } else {
         setError(result.message || 'Login failed');
@@ -101,6 +103,8 @@ export const AuthProvider = ({ children }) => {
         setToken(actualToken);
         setUser(data.user || data);
         setLoading(false);
+        // Notify WishlistContext to sync guest items after Google login
+        window.dispatchEvent(new CustomEvent('wishlist-auth-change', { detail: { type: 'login' } }));
         return { success: true, user: data.user || data };
       } else {
         setError(result.message || 'Google Login failed');
@@ -149,6 +153,8 @@ export const AuthProvider = ({ children }) => {
       setToken(null);
       setUser(null);
       setError(null);
+      // Notify WishlistContext to switch to guest mode
+      window.dispatchEvent(new CustomEvent('wishlist-auth-change', { detail: { type: 'logout' } }));
     }
   };
 

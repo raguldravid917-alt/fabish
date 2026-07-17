@@ -318,7 +318,7 @@ const Home = () => {
             <div className="md:col-span-1 md:row-span-2 relative w-full h-full overflow-hidden group cursor-pointer bg-[#f6f5ea]">
               <img src="/assets/homepage/Rectangle_1_f394c5a5-71c4-413b-8939-f8b03e00b527.jpg" alt="Organic Face Cream" className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
               <div className="absolute bottom-[30px] left-1/2 -translate-x-1/2 z-10 w-[80%] max-w-[180px]">
-                <Link to="/collections/all" className="flex items-center justify-center bg-white text-black hover:bg-black hover:text-white font-heading font-bold text-[12px] tracking-[0.2em] uppercase h-[46px] w-full transition-all duration-300 shadow-sm border-none" style={{ textDecoration: 'none' }}>SERUMS</Link>
+                <Link to="/collections/serums" className="flex items-center justify-center bg-white text-black hover:bg-black hover:text-white font-heading font-bold text-[12px] tracking-[0.2em] uppercase h-[46px] w-full transition-all duration-300 shadow-sm border-none" style={{ textDecoration: 'none' }}>SERUMS</Link>
               </div>
             </div>
 
@@ -338,7 +338,7 @@ const Home = () => {
             <div className="md:col-span-1 md:row-span-1 relative w-full h-full overflow-hidden group cursor-pointer bg-[#f6f5ea]">
               <img src="/assets/homepage/Rectangle_3_af090527-90c1-41b6-9c56-1e551d99d1bf.jpg" alt="Natural Organic Face Wash" className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
               <div className="absolute bottom-[30px] left-1/2 -translate-x-1/2 z-10 w-[80%] max-w-[180px]">
-                <Link to="/collections/all" className="flex items-center justify-center bg-white text-black hover:bg-black hover:text-white font-heading font-bold text-[12px] tracking-[0.2em] uppercase h-[46px] w-full transition-all duration-300 shadow-sm border-none" style={{ textDecoration: 'none' }}>LOTION</Link>
+                <Link to="/collections/lotion" className="flex items-center justify-center bg-white text-black hover:bg-black hover:text-white font-heading font-bold text-[12px] tracking-[0.2em] uppercase h-[46px] w-full transition-all duration-300 shadow-sm border-none" style={{ textDecoration: 'none' }}>LOTION</Link>
               </div>
             </div>
 
@@ -346,7 +346,7 @@ const Home = () => {
             <div className="md:col-span-1 md:row-span-1 relative w-full h-full overflow-hidden group cursor-pointer bg-[#f6f5ea]">
               <img src="/assets/homepage/Rectangle_2_5d23986c-81f7-4e44-a103-f90ce659a719.jpg" alt="Open Face Cream Jar" className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
               <div className="absolute bottom-[30px] left-1/2 -translate-x-1/2 z-10 w-[80%] max-w-[180px]">
-                <Link to="/collections/all" className="flex items-center justify-center bg-white text-black hover:bg-black hover:text-white font-heading font-bold text-[12px] tracking-[0.2em] uppercase h-[46px] w-full transition-all duration-300 shadow-sm border-none" style={{ textDecoration: 'none' }}>FACE CREAM</Link>
+                <Link to="/collections/face-cream" className="flex items-center justify-center bg-white text-black hover:bg-black hover:text-white font-heading font-bold text-[12px] tracking-[0.2em] uppercase h-[46px] w-full transition-all duration-300 shadow-sm border-none" style={{ textDecoration: 'none' }}>FACE CREAM</Link>
               </div>
             </div>
 
@@ -354,7 +354,7 @@ const Home = () => {
             <div className="md:col-span-1 md:row-span-1 relative w-full h-full overflow-hidden group cursor-pointer bg-[#f6f5ea]">
               <img src="/assets/homepage/Rectangle_4_d29da3f1-b9e8-43ab-93cd-f60f9edceb81.jpg" alt="Cosmetic Cream Peaks" className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
               <div className="absolute bottom-[30px] left-1/2 -translate-x-1/2 z-10 w-[80%] max-w-[180px]">
-                <Link to="/collections/all" className="flex items-center justify-center bg-white text-black hover:bg-black hover:text-white font-heading font-bold text-[12px] tracking-[0.2em] uppercase h-[46px] w-full transition-all duration-300 shadow-sm border-none" style={{ textDecoration: 'none' }}>CLEANSE</Link>
+                <Link to="/collections/cleanse" className="flex items-center justify-center bg-white text-black hover:bg-black hover:text-white font-heading font-bold text-[12px] tracking-[0.2em] uppercase h-[46px] w-full transition-all duration-300 shadow-sm border-none" style={{ textDecoration: 'none' }}>CLEANSE</Link>
               </div>
             </div>
 

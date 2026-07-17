@@ -15,7 +15,12 @@ class CategoryService {
   }
 
   async getCategoryBySlug(slug) {
-    const category = await categoryRepository.findBySlug(slug);
+    let normalizedSlug = slug;
+    if (slug === 'lotion') normalizedSlug = 'body-lotion';
+    else if (slug === 'cleanse') normalizedSlug = 'cleanser';
+    else if (slug === 'serums') normalizedSlug = 'serum';
+
+    const category = await categoryRepository.findBySlug(normalizedSlug);
     if (!category) {
       throw new Error('Category not found');
     }

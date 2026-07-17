@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Edit, Trash2, Search, ArrowUpDown, ChevronLeft, ChevronRight, Upload, X, ShieldAlert, ArrowLeft, ArrowRight, Star, AlertCircle, Save, Check } from 'lucide-react';
+import { Edit, Trash2, Search, ArrowUpDown, ChevronLeft, ChevronRight, Upload, X, ShieldAlert, ArrowLeft, ArrowRight, Star, AlertCircle, Save, Check, ListPlus } from 'lucide-react';
 import Loader from '../../components/ui/Loader';
 import { productService } from '../../api/productService';
 import { categoryService } from '../../api/categoryService';
@@ -11,13 +11,19 @@ import ErrorAlert from '../../components/ui/ErrorAlert';
 import { useToast } from '../../context/ToastContext';
 import { formatPrice } from '../../utils/formatPrice';
 import { getLocalImageUrl } from '../../utils/imageMapper';
+import AdminProductContent from './AdminProductContent';
 
 const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
   useDocumentTitle('Admin - Products');
   const { showToast } = useToast();
 
-  const [view, setView] = useState('list'); // 'list' | 'form'
+  const [view, setView] = useState('list'); // 'list' | 'form' | 'content'
   const [editingProduct, setEditingProduct] = useState(null);
+
+  const handleManageContentClick = (product) => {
+    setEditingProduct(product);
+    setView('content');
+  };
 
   // Search, Filter & Pagination state synced with React Router URL Search Params
   const [searchParams, setSearchParams] = useSearchParams();
@@ -900,6 +906,15 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
                         </button>
                         <button
                           type="button"
+                          onClick={() => handleManageContentClick(prod)}
+                          className="p-2 border border-[#eae8d8] text-black hover:bg-[#729855] hover:text-white transition-all cursor-pointer bg-[#fcfcfa]"
+                          title="Manage Dynamic Content"
+                          aria-label={`Manage Content for ${prod.title}`}
+                        >
+                          <ListPlus className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => handleDelete(prod._id)}
                           className="p-2 border border-red-200 text-red-500 hover:bg-red-500 hover:text-white transition-all cursor-pointer bg-[#fcfcfa]"
                           aria-label={`Delete ${prod.title}`}
@@ -959,6 +974,20 @@ const AdminProducts = ({ products = [], categories = [], onRefresh }) => {
           </div>
         )}
       </div>
+    );
+  }
+
+  if (view === 'content') {
+    return (
+      <AdminProductContent
+        product={editingProduct}
+        products={products}
+        onBack={() => {
+          setEditingProduct(null);
+          setView('list');
+          onRefresh();
+        }}
+      />
     );
   }
 

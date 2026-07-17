@@ -20,9 +20,14 @@ const getCategoryAndDescendants = async (categorySlugOrId) => {
   if (mongoose.Types.ObjectId.isValid(categorySlugOrId)) {
     targetCat = await Category.findById(categorySlugOrId);
   } else {
-    targetCat = await Category.findOne({ slug: categorySlugOrId, isDeleted: false });
-    if (!targetCat && typeof categorySlugOrId === 'string' && categorySlugOrId.endsWith('s')) {
-      const singularSlug = categorySlugOrId.slice(0, -1);
+    let normalizedSlug = categorySlugOrId;
+    if (categorySlugOrId === 'lotion') normalizedSlug = 'body-lotion';
+    else if (categorySlugOrId === 'cleanse') normalizedSlug = 'cleanser';
+    else if (categorySlugOrId === 'serums') normalizedSlug = 'serum';
+
+    targetCat = await Category.findOne({ slug: normalizedSlug, isDeleted: false });
+    if (!targetCat && typeof normalizedSlug === 'string' && normalizedSlug.endsWith('s')) {
+      const singularSlug = normalizedSlug.slice(0, -1);
       targetCat = await Category.findOne({ slug: singularSlug, isDeleted: false });
     }
   }
@@ -571,6 +576,90 @@ class ProductService {
   async bulkHide(ids) {
     return await productRepository.bulkUpdateStatus(ids, PRODUCT_STATUS.HIDDEN);
   }
+
+  /**
+   * Get related products with smart 3-tier fallback:
+   * 1. Same category (excluding current product)
+   * 2. Same subcategory if category count < minCount
+   * 3. Latest published products as final fallback
+   *
+   * Guarantees a minimum of minCount results if that many products exist in DB.
+   */
+  async getRelatedProducts(productId, limit = 8, minCount = 4) {
+    const product = await Product.findById(productId).select('category subcategory status').lean();
+    if (!product) return [];
+
+    const baseFilter = {
+      _id: { $ne: productId },
+      status: PRODUCT_STATUS.PUBLISHED,
+    };
+
+    const seenIds = new Set([productId.toString()]);
+    const results = [];
+
+    // ── Tier 1: Same category ─────────────────────────────────────────────────
+    if (product.category) {
+      const categoryIds = await getCategoryAndDescendants(product.category.toString());
+      const tier1 = await Product.find({
+        ...baseFilter,
+        category: { $in: categoryIds },
+      })
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .populate('category', 'name slug')
+        .lean();
+
+      tier1.forEach((p) => {
+        if (!seenIds.has(p._id.toString())) {
+          seenIds.add(p._id.toString());
+          results.push(p);
+        }
+      });
+    }
+
+    // ── Tier 2: Same subcategory ──────────────────────────────────────────────
+    if (results.length < minCount && product.subcategory) {
+      const tier2 = await Product.find({
+        ...baseFilter,
+        subcategory: product.subcategory,
+        _id: { $nin: Array.from(seenIds) },
+      })
+        .sort({ createdAt: -1 })
+        .limit(limit - results.length)
+        .populate('category', 'name slug')
+        .lean();
+
+      tier2.forEach((p) => {
+        if (!seenIds.has(p._id.toString())) {
+          seenIds.add(p._id.toString());
+          results.push(p);
+        }
+      });
+    }
+
+    // ── Tier 3: Latest published products ────────────────────────────────────
+    if (results.length < minCount) {
+      const needed = limit - results.length;
+      const tier3 = await Product.find({
+        ...baseFilter,
+        _id: { $nin: Array.from(seenIds) },
+      })
+        .sort({ createdAt: -1 })
+        .limit(needed)
+        .populate('category', 'name slug')
+        .lean();
+
+      tier3.forEach((p) => {
+        if (!seenIds.has(p._id.toString())) {
+          seenIds.add(p._id.toString());
+          results.push(p);
+        }
+      });
+    }
+
+    return results.slice(0, limit);
+  }
 }
 
 module.exports = new ProductService();
+

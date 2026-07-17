@@ -1,21 +1,32 @@
-import React, { createContext, useState, useEffect, useRef } from 'react';
-import { api } from '../api/client'; // Imports your custom Axios api instance
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useState, useEffect, useCallback } from 'react';
+import { api } from '../api/client';
 
 export const WishlistContext = createContext();
+
 
 export const WishlistProvider = ({ children }) => {
   const [wishlistItems, setWishlistItems] = useState([]);
   const [loading, setLoading] = useState(false);
-  const prevToken = useRef(localStorage.getItem('token'));
+  // Track which product IDs are currently being toggled (for per-item loading state)
+  const [togglingIds, setTogglingIds] = useState(new Set());
 
-  const fetchWishlist = async () => {
-    let token = localStorage.getItem('token');
-    if (token === 'undefined' || token === 'null') {
-      token = null;
-    }
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  const getToken = () => {
+    const t = localStorage.getItem('token');
+    return t && t !== 'undefined' && t !== 'null' ? t : null;
+  };
+
+  // ── Fetch wishlist ─────────────────────────────────────────────────────────
+  const fetchWishlist = useCallback(async () => {
+    const token = getToken();
     if (!token) {
-      const localData = localStorage.getItem('guest_wishlistItems');
-      setWishlistItems(localData ? JSON.parse(localData) : []);
+      try {
+        const localData = localStorage.getItem('guest_wishlistItems');
+        setWishlistItems(localData ? JSON.parse(localData) : []);
+      } catch {
+        setWishlistItems([]);
+      }
       return;
     }
 
@@ -26,60 +37,118 @@ export const WishlistProvider = ({ children }) => {
         setWishlistItems(result.data.products || []);
       }
     } catch (error) {
-      console.error('Error fetching secure user wishlist:', error);
+      console.error('Error fetching wishlist:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchWishlist();
-
-    const handleStorageChange = () => {
-      fetchWishlist();
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-
-    const interval = setInterval(() => {
-      const currentToken = localStorage.getItem('token');
-      if (currentToken !== prevToken.current) {
-        prevToken.current = currentToken;
-        fetchWishlist();
-      }
-    }, 1000);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
-    };
   }, []);
 
-  const toggleWishlist = async (product) => {
-    const token = localStorage.getItem('token');
+  // ── Sync guest wishlist items into DB after login ──────────────────────────
+  const syncGuestWishlistAfterLogin = useCallback(async () => {
+    const token = getToken();
+    if (!token) return;
+
+    try {
+      const localData = localStorage.getItem('guest_wishlistItems');
+      if (!localData) return;
+      const guestItems = JSON.parse(localData);
+      if (!guestItems || guestItems.length === 0) return;
+
+      // Merge each guest item into the DB wishlist via toggle (add only if not present)
+      const dbResult = await api.get('/wishlist');
+      const dbProducts = dbResult?.data?.products || [];
+      const dbIds = new Set(dbProducts.map((p) => (p._id || p).toString()));
+
+      for (const item of guestItems) {
+        const itemId = (item._id || item).toString();
+        if (!dbIds.has(itemId)) {
+          await api.post('/wishlist/toggle', { productId: itemId });
+        }
+      }
+
+      // Clear guest list after sync
+      localStorage.removeItem('guest_wishlistItems');
+      // Refresh from DB
+      await fetchWishlist();
+    } catch (error) {
+      console.error('Error syncing guest wishlist after login:', error);
+    }
+  }, [fetchWishlist]);
+
+  // ── Listen for auth change events (fired by AuthContext) ───────────────────
+  useEffect(() => {
+    // Initial wishlist load (called inside a callback to satisfy linting rules)
+    const initWishlist = () => fetchWishlist();
+    initWishlist();
+
+    const handleAuthChange = (e) => {
+      const { type } = e.detail || {};
+      if (type === 'login') {
+        // Sync guest items then fetch fresh DB wishlist
+        syncGuestWishlistAfterLogin();
+      } else {
+        // Logout — load from localStorage (will be empty or new guest data)
+        fetchWishlist();
+      }
+    };
+
+    const handleStorageChange = (e) => {
+      // Only react to token changes in other tabs
+      if (e.key === 'token') {
+        fetchWishlist();
+      }
+    };
+
+    window.addEventListener('wishlist-auth-change', handleAuthChange);
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('wishlist-auth-change', handleAuthChange);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [fetchWishlist, syncGuestWishlistAfterLogin]);
+
+  // ── Toggle wishlist ────────────────────────────────────────────────────────
+  const toggleWishlist = useCallback(async (product) => {
+    const productId = product._id || product;
+    const token = getToken();
+
     if (!token) {
+      // Guest: toggle in localStorage
       setWishlistItems((prevItems) => {
-        const isExist = prevItems.some((x) => x._id === product._id);
+        const isExist = prevItems.some((x) => (x._id || x).toString() === productId.toString());
         const updated = isExist
-          ? prevItems.filter((x) => x._id !== product._id)
+          ? prevItems.filter((x) => (x._id || x).toString() !== productId.toString())
           : [...prevItems, product];
-        localStorage.setItem('guest_wishlistItems', JSON.stringify(updated));
+        try {
+          localStorage.setItem('guest_wishlistItems', JSON.stringify(updated));
+        } catch (e) { /* eslint-disable-line no-unused-vars */ // localStorage write failed — ignore
+        }
         return updated;
       });
       return;
     }
 
+    // Mark as toggling
+    setTogglingIds((prev) => new Set([...prev, productId.toString()]));
     try {
-      const result = await api.post('/wishlist/toggle', { productId: product._id });
+      const result = await api.post('/wishlist/toggle', { productId });
       if (result.success && result.data) {
         setWishlistItems(result.data.products || []);
       }
     } catch (error) {
-      console.error('Error toggling database wishlist:', error);
+      console.error('Error toggling wishlist:', error);
+    } finally {
+      setTogglingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(productId.toString());
+        return next;
+      });
     }
-  };
+  }, []);
 
-  const isInWishlist = (id) => {
+  // ── isInWishlist ───────────────────────────────────────────────────────────
+  const isInWishlist = useCallback((id) => {
     if (!id) return false;
     const idStr = id.toString();
     return wishlistItems.some((x) => {
@@ -88,13 +157,20 @@ export const WishlistProvider = ({ children }) => {
       const itemId = x._id || x;
       return itemId && itemId.toString() === idStr;
     });
-  };
+  }, [wishlistItems]);
 
-  const removeFromWishlist = async (productId) => {
+  // ── isToggling ─────────────────────────────────────────────────────────────
+  const isToggling = useCallback((id) => {
+    if (!id) return false;
+    return togglingIds.has(id.toString());
+  }, [togglingIds]);
+
+  // ── removeFromWishlist ─────────────────────────────────────────────────────
+  const removeFromWishlist = useCallback(async (productId) => {
     if (!productId) return false;
     const idStr = productId.toString();
-    const token = localStorage.getItem('token');
-    
+    const token = getToken();
+
     if (!token) {
       setWishlistItems((prevItems) => {
         const updated = prevItems.filter((x) => {
@@ -103,34 +179,46 @@ export const WishlistProvider = ({ children }) => {
           const itemId = x._id || x;
           return itemId && itemId.toString() !== idStr;
         });
-        localStorage.setItem('guest_wishlistItems', JSON.stringify(updated));
+        try {
+          localStorage.setItem('guest_wishlistItems', JSON.stringify(updated));
+        } catch (e) { /* eslint-disable-line no-unused-vars */ // localStorage write failed — ignore
+        }
         return updated;
       });
       return true;
     }
 
+    const exists = wishlistItems.some((x) => {
+      if (!x) return false;
+      if (typeof x === 'string') return x === idStr;
+      const itemId = x._id || x;
+      return itemId && itemId.toString() === idStr;
+    });
+
+    if (!exists) return false;
+
+    setTogglingIds((prev) => new Set([...prev, idStr]));
     try {
-      const isExist = wishlistItems.some((x) => {
-        if (!x) return false;
-        if (typeof x === 'string') return x === idStr;
-        const itemId = x._id || x;
-        return itemId && itemId.toString() === idStr;
-      });
-      if (isExist) {
-        const result = await api.post('/wishlist/toggle', { productId: idStr });
-        if (result.success && result.data) {
-          setWishlistItems(result.data.products || []);
-        }
+      const result = await api.post('/wishlist/toggle', { productId: idStr });
+      if (result.success && result.data) {
+        setWishlistItems(result.data.products || []);
       }
       return true;
     } catch (error) {
-      console.error('Error removing from database wishlist:', error);
+      console.error('Error removing from wishlist:', error);
       return false;
+    } finally {
+      setTogglingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(idStr);
+        return next;
+      });
     }
-  };
+  }, [wishlistItems]);
 
-  const clearWishlist = async () => {
-    const token = localStorage.getItem('token');
+  // ── clearWishlist ──────────────────────────────────────────────────────────
+  const clearWishlist = useCallback(async () => {
+    const token = getToken();
     if (!token) {
       setWishlistItems([]);
       localStorage.removeItem('guest_wishlistItems');
@@ -143,9 +231,9 @@ export const WishlistProvider = ({ children }) => {
         setWishlistItems([]);
       }
     } catch (error) {
-      console.error('Error clearing database wishlist:', error);
+      console.error('Error clearing wishlist:', error);
     }
-  };
+  }, []);
 
   return (
     <WishlistContext.Provider
@@ -154,7 +242,10 @@ export const WishlistProvider = ({ children }) => {
         toggleWishlist,
         removeFromWishlist,
         isInWishlist,
+        isToggling,
         clearWishlist,
+        syncGuestWishlistAfterLogin,
+        fetchWishlist,
         loading,
       }}
     >

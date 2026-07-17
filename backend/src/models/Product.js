@@ -139,6 +139,99 @@ const productSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+
+    // ── Extended Product Information (optional, admin-managed) ────────────────
+    // These supplement the ProductContent collection-based system for simpler
+    // text/array data that doesn't need full content-block infrastructure.
+    about: {
+      type: String,
+      default: '',
+    },
+    highlights: {
+      type: [String],
+      default: [],
+    },
+    benefits: {
+      type: [{
+        title: { type: String, default: '' },
+        description: { type: String, default: '' },
+        icon: { type: String, default: 'CheckCircle' },
+      }],
+      default: [],
+    },
+    ingredients: {
+      type: [{
+        name: { type: String, default: '' },
+        description: { type: String, default: '' },
+      }],
+      default: [],
+    },
+    howToUse: {
+      type: [{
+        title: { type: String, default: '' },
+        instruction: { type: String, default: '' },
+      }],
+      default: [],
+    },
+    specifications: {
+      type: [{
+        key: { type: String, default: '' },
+        value: { type: String, default: '' },
+      }],
+      default: [],
+    },
+    manufacturer: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    countryOfOrigin: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    expiry: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    packageContents: {
+      type: [String],
+      default: [],
+    },
+    storageInstructions: {
+      type: [String],
+      default: [],
+    },
+    warnings: {
+      type: [String],
+      default: [],
+    },
+    certifications: {
+      type: [String],
+      default: [],
+    },
+    skinType: {
+      type: [String],
+      default: [],
+    },
+    suitableFor: {
+      type: [String],
+      default: [],
+    },
+    faq: {
+      type: [{
+        question: { type: String, default: '' },
+        answer: { type: String, default: '' },
+      }],
+      default: [],
+    },
+    additionalInformation: {
+      type: String,
+      default: '',
+    },
+    // ─────────────────────────────────────────────────────────────────────────
+
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

@@ -74,9 +74,36 @@ export const productService = {
   },
 
   /**
+   * Get dynamic content and configurations for a product.
+   * @param {string} productId
+   * @returns {Promise<{ success, data, message }>}
+   */
+  getContent: (productId) =>
+    api.get(`${ENDPOINTS.PRODUCTS}/${productId}/content`),
+
+  /**
+   * Update dynamic content and configurations for a product (admin only).
+   * @param {string} productId
+   * @param {object} contentData
+   * @returns {Promise<{ success, data, message }>}
+   */
+  updateContent: (productId, contentData) =>
+    api.put(`${ENDPOINTS.PRODUCTS}/${productId}/content`, contentData, { auth: true }),
+
+  /**
+   * Get related products with smart category/subcategory/latest fallback.
+   * @param {string} id - Product ID (not slug)
+   * @param {number} [limit=8]
+   * @returns {Promise<{ success, data, message }>}
+   */
+  getRelated: (id, limit = 8) =>
+    api.get(`${ENDPOINTS.PRODUCTS}/${id}/related?limit=${limit}`),
+
+  /**
    * Get all available product statuses.
    * @returns {Promise<{ success, data, message }>}
    */
   getStatuses: () =>
     api.get(`${ENDPOINTS.PRODUCTS}/statuses`),
 };
+

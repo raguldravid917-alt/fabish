@@ -4,6 +4,7 @@ import { useCategories } from '../context/CategoryContext';
 import { Link } from 'react-router-dom';
 import { getLocalImageUrl } from '../utils/imageMapper';
 import { productService } from '../api/productService'; // Imports backend service natively
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 // Helper to securely map database paths and prevent image breakage
 const ensureAbsolutePath = (path) => {
@@ -27,6 +28,7 @@ const ensureAbsolutePath = (path) => {
 };
 
 const Collections = () => {
+  useDocumentTitle('All Collections');
   const { categories, loading: categoriesLoading } = useCategories();
   const [products, setProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(true);
