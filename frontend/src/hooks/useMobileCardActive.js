@@ -1,9 +1,17 @@
 import { useState, useEffect, useId, useMemo } from 'react';
-import { cardListeners, getSharedObserver, setActiveCardId, getActiveCardId, isMobileOrTouchTablet } from '../utils/mobileCardObserver';
+
+// Helper function to detect mobile/touch-tablet interface
+export const isMobileOrTouchTablet = () => {
+  if (typeof window === 'undefined') return false;
+  const isMobileWidth = window.innerWidth < 768;
+  const supportsHover = window.matchMedia('(hover: hover)').matches;
+  return isMobileWidth || !supportsHover;
+};
 
 export const useMobileCardActive = (productId, cardRef) => {
   const [isActiveMobile, setIsActiveMobile] = useState(false);
   const reactId = useId();
+  // Unique card ID for state management/accessibility
   const cardId = useMemo(() => `card-${productId}-${reactId.replace(/:/g, '')}`, [productId, reactId]);
 
   const [useMobileInteraction, setUseMobileInteraction] = useState(false);
@@ -17,37 +25,35 @@ export const useMobileCardActive = (productId, cardRef) => {
     return () => window.removeEventListener('resize', checkInteraction);
   }, []);
 
+  // Listen for clicks outside to deactivate the card on mobile
   useEffect(() => {
-    const el = cardRef.current;
-    if (!el || typeof window === 'undefined') return;
+    if (!useMobileInteraction) return;
 
-    cardListeners.set(cardId, setIsActiveMobile);
-
-    const observer = getSharedObserver();
-    if (observer) {
-      observer.observe(el);
-    }
-
-    return () => {
-      cardListeners.delete(cardId);
-      if (observer && el) {
-        observer.unobserve(el);
-      }
-      if (getActiveCardId() === cardId) {
-        setActiveCardId(null);
+    const handleOutsideClick = (e) => {
+      if (cardRef.current && !cardRef.current.contains(e.target)) {
+        setIsActiveMobile(false);
       }
     };
-  }, [cardId, cardRef]);
+
+    // Use capture phase for click to ensure we intercept it, and touchstart for mobile responsiveness
+    document.addEventListener('click', handleOutsideClick, { capture: true });
+    document.addEventListener('touchstart', handleOutsideClick, { passive: true });
+
+    return () => {
+      document.removeEventListener('click', handleOutsideClick, { capture: true });
+      document.removeEventListener('touchstart', handleOutsideClick, { passive: true });
+    };
+  }, [useMobileInteraction, cardRef]);
 
   const handleCardInteraction = (e) => {
     if (!isMobileOrTouchTablet()) return;
     if (isActiveMobile) return;
 
-    // First tap: prevent navigation, show action buttons, mark card active
+    // First tap: prevent navigation/default action, show action buttons/icons, and mark card active
     e.preventDefault();
     e.stopPropagation();
 
-    setActiveCardId(cardId);
+    setIsActiveMobile(true);
   };
 
   return {
