@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useCallback } from 'react';
+import React, { createContext, useState, useContext, useCallback, useEffect } from 'react';
 import { X, CheckCircle, AlertCircle, Info } from 'lucide-react';
 
 const ToastContext = createContext();
@@ -13,6 +13,7 @@ export const useToast = () => {
 
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
+  const [bottomOffset, setBottomOffset] = useState(0);
 
   const showToast = useCallback((message, type = 'success', duration = 3000) => {
     const id = Date.now();
@@ -27,11 +28,90 @@ export const ToastProvider = ({ children }) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
+  useEffect(() => {
+    const updateOffset = () => {
+      const elements = document.querySelectorAll(
+        '[class*="fixed"][class*="bottom-0"], [class*="sticky"][class*="bottom-0"], [data-sticky-bottom="true"]'
+      );
+      
+      let maxBottomHeight = 0;
+      elements.forEach((el) => {
+        if (el.id === 'toast-container-root' || el.contains(document.getElementById('toast-container-root'))) {
+          return;
+        }
+        
+        const rect = el.getBoundingClientRect();
+        const style = window.getComputedStyle(el);
+        
+        const isVisible = 
+          rect.height > 0 && 
+          rect.height < 150 && 
+          style.display !== 'none' && 
+          style.visibility !== 'hidden' && 
+          parseFloat(style.opacity || '1') > 0 &&
+          rect.top < window.innerHeight - 5;
+          
+        if (isVisible) {
+          const occupiedHeight = window.innerHeight - rect.top;
+          if (occupiedHeight > maxBottomHeight) {
+            maxBottomHeight = occupiedHeight;
+          }
+        }
+      });
+
+      let keyboardHeight = 0;
+      if (window.visualViewport) {
+        const vv = window.visualViewport;
+        keyboardHeight = Math.max(0, window.innerHeight - (vv.offsetTop + vv.height));
+      }
+      
+      setBottomOffset(Math.max(keyboardHeight, maxBottomHeight));
+    };
+
+    window.addEventListener('resize', updateOffset);
+    window.addEventListener('scroll', updateOffset);
+    
+    let visualViewportListener = null;
+    if (window.visualViewport) {
+      visualViewportListener = updateOffset;
+      window.visualViewport.addEventListener('resize', visualViewportListener);
+      window.visualViewport.addEventListener('scroll', visualViewportListener);
+    }
+    
+    const observer = new MutationObserver(updateOffset);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style']
+    });
+
+    updateOffset();
+
+    return () => {
+      window.removeEventListener('resize', updateOffset);
+      window.removeEventListener('scroll', updateOffset);
+      if (window.visualViewport && visualViewportListener) {
+        window.visualViewport.removeEventListener('resize', visualViewportListener);
+        window.visualViewport.removeEventListener('scroll', visualViewportListener);
+      }
+      observer.disconnect();
+    };
+  }, []);
+
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
       {/* Toast Portal Container */}
-      <div className="fixed bottom-5 right-5 z-[9999] flex flex-col gap-3 pointer-events-none w-full max-w-sm">
+      <div 
+        id="toast-container-root"
+        className="fixed z-[9999] flex flex-col gap-3 pointer-events-none w-[calc(100%-2rem)] max-w-[384px] left-1/2 -translate-x-1/2 lg:left-auto lg:translate-x-0 lg:right-5 lg:w-full lg:max-w-sm"
+        style={{
+          bottom: bottomOffset > 0 
+            ? `calc(${bottomOffset}px + env(safe-area-inset-bottom) + 12px)`
+            : `calc(20px + env(safe-area-inset-bottom))`,
+        }}
+      >
         {toasts.map((toast) => {
           let bgColor = 'bg-white';
           let borderLeftColor = 'border-l-[4px] border-l-[#729855]';

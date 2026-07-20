@@ -1056,7 +1056,7 @@ const ProductDetail = () => {
       </div>
 
       {/* ── Sticky Bottom Add to Cart Bar ───────────────────────────────────── */}
-      <div className={`fixed bottom-0 left-0 w-full bg-white border-t border-[#eae8d8] shadow-[0_-8px_30px_rgba(0,0,0,0.06)] py-3 px-4 md:px-12 z-[1000] transition-all duration-300 transform flex items-center justify-between ${showStickyBar ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'}`}>
+      <div data-sticky-bottom="true" className={`fixed bottom-0 left-0 w-full bg-white border-t border-[#eae8d8] shadow-[0_-8px_30px_rgba(0,0,0,0.06)] py-3 px-4 md:px-12 z-[1000] transition-all duration-300 transform flex items-center justify-between ${showStickyBar ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'}`}>
         <div className="hidden sm:flex items-center gap-4">
           <img src={getLocalImageUrl(mainImage)} alt={product.title} className="w-10 h-12 object-cover bg-[#f6f5ea] mix-blend-darken" />
           <div className="text-left">

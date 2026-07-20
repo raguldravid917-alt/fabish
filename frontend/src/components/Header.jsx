@@ -646,7 +646,7 @@ const Header = () => {
       </header>
 
       {/* Mobile Bottom Navigation Bar */}
-      <nav className="lg:hidden fixed bottom-0 left-0 w-full h-16 bg-[#F9F9EB] border-t border-[#eae8d8] shadow-[0_-4px_16px_rgba(0,0,0,0.05)] z-50 flex items-center justify-around">
+      <nav data-sticky-bottom="true" className="lg:hidden fixed bottom-0 left-0 w-full h-16 bg-[#F9F9EB] border-t border-[#eae8d8] shadow-[0_-4px_16px_rgba(0,0,0,0.05)] z-50 flex items-center justify-around">
         <Link
           to="/"
           className={`flex flex-col items-center justify-center gap-1 flex-1 h-full ${currentPath === '/' ? 'text-[#729855]' : 'text-black'}`}

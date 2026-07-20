@@ -1,0 +1,9 @@
+{
+  "name": "fabish-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Utility scripts and scraping tools",
+  "dependencies": {
+    "puppeteer-core": "^25.3.0"
+  }
+}

@@ -904,7 +904,7 @@ const Cart = () => {
 
       {/* Sticky Bottom Checkout Bar for Mobile (Cart View Only) */}
       {!isCheckoutMode && cartItems.length > 0 && (
-        <div className="fixed bottom-0 left-0 w-full bg-white border-t border-brand-border shadow-[0_-8px_30px_rgba(0,0,0,0.06)] py-3.5 px-6 z-40 flex items-center justify-between lg:hidden select-none">
+        <div data-sticky-bottom="true" className="fixed bottom-0 left-0 w-full bg-white border-t border-brand-border shadow-[0_-8px_30px_rgba(0,0,0,0.06)] py-3.5 px-6 z-40 flex items-center justify-between lg:hidden select-none">
           <div className="flex flex-col text-left">
             <span className="text-[10px] text-brand-muted uppercase tracking-wider font-heading font-bold">Total Amount</span>
             <span className="font-sans text-base font-bold text-brand-charcoal">{formatINR(totalPrice)}</span>
@@ -920,7 +920,7 @@ const Cart = () => {
 
       {/* Sticky Bottom Pay Bar for Mobile (Checkout View Only) */}
       {isCheckoutMode && cartItems.length > 0 && (
-        <div className="fixed bottom-0 left-0 w-full bg-white border-t border-brand-border shadow-[0_-8px_30px_rgba(0,0,0,0.06)] py-3.5 px-6 z-40 flex items-center justify-between lg:hidden select-none">
+        <div data-sticky-bottom="true" className="fixed bottom-0 left-0 w-full bg-white border-t border-brand-border shadow-[0_-8px_30px_rgba(0,0,0,0.06)] py-3.5 px-6 z-40 flex items-center justify-between lg:hidden select-none">
           <div className="flex flex-col text-left">
             <span className="text-[10px] text-brand-muted uppercase tracking-wider font-heading font-bold">Order Total</span>
             <span className="font-sans text-base font-bold text-brand-charcoal">{formatINR(totalPrice)}</span>

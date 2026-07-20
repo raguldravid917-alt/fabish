@@ -1,16 +1,22 @@
 {
   "name": "fabish-storefront-clone",
   "version": "1.0.0",
+  "private": true,
   "description": "Full-stack MERN clone of Fabish storefront - Root package",
+  "workspaces": [
+    "backend",
+    "frontend",
+    "tools"
+  ],
   "scripts": {
-    "install-all": "npm install && npm install --prefix backend && npm install --prefix frontend",
-    "seed": "npm run seed --prefix backend",
-    "backend": "npm start --prefix backend",
-    "frontend": "npm run dev --prefix frontend",
-    "dev": "concurrently \"npm run backend\" \"npm run frontend\""
+    "dev": "concurrently \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "install-all": "npm install",
+    "seed": "npm run seed -w backend",
+    "backend": "npm run dev -w backend",
+    "frontend": "npm run dev -w frontend",
+    "tools": "npm install -w tools"
   },
   "dependencies": {
-    "concurrently": "^8.2.2",
-    "puppeteer-core": "^25.3.0"
+    "concurrently": "^8.2.2"
   }
 }
