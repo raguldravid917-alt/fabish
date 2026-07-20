@@ -827,7 +827,7 @@ class OrderService {
     }
   }
 
-  async getTrackingInfo(trackingNumberOrOrderNumber) {
+  async getTrackingInfo(trackingNumberOrOrderNumber, emailOrPhone) {
     const order = await Order.findOne({
       $or: [
         { trackingNumber: trackingNumberOrOrderNumber },
@@ -837,6 +837,22 @@ class OrderService {
 
     if (!order) {
       throw new Error('Order not found for the provided tracking number or order number');
+    }
+
+    if (emailOrPhone) {
+      const input = emailOrPhone.trim().toLowerCase();
+      const customerEmail = (order.customerDetails?.email || '').trim().toLowerCase();
+      const customerPhone = (order.customerDetails?.phone || '').trim().replace(/\D/g, '');
+      const userEmail = (order.user?.email || '').trim().toLowerCase();
+      
+      const cleanInputPhone = input.replace(/\D/g, '');
+      
+      const emailMatches = customerEmail === input || userEmail === input;
+      const phoneMatches = customerPhone !== '' && cleanInputPhone !== '' && (customerPhone.endsWith(cleanInputPhone) || cleanInputPhone.endsWith(customerPhone));
+      
+      if (!emailMatches && !phoneMatches) {
+        throw new Error('Email or Phone number does not match this order');
+      }
     }
 
     return {
@@ -850,6 +866,10 @@ class OrderService {
       estimatedDelivery: order.estimatedDelivery,
       trackingHistory: order.trackingHistory || [],
       createdAt: order.createdAt,
+      customerDetails: {
+        name: order.customerDetails?.name,
+        phone: order.customerDetails?.phone,
+      }
     };
   }
 }

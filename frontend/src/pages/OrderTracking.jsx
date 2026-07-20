@@ -21,28 +21,30 @@ const OrderTracking = () => {
   const { showToast } = useToast();
   
   const queryNumber = searchParams.get('number') || searchParams.get('orderId') || '';
+  const queryEmailOrPhone = searchParams.get('emailOrPhone') || '';
   
   const [searchQuery, setSearchQuery] = useState(queryNumber);
+  const [emailOrPhone, setEmailOrPhone] = useState(queryEmailOrPhone);
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const fetchTracking = async (numberOrId) => {
+  const fetchTracking = async (numberOrId, checkContact) => {
     if (!numberOrId?.trim()) return;
     setLoading(true);
     setError('');
     setOrder(null);
     try {
-      const res = await orderService.getTracking(numberOrId.trim());
+      const res = await orderService.getTracking(numberOrId.trim(), checkContact?.trim());
       if (res.success && res.data) {
         setOrder(res.data);
       } else {
-        setError(res.message || 'Tracking information not found. Check your order/tracking number.');
-        showToast(res.message || 'Tracking number not found', 'error');
+        setError(res.message || 'Tracking information not found. Please verify your ID and email/phone number.');
+        showToast(res.message || 'Tracking details not found', 'error');
       }
     } catch (err) {
-      setError('Failed to load tracking data. Please try again.');
-      showToast('Error loading tracking data', 'error');
+      setError(err.message || 'Failed to load tracking data. Please try again.');
+      showToast(err.message || 'Error loading tracking data', 'error');
     } finally {
       setLoading(false);
     }
@@ -50,13 +52,14 @@ const OrderTracking = () => {
 
   useEffect(() => {
     if (queryNumber) {
-      fetchTracking(queryNumber);
+      fetchTracking(queryNumber, queryEmailOrPhone);
       setSearchQuery(queryNumber);
+      setEmailOrPhone(queryEmailOrPhone);
     } else {
       setOrder(null);
       setError('');
     }
-  }, [queryNumber]);
+  }, [queryNumber, queryEmailOrPhone]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -64,7 +67,14 @@ const OrderTracking = () => {
       showToast('Please enter an order or tracking number', 'warning');
       return;
     }
-    setSearchParams({ number: searchQuery.trim() });
+    if (!emailOrPhone.trim()) {
+      showToast('Please enter the email or phone number associated with the order', 'warning');
+      return;
+    }
+    setSearchParams({ 
+      number: searchQuery.trim(),
+      emailOrPhone: emailOrPhone.trim()
+    });
   };
 
   const getEventForStage = (stageLabel, paymentMethod) => {
@@ -102,30 +112,44 @@ const OrderTracking = () => {
             Track Your Order
           </h1>
           <p className="text-xs text-brand-muted mt-2 max-w-md mx-auto">
-            Enter your unique Tracking Number or Order Number below to view live shipment updates.
+            Enter your unique Tracking/Order ID along with your email or phone number below.
           </p>
         </div>
 
         {/* Search Bar Form */}
         <div className="bg-white border border-brand-border p-6 md:p-8 shadow-sm mb-8">
-          <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-grow">
-              <input
-                type="text"
-                placeholder="Enter Tracking ID (e.g. TRK-...) or Order ID (e.g. FAB-...)"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#f4f7f8] border border-transparent focus:border-[#729855] focus:bg-white px-5 py-4 pl-12 text-sm text-[#333] outline-none transition-all placeholder:text-gray-400 font-medium"
-              />
-              <Search className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
+          <form onSubmit={handleSearchSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Order or Tracking ID (e.g. FAB-... / TRK-...)"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-[#f4f7f8] border border-transparent focus:border-[#729855] focus:bg-white px-5 py-4 pl-12 text-sm text-[#333] outline-none transition-all placeholder:text-gray-400 font-medium"
+                />
+                <ClipboardList className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
+              </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Billing Email ID or Phone Number"
+                  value={emailOrPhone}
+                  onChange={(e) => setEmailOrPhone(e.target.value)}
+                  className="w-full bg-[#f4f7f8] border border-transparent focus:border-[#729855] focus:bg-white px-5 py-4 pl-12 text-sm text-[#333] outline-none transition-all placeholder:text-gray-400 font-medium"
+                />
+                <User className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
+              </div>
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-[#2f3e10] hover:bg-black text-white px-8 py-4 text-xs font-bold tracking-widest uppercase transition-colors shrink-0 border-none cursor-pointer flex items-center justify-center gap-2"
-            >
-              {loading ? 'Searching...' : 'Track Shipment'}
-            </button>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={loading}
+                className="bg-[#2f3e10] hover:bg-black text-white px-8 py-4 text-xs font-bold tracking-widest uppercase transition-colors shrink-0 border-none cursor-pointer flex items-center justify-center gap-2"
+              >
+                {loading ? 'Searching...' : 'Track Shipment'}
+              </button>
+            </div>
           </form>
         </div>
 

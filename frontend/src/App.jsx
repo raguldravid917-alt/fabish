@@ -39,6 +39,14 @@ const Unauthorized = lazy(() => import('./pages/Unauthorized'));
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'));
 const Profile = lazy(() => import('./pages/Profile'));
 const OrderTracking = lazy(() => import('./pages/OrderTracking'));
+const ShippingReturns = lazy(() => import('./pages/ShippingReturns'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const Promotions = lazy(() => import('./pages/Promotions'));
+const SupportRequest = lazy(() => import('./pages/SupportRequest'));
+const OurTeam = lazy(() => import('./pages/OurTeam'));
+const Partnership = lazy(() => import('./pages/Partnership'));
+const TermsConditions = lazy(() => import('./pages/TermsConditions'));
+const LatestNews = lazy(() => import('./pages/LatestNews'));
 
 function App() {
   return (
@@ -63,6 +71,9 @@ function App() {
                           <Route path="/pages/about-us" element={<AboutUs />} />
                           <Route path="/pages/contact" element={<Contact />} />
                           <Route path="/pages/faq" element={<FAQ />} />
+                          <Route path="/pages/shipping-returns" element={<ShippingReturns />} />
+                          <Route path="/pages/privacy-policy" element={<PrivacyPolicy />} />
+                          <Route path="/pages/promotions" element={<Promotions />} />
                           <Route path="/blogs/news" element={<Blog />} />
                           {/* Added route for single blog details to prevent wildcard home redirection */}
                           <Route path="/blogs/news/:slug" element={<Blog />} />
@@ -70,6 +81,13 @@ function App() {
                           <Route path="/account/profile" element={<Profile />} />
                           <Route path="/orders/track" element={<OrderTracking />} />
                           <Route path="/unauthorized" element={<Unauthorized />} />
+                          {/* ── FABISH footer pages ── */}
+                          <Route path="/pages/support" element={<SupportRequest />} />
+                          <Route path="/pages/our-team" element={<OurTeam />} />
+                          <Route path="/pages/partnership" element={<Partnership />} />
+                          <Route path="/pages/terms-conditions" element={<TermsConditions />} />
+                          <Route path="/pages/latest-news" element={<LatestNews />} />
+                          <Route path="/pages/latest-news/:slug" element={<LatestNews />} />
                         </Route>
 
                         {/* Authentication Layout Routes (Minimal Centered, No Header/Footer) */}

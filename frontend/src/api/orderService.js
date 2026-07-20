@@ -78,6 +78,10 @@ export const orderService = {
    * @param {string} trackingNumberOrOrderNumber
    * @returns {Promise<{ success, data, message }>}
    */
-  getTracking: (trackingNumberOrOrderNumber) =>
-    api.get(`${ENDPOINTS.ORDERS}/track/${trackingNumberOrOrderNumber}`, { auth: false }),
+  getTracking: (trackingNumberOrOrderNumber, emailOrPhone) => {
+    const url = emailOrPhone
+      ? `${ENDPOINTS.ORDERS}/track/${trackingNumberOrOrderNumber}?emailOrPhone=${encodeURIComponent(emailOrPhone)}`
+      : `${ENDPOINTS.ORDERS}/track/${trackingNumberOrOrderNumber}`;
+    return api.get(url, { auth: false });
+  },
 };

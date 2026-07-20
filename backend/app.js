@@ -27,6 +27,9 @@ const contactRoutes = require('./src/routes/contactRoutes');
 const userRoutes = require('./src/routes/userRoutes');
 const profileRoutes = require('./src/routes/profileRoutes');
 const sitemapRoutes = require('./src/routes/sitemapRoutes');
+const supportTicketRoutes = require('./src/routes/supportTicketRoutes');
+const teamRoutes = require('./src/routes/teamRoutes');
+const partnerRoutes = require('./src/routes/partnerRoutes');
 
 const app = express();
 
@@ -106,8 +109,8 @@ app.use(cors({
 }));
 
 // 3. Body parsers
-app.use(express.json({ limit: '10kb' })); // Restrict body sizes
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(express.json({ limit: '50kb' })); // Increased for partnership form dynamic fields
+app.use(express.urlencoded({ extended: true, limit: '50kb' }));
 app.use(cookieParser());
 
 // 4. Input Sanitization (NoSQL injection prevention)
@@ -144,10 +147,14 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/addresses', addressRoutes);
 app.use('/api/coupons', couponRoutes);
+app.use('/api/cms/pages', require('./src/routes/cmsPageRoutes'));
 app.use('/api/blogs', blogRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/sitemap.xml', sitemapRoutes);
+app.use('/api/support', supportTicketRoutes);
+app.use('/api/team', teamRoutes);
+app.use('/api/partnerships', partnerRoutes);
 
 app.post('/api/log-error', (req, res) => {
   // Only log in development to avoid flooding production logs with client-side errors

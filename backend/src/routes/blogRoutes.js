@@ -7,6 +7,7 @@ const { ROLES } = require('../constants');
 const upload = require('../middleware/uploadMiddleware');
 
 // Public endpoints
+router.get('/categories', blogController.getCategories);  // Must be before /:slug
 router.get('/', blogController.getBlogs);
 router.get('/:slug', blogController.getBlogBySlug);
 

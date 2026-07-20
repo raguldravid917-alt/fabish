@@ -564,7 +564,7 @@ const Profile = () => {
   if (!user) return null;
 
   return (
-    <div className="bg-[#f7f6f0] min-h-screen py-12 font-body text-brand-charcoal select-none">
+    <div className="bg-[#f7f6f0] min-h-screen py-6 sm:py-12 font-body text-brand-charcoal select-none overflow-x-hidden">
 
       {/* Dynamic CSS styles matching premium store theme */}
       <style>{`
@@ -576,12 +576,12 @@ const Profile = () => {
         }
       `}</style>
 
-      <div className="max-w-[1440px] mx-auto px-6 md:px-12">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-12 w-full">
 
         {/* Page Header - Clean & Minimalist, No Logout Button */}
-        <div className="text-left border-b border-[#eae8d8] pb-6 mb-10 no-print">
-          <h1 className="font-serif text-3xl md:text-4xl font-semibold tracking-wide text-brand-charcoal">MY ACCOUNT</h1>
-          <p className="text-brand-muted text-[11px] font-bold tracking-widest font-heading uppercase mt-1">
+        <div className="text-left border-b border-[#eae8d8] pb-4 sm:pb-6 mb-6 sm:mb-10 no-print">
+          <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-semibold tracking-wide text-brand-charcoal">MY ACCOUNT</h1>
+          <p className="text-brand-muted text-[10px] sm:text-[11px] font-bold tracking-widest font-heading uppercase mt-1">
             WELCOME BACK, {user.name}
           </p>
         </div>
@@ -595,48 +595,48 @@ const Profile = () => {
         )}
 
         {/* Tab Selection Row */}
-        <div className="flex border-b border-[#eae8d8] mb-10 overflow-x-auto no-scrollbar no-print gap-1 select-none">
+        <div className="flex border-b border-[#eae8d8] mb-6 sm:mb-10 overflow-x-auto no-scrollbar no-print gap-1 select-none max-w-full">
           <button
             onClick={() => setSearchParams({ tab: 'dashboard' })}
-            className={`py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${activeTab === 'dashboard' ? 'border-[#729855] text-brand-charcoal' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
+            className={`py-3 sm:py-4 px-3 sm:px-6 font-heading font-bold text-[10px] sm:text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none shrink-0 ${activeTab === 'dashboard' ? 'border-[#729855] text-brand-charcoal font-extrabold' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
               }`}
           >
-            <User className="w-3.5 h-3.5" /> Dashboard
+            <User className="w-3.5 h-3.5 shrink-0" /> Dashboard
           </button>
           <button
             onClick={() => { setSearchParams({ tab: 'orders' }); setSelectedOrder(null); }}
-            className={`py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${activeTab === 'orders' ? 'border-[#729855] text-brand-charcoal' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
+            className={`py-3 sm:py-4 px-3 sm:px-6 font-heading font-bold text-[10px] sm:text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none shrink-0 ${activeTab === 'orders' ? 'border-[#729855] text-brand-charcoal font-extrabold' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
               }`}
           >
-            <ShoppingBag className="w-3.5 h-3.5" /> My Orders
+            <ShoppingBag className="w-3.5 h-3.5 shrink-0" /> My Orders
           </button>
           <button
             onClick={() => setSearchParams({ tab: 'addresses' })}
-            className={`py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${activeTab === 'addresses' ? 'border-[#729855] text-brand-charcoal' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
+            className={`py-3 sm:py-4 px-3 sm:px-6 font-heading font-bold text-[10px] sm:text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none shrink-0 ${activeTab === 'addresses' ? 'border-[#729855] text-brand-charcoal font-extrabold' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
               }`}
           >
-            <MapPin className="w-3.5 h-3.5" /> Addresses
+            <MapPin className="w-3.5 h-3.5 shrink-0" /> Addresses
           </button>
           <button
             onClick={() => setSearchParams({ tab: 'wishlist' })}
-            className={`py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${activeTab === 'wishlist' ? 'border-[#729855] text-brand-charcoal' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
+            className={`py-3 sm:py-4 px-3 sm:px-6 font-heading font-bold text-[10px] sm:text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none shrink-0 ${activeTab === 'wishlist' ? 'border-[#729855] text-brand-charcoal font-extrabold' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
               }`}
           >
-            <Heart className="w-3.5 h-3.5" /> Wishlist
+            <Heart className="w-3.5 h-3.5 shrink-0" /> Wishlist
           </button>
           <button
             onClick={() => setSearchParams({ tab: 'settings' })}
-            className={`py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${activeTab === 'settings' ? 'border-[#729855] text-brand-charcoal' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
+            className={`py-3 sm:py-4 px-3 sm:px-6 font-heading font-bold text-[10px] sm:text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none shrink-0 ${activeTab === 'settings' ? 'border-[#729855] text-brand-charcoal font-extrabold' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
               }`}
           >
-            <Settings className="w-3.5 h-3.5" /> Settings
+            <Settings className="w-3.5 h-3.5 shrink-0" /> Settings
           </button>
           <button
             onClick={() => setSearchParams({ tab: 'rewards' })}
-            className={`py-4 px-6 font-heading font-bold text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none ${activeTab === 'rewards' ? 'border-[#729855] text-brand-charcoal' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
+            className={`py-3 sm:py-4 px-3 sm:px-6 font-heading font-bold text-[10px] sm:text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 cursor-pointer bg-transparent border-t-0 border-x-0 rounded-none shrink-0 ${activeTab === 'rewards' ? 'border-[#729855] text-brand-charcoal font-extrabold' : 'border-transparent text-brand-muted hover:text-brand-charcoal'
               }`}
           >
-            <Award className="w-3.5 h-3.5" /> Reward Points
+            <Award className="w-3.5 h-3.5 shrink-0" /> Reward Points
           </button>
         </div>
 
@@ -655,7 +655,8 @@ const Profile = () => {
                 className="space-y-8"
               >
                 {/* Welcome Banner */}
-                <div className="bg-[#faf9f5] border border-[#eae8d8] p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden rounded-none">
+                {/* Welcome Banner */}
+                <div className="bg-[#faf9f5] border border-[#eae8d8] p-4 sm:p-6 md:p-8 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 relative overflow-hidden rounded-none">
                   {/* Organic leaf vector SVG overlays background */}
                   <div className="absolute right-[-20px] bottom-[-20px] opacity-[0.05] pointer-events-none select-none text-brand-green z-0">
                     <svg width="280" height="280" viewBox="0 0 100 100" fill="currentColor">
@@ -664,54 +665,54 @@ const Profile = () => {
                     </svg>
                   </div>
 
-                  <div className="space-y-2 z-10 text-left">
-                    <span className="block font-heading text-xs font-bold uppercase tracking-[0.25em] text-[#729855]">Member Space</span>
-                    <h2 className="font-heading font-semibold text-2xl text-brand-charcoal mt-1">Welcome back, {user.name}</h2>
-                    <p className="text-sm font-body text-brand-muted max-w-md leading-relaxed mt-2">
+                  <div className="space-y-2 z-10 text-left w-full lg:max-w-xl">
+                    <span className="block font-heading text-[10px] sm:text-xs font-bold uppercase tracking-[0.25em] text-[#729855]">Member Space</span>
+                    <h2 className="font-heading font-semibold text-xl sm:text-2xl text-brand-charcoal mt-1">Welcome back, {user.name}</h2>
+                    <p className="text-xs sm:text-sm font-body text-brand-muted leading-relaxed mt-2">
                       Manage your orders, saved delivery coordinates, rewards tier details, and edit your profile settings.
                     </p>
 
                     {/* Quick Actions */}
-                    <div className="flex flex-wrap gap-4 pt-3 text-xs font-heading font-bold uppercase tracking-widest">
+                    <div className="flex flex-wrap gap-x-4 gap-y-2 pt-3 text-[10px] sm:text-xs font-heading font-bold uppercase tracking-widest">
                       <Link to="/collections/all" className="text-brand-charcoal hover:text-[#729855] underline underline-offset-4 decoration-1 transition-colors">
                         Shop New Arrivals
                       </Link>
-                      <span className="text-brand-border/60 select-none">•</span>
+                      <span className="text-brand-border/60 select-none hidden sm:inline">•</span>
                       <button onClick={() => setSearchParams({ tab: 'orders' })} className="text-brand-charcoal hover:text-[#729855] underline underline-offset-4 decoration-1 transition-colors bg-transparent border-none cursor-pointer p-0">
                         View Orders
                       </button>
-                      <span className="text-brand-border/60 select-none">•</span>
+                      <span className="text-brand-border/60 select-none hidden sm:inline">•</span>
                       <button onClick={() => setSearchParams({ tab: 'settings' })} className="text-brand-charcoal hover:text-[#729855] underline underline-offset-4 decoration-1 transition-colors bg-transparent border-none cursor-pointer p-0">
                         Profile Settings
                       </button>
                     </div>
                   </div>
 
-                  <div className="flex gap-6 items-center shrink-0 border border-[#eae8d8] bg-white p-5 rounded-none z-10 w-full md:w-auto">
+                  <div className="flex gap-4 items-center shrink-0 border border-[#eae8d8] bg-white p-4 sm:p-5 rounded-none z-10 w-full lg:w-auto">
                     <div className="text-left space-y-1">
-                      <span className="block font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Member Tier</span>
-                      <span className="font-heading text-base text-brand-charcoal flex items-center gap-1.5 font-semibold mt-1">
+                      <span className="block font-heading text-[10px] sm:text-xs font-bold uppercase tracking-widest text-brand-muted">Member Tier</span>
+                      <span className="font-heading text-sm sm:text-base text-brand-charcoal flex items-center gap-1.5 font-semibold mt-1">
                         <Award className="w-4 h-4 text-[#729855]" /> {rewards.tierName}
                       </span>
-                      <span className="block text-xs font-medium text-brand-muted font-body mt-1">Joined {user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Recently'}</span>
+                      <span className="block text-[10px] sm:text-xs font-medium text-brand-muted font-body mt-1">Joined {user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Recently'}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Statistics Cards Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
 
                   {/* Card 1: Orders */}
                   <motion.div
                     whileHover={{ y: -4, borderColor: '#729855' }}
                     onClick={() => setSearchParams({ tab: 'orders' })}
-                    className="bg-white border border-[#eae8d8] p-5 rounded-none flex flex-col justify-between cursor-pointer group transition-colors select-none text-left"
+                    className="bg-white border border-[#eae8d8] p-4 sm:p-5 rounded-none flex flex-col justify-between cursor-pointer group transition-colors select-none text-left"
                   >
-                    <div className="flex justify-between items-start mb-4">
-                      <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted group-hover:text-brand-charcoal transition-colors">Orders Placed</span>
-                      <ShoppingBag className="w-4 h-4 text-[#729855] group-hover:scale-110 transition-transform duration-300" />
+                    <div className="flex justify-between items-start mb-4 gap-2">
+                      <span className="font-heading text-[10px] sm:text-xs font-bold uppercase tracking-widest text-brand-muted group-hover:text-brand-charcoal transition-colors">Orders Placed</span>
+                      <ShoppingBag className="w-4 h-4 text-[#729855] shrink-0 group-hover:scale-110 transition-transform duration-300" />
                     </div>
-                    <span className="font-heading text-3xl text-brand-charcoal font-semibold">
+                    <span className="font-heading text-2xl sm:text-3xl text-brand-charcoal font-semibold">
                       <AnimatedCounter value={orders.length} />
                     </span>
                   </motion.div>
@@ -720,13 +721,13 @@ const Profile = () => {
                   <motion.div
                     whileHover={{ y: -4, borderColor: '#729855' }}
                     onClick={() => setSearchParams({ tab: 'addresses' })}
-                    className="bg-white border border-[#eae8d8] p-5 rounded-none flex flex-col justify-between cursor-pointer group transition-colors select-none text-left"
+                    className="bg-white border border-[#eae8d8] p-4 sm:p-5 rounded-none flex flex-col justify-between cursor-pointer group transition-colors select-none text-left"
                   >
-                    <div className="flex justify-between items-start mb-4">
-                      <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted group-hover:text-brand-charcoal transition-colors">Addresses</span>
-                      <MapPin className="w-4 h-4 text-[#729855] group-hover:scale-110 transition-transform duration-300" />
+                    <div className="flex justify-between items-start mb-4 gap-2">
+                      <span className="font-heading text-[10px] sm:text-xs font-bold uppercase tracking-widest text-brand-muted group-hover:text-brand-charcoal transition-colors">Addresses</span>
+                      <MapPin className="w-4 h-4 text-[#729855] shrink-0 group-hover:scale-110 transition-transform duration-300" />
                     </div>
-                    <span className="font-heading text-3xl text-brand-charcoal font-semibold">
+                    <span className="font-heading text-2xl sm:text-3xl text-brand-charcoal font-semibold">
                       <AnimatedCounter value={addresses.length} />
                     </span>
                   </motion.div>
@@ -735,13 +736,13 @@ const Profile = () => {
                   <motion.div
                     whileHover={{ y: -4, borderColor: '#729855' }}
                     onClick={() => setSearchParams({ tab: 'wishlist' })}
-                    className="bg-white border border-[#eae8d8] p-5 rounded-none flex flex-col justify-between cursor-pointer group transition-colors select-none text-left"
+                    className="bg-white border border-[#eae8d8] p-4 sm:p-5 rounded-none flex flex-col justify-between cursor-pointer group transition-colors select-none text-left"
                   >
-                    <div className="flex justify-between items-start mb-4">
-                      <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted group-hover:text-brand-charcoal transition-colors">Wishlist Items</span>
-                      <Heart className="w-4 h-4 text-[#729855] group-hover:scale-110 transition-transform duration-300" />
+                    <div className="flex justify-between items-start mb-4 gap-2">
+                      <span className="font-heading text-[10px] sm:text-xs font-bold uppercase tracking-widest text-brand-muted group-hover:text-brand-charcoal transition-colors">Wishlist Items</span>
+                      <Heart className="w-4 h-4 text-[#729855] shrink-0 group-hover:scale-110 transition-transform duration-300" />
                     </div>
-                    <span className="font-heading text-3xl text-brand-charcoal font-semibold">
+                    <span className="font-heading text-2xl sm:text-3xl text-brand-charcoal font-semibold">
                       <AnimatedCounter value={wishlistItems.length} />
                     </span>
                   </motion.div>
@@ -750,13 +751,13 @@ const Profile = () => {
                   <motion.div
                     whileHover={{ y: -4, borderColor: '#729855' }}
                     onClick={() => setSearchParams({ tab: 'rewards' })}
-                    className="bg-white border border-[#eae8d8] p-5 rounded-none flex flex-col justify-between group transition-colors select-none text-left cursor-pointer"
+                    className="bg-white border border-[#eae8d8] p-4 sm:p-5 rounded-none flex flex-col justify-between group transition-colors select-none text-left cursor-pointer"
                   >
-                    <div className="flex justify-between items-start mb-4">
-                      <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Reward Points</span>
-                      <Award className="w-4 h-4 text-[#729855] group-hover:scale-110 transition-transform duration-300" />
+                    <div className="flex justify-between items-start mb-4 gap-2">
+                      <span className="font-heading text-[10px] sm:text-xs font-bold uppercase tracking-widest text-brand-muted">Reward Points</span>
+                      <Award className="w-4 h-4 text-[#729855] shrink-0 group-hover:scale-110 transition-transform duration-300" />
                     </div>
-                    <span className="font-heading text-3xl text-brand-charcoal font-semibold">
+                    <span className="font-heading text-2xl sm:text-3xl text-brand-charcoal font-semibold">
                       <AnimatedCounter value={user?.rewardPoints || 0} />
                     </span>
                   </motion.div>
@@ -764,13 +765,13 @@ const Profile = () => {
                   {/* Card 5: Coupons */}
                   <motion.div
                     whileHover={{ y: -4, borderColor: '#729855' }}
-                    className="bg-white border border-[#eae8d8] p-5 rounded-none flex flex-col justify-between group transition-colors select-none text-left"
+                    className="bg-white border border-[#eae8d8] p-4 sm:p-5 rounded-none flex flex-col justify-between group transition-colors select-none text-left"
                   >
-                    <div className="flex justify-between items-start mb-4">
-                      <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Active Coupons</span>
-                      <Tag className="w-4 h-4 text-[#729855] group-hover:scale-110 transition-transform duration-300" />
+                    <div className="flex justify-between items-start mb-4 gap-2">
+                      <span className="font-heading text-[10px] sm:text-xs font-bold uppercase tracking-widest text-brand-muted">Active Coupons</span>
+                      <Tag className="w-4 h-4 text-[#729855] shrink-0 group-hover:scale-110 transition-transform duration-300" />
                     </div>
-                    <span className="font-heading text-3xl text-brand-charcoal font-semibold">
+                    <span className="font-heading text-2xl sm:text-3xl text-brand-charcoal font-semibold">
                       <AnimatedCounter value={3} />
                     </span>
                   </motion.div>
@@ -807,52 +808,54 @@ const Profile = () => {
                         <div className="space-y-4">
                           {orders.slice(0, 2).map((order) => (
                             <div key={order._id} className="border border-[#eae8d8] p-4 rounded-none space-y-4 text-left">
-                              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-[#eae8d8]/40 pb-3">
-                                <div>
-                                  <span className="font-heading text-xs font-bold uppercase tracking-widest text-[#729855]">Order ID</span>
-                                  <p className="font-mono font-bold text-xs text-brand-charcoal leading-snug">#{order.orderNumber}</p>
-                                  <span className="text-xs text-brand-muted font-body mt-0.5 block">{new Date(order.createdAt).toLocaleDateString()}</span>
+                              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-[#eae8d8]/40 pb-3 w-full">
+                                <div className="min-w-0 flex-1">
+                                  <span className="font-heading text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#729855]">Order ID</span>
+                                  <p className="font-mono font-bold text-xs text-brand-charcoal leading-snug break-all">#{order.orderNumber}</p>
+                                  <span className="text-[10px] sm:text-xs text-brand-muted font-body mt-0.5 block">{new Date(order.createdAt).toLocaleDateString()}</span>
                                 </div>
-                                <div className="flex gap-2">
-                                  <span className={`inline-block px-2 py-0.5 font-heading text-xs font-bold uppercase tracking-widest ${order.paymentStatus === 'Paid' ? 'bg-green-50 border border-green-200 text-brand-green' : 'bg-yellow-50 border border-yellow-200 text-yellow-700'
+                                <div className="flex flex-wrap gap-2 shrink-0">
+                                  <span className={`inline-block px-2 py-0.5 font-heading text-[10px] sm:text-xs font-bold uppercase tracking-widest ${order.paymentStatus === 'Paid' ? 'bg-green-50 border border-green-200 text-brand-green' : 'bg-yellow-50 border border-yellow-200 text-yellow-700'
                                     }`}>{order.paymentStatus}</span>
-                                  <span className={`inline-block px-2 py-0.5 font-heading text-xs font-bold uppercase tracking-widest ${order.orderStatus === 'Delivered' ? 'bg-green-50 border border-green-200 text-brand-green' : 'bg-blue-50 border border-blue-200 text-blue-700'
+                                  <span className={`inline-block px-2 py-0.5 font-heading text-[10px] sm:text-xs font-bold uppercase tracking-widest ${order.orderStatus === 'Delivered' ? 'bg-green-50 border border-green-200 text-brand-green' : 'bg-blue-50 border border-blue-200 text-blue-700'
                                     }`}>{order.orderStatus}</span>
                                 </div>
                               </div>
-                              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                                <div className="flex gap-3 items-center">
-                                  {order.orderItems.map((item, idx) => (
-                                    <img
-                                      key={idx}
-                                      src={getLocalImageUrl(item.image)}
-                                      alt={item.title}
-                                      className="w-10 h-12 object-cover bg-[#faf9f5] border border-[#eae8d8] shrink-0"
-                                      title={item.title}
-                                    />
-                                  ))}
-                                  <div className="ml-1 text-xs">
-                                    <p className="font-bold text-brand-charcoal">{order.orderItems.length} {order.orderItems.length === 1 ? 'Product' : 'Products'}</p>
-                                    <p className="text-xs text-brand-muted truncate max-w-[200px]">
+                              <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4">
+                                <div className="flex gap-3 items-center min-w-0 flex-1">
+                                  <div className="flex -space-x-2 overflow-hidden shrink-0">
+                                    {order.orderItems.map((item, idx) => (
+                                      <img
+                                        key={idx}
+                                        src={getLocalImageUrl(item.image)}
+                                        alt={item.title}
+                                        className="w-10 h-12 object-cover bg-[#faf9f5] border border-white ring-1 ring-[#eae8d8] shrink-0 rounded-none z-10"
+                                        title={item.title}
+                                      />
+                                    ))}
+                                  </div>
+                                  <div className="min-w-0 flex-1 text-xs">
+                                    <p className="font-bold text-brand-charcoal leading-snug">{order.orderItems.length} {order.orderItems.length === 1 ? 'Product' : 'Products'}</p>
+                                    <p className="text-xs text-brand-muted break-words line-clamp-1 mt-0.5">
                                       {order.orderItems.map(item => item.title).join(', ')}
                                     </p>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-                                  <div className="text-left sm:text-right mr-2">
-                                    <span className="block font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Total Price</span>
+                                <div className="flex flex-wrap sm:flex-nowrap items-center justify-between lg:justify-end gap-3 sm:gap-4 pt-3 lg:pt-0 border-t border-[#eae8d8]/40 lg:border-t-0 shrink-0">
+                                  <div className="text-left sm:text-right shrink-0">
+                                    <span className="block font-heading text-[10px] font-bold uppercase tracking-widest text-brand-muted">Total Price</span>
                                     <span className="font-heading font-bold text-xs text-brand-charcoal">Rs. {order.totalPrice.toLocaleString('en-IN')}.00</span>
                                   </div>
-                                  <div className="flex gap-2">
+                                  <div className="flex gap-2 w-full sm:w-auto">
                                     <button
                                       onClick={() => { setSelectedOrder(order); setSearchParams({ tab: 'orders' }); }}
-                                      className="border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white px-4 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer bg-transparent rounded-none"
+                                      className="flex-1 sm:flex-none border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white px-4 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer bg-transparent rounded-none text-center"
                                     >
                                       Details
                                     </button>
                                     <button
                                       onClick={() => handleBuyAgain(order)}
-                                      className="bg-brand-charcoal text-white hover:bg-[#729855] px-4 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer border-none rounded-none"
+                                      className="flex-1 sm:flex-none bg-brand-charcoal text-white hover:bg-[#729855] px-4 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer border-none rounded-none text-center"
                                     >
                                       Re-order
                                     </button>
@@ -864,9 +867,8 @@ const Profile = () => {
                         </div>
                       )}
                     </div>
-
                     {/* Tier Rewards Progression Card */}
-                    <div className="bg-[#faf9f5] border border-[#eae8d8] p-6 rounded-none space-y-5 text-left">
+                    <div className="bg-[#faf9f5] border border-[#eae8d8] p-4 sm:p-6 rounded-none space-y-5 text-left">
                       <div className="flex justify-between items-start">
                         <div>
                           <span className="font-heading text-xs font-bold uppercase tracking-widest text-[#729855] block mb-1">Rewards Progress</span>
@@ -929,7 +931,7 @@ const Profile = () => {
                   <div className="space-y-6 md:space-y-8">
 
                     {/* Default Address preview card */}
-                    <div className="bg-white border border-[#eae8d8] p-6 rounded-none space-y-4 text-left">
+                    <div className="bg-white border border-[#eae8d8] p-4 sm:p-6 rounded-none space-y-4 text-left">
                       <div className="flex justify-between items-center border-b border-[#eae8d8] pb-3">
                         <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal">Delivery Coordinates</span>
                         <button onClick={() => setSearchParams({ tab: 'addresses' })} className="text-[#729855] hover:text-[#2f3e10] font-heading font-bold text-xs uppercase tracking-widest bg-transparent border-none cursor-pointer p-0">
@@ -957,8 +959,8 @@ const Profile = () => {
                                     {def.addressType || 'Home'}
                                   </span>
                                 </div>
-                                <p className="text-brand-muted font-mono text-sm">{def.phone}</p>
-                                <p className="text-brand-charcoal/80 font-normal text-sm leading-relaxed">
+                                <p className="text-brand-muted font-mono text-sm break-all">{def.phone}</p>
+                                <p className="text-brand-charcoal/80 font-normal text-sm leading-relaxed break-words">
                                   {def.addressLine1}
                                   {def.addressLine2 && `, ${def.addressLine2}`}
                                   {def.landmark && <span className="block text-xs text-brand-muted mt-0.5 font-semibold">Landmark: {def.landmark}</span>}
@@ -975,7 +977,7 @@ const Profile = () => {
                     </div>
 
                     {/* Coupons Available Card */}
-                    <div className="bg-white border border-[#eae8d8] p-6 rounded-none space-y-4 text-left">
+                    <div className="bg-white border border-[#eae8d8] p-4 sm:p-6 rounded-none space-y-4 text-left">
                       <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal block border-b border-[#eae8d8] pb-3">Available Promos</span>
 
                       <div className="space-y-3.5">
@@ -985,8 +987,8 @@ const Profile = () => {
                           <p className="text-xs text-brand-muted font-semibold">No promos available at the moment.</p>
                         ) : (
                           availableCoupons.map((coupon) => (
-                            <div key={coupon._id} className="border border-dashed border-[#eae8d8] p-3 flex justify-between items-center rounded-none bg-[#faf9f5]/40 hover:bg-[#faf9f5]/80 transition-colors">
-                              <div className="text-left">
+                            <div key={coupon._id} className="border border-dashed border-[#eae8d8] p-3 flex justify-between items-center gap-3 rounded-none bg-[#faf9f5]/40 hover:bg-[#faf9f5]/80 transition-colors">
+                              <div className="text-left min-w-0 flex-1">
                                 <span className="font-heading text-[10px] font-bold uppercase tracking-widest bg-green-50 text-brand-green px-1.5 py-0.5 border border-green-200">
                                   {coupon.discountType === 'Percentage' 
                                     ? `${coupon.discountPercentage || coupon.discountValue}% OFF` 
@@ -994,8 +996,8 @@ const Profile = () => {
                                       ? 'FREE SHIP' 
                                       : `Rs. ${coupon.discountValue} OFF`}
                                 </span>
-                                <p className="font-mono font-bold text-xs text-brand-charcoal mt-1">{coupon.code}</p>
-                                <span className="text-[10px] text-brand-muted font-semibold block mt-1">
+                                <p className="font-mono font-bold text-xs text-brand-charcoal mt-1 truncate">{coupon.code}</p>
+                                <span className="text-[10px] text-brand-muted font-semibold block mt-1 break-words">
                                   {coupon.minimumOrderAmount > 0 
                                     ? `Min Order: Rs. ${coupon.minimumOrderAmount.toLocaleString('en-IN')}` 
                                     : 'No Minimum Order'}
@@ -1004,7 +1006,7 @@ const Profile = () => {
                               </div>
                               <button
                                 onClick={() => handleCopyCoupon(coupon.code)}
-                                className="bg-brand-charcoal hover:bg-[#729855] text-white p-2 transition-all cursor-pointer border-none rounded-none flex items-center justify-center"
+                                className="bg-brand-charcoal hover:bg-[#729855] text-white p-2 transition-all cursor-pointer border-none rounded-none flex items-center justify-center shrink-0"
                                 title="Copy Coupon"
                               >
                                 <Copy className="w-3.5 h-3.5" />
@@ -1020,7 +1022,7 @@ const Profile = () => {
                 </div>
 
                 {/* Full Width Card: Recent Activity */}
-                <div className="bg-white border border-[#eae8d8] p-6 rounded-none text-left space-y-5">
+                <div className="bg-white border border-[#eae8d8] p-4 sm:p-6 rounded-none text-left space-y-5">
                   <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal block border-b border-[#eae8d8] pb-3">Recent Account Activity</span>
 
                   <div className="relative border-l border-brand-border pl-5 space-y-4 text-sm font-semibold text-brand-charcoal">
@@ -1078,7 +1080,7 @@ const Profile = () => {
               >
                 {selectedOrder ? (
                   /* Detailed Order View with Tracking Timeline */
-                  <div className="bg-white border border-[#eae8d8] p-6 md:p-8 space-y-8 select-text text-left rounded-none">
+                  <div className="bg-white border border-[#eae8d8] p-4 sm:p-6 md:p-8 space-y-8 select-text text-left rounded-none">
 
                     {/* Back to List */}
                     <button
@@ -1088,21 +1090,21 @@ const Profile = () => {
                       <ArrowLeft className="w-3.5 h-3.5" /> Back to Orders
                     </button>
 
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-[#eae8d8] pb-4 gap-4">
-                      <div>
-                        <h2 className="font-heading text-2xl text-brand-charcoal leading-snug font-semibold">Order Number: #{selectedOrder.orderNumber}</h2>
-                        <p className="text-brand-muted text-xs font-semibold font-heading uppercase tracking-widest mt-1">Placed on: {new Date(selectedOrder.createdAt).toLocaleDateString()}</p>
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-[#eae8d8] pb-4 gap-4">
+                      <div className="min-w-0 flex-1">
+                        <h2 className="font-heading text-xl sm:text-2xl text-brand-charcoal leading-snug font-semibold break-all">Order Number: #{selectedOrder.orderNumber}</h2>
+                        <p className="text-brand-muted text-[10px] sm:text-xs font-semibold font-heading uppercase tracking-widest mt-1">Placed on: {new Date(selectedOrder.createdAt).toLocaleDateString()}</p>
                       </div>
                       <button
                         onClick={() => setViewInvoice(selectedOrder)}
-                        className="bg-brand-charcoal text-white hover:bg-brand-button-hover px-6 py-3.5 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer border-none rounded-none"
+                        className="w-full sm:w-auto bg-brand-charcoal text-white hover:bg-brand-button-hover px-6 py-3 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer border-none rounded-none text-center"
                       >
                         View & Print Invoice
                       </button>
                     </div>
 
                     {/* Order tracking timeline */}
-                    <div className="p-6 bg-brand-bg-cream/45 border border-[#eae8d8] rounded-none">
+                    <div className="p-4 sm:p-6 bg-brand-bg-cream/45 border border-[#eae8d8] rounded-none">
                       <div className="flex justify-between items-center mb-6">
                         <h3 className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal flex items-center gap-2 mb-0">
                           <Truck className="w-4 h-4 text-[#729855]" /> Delivery Tracking
@@ -1128,7 +1130,7 @@ const Profile = () => {
 
                           <div className="grid grid-cols-1 md:grid-cols-7 gap-6 relative">
                             {/* Horizontal line for medium+ screens */}
-                            <div className="absolute left-6 right-6 top-[15px] h-0.5 bg-brand-border hidden md:block z-0"></div>
+                            <div className="absolute left-6 right-6 top-[10px] h-0.5 bg-brand-border hidden md:block z-0"></div>
 
                             {getTimelineStages(selectedOrder).map((stage, idx) => (
                               <div key={idx} className="flex md:flex-col items-start md:items-center text-left md:text-center relative z-10 gap-4 md:gap-2">
@@ -1162,21 +1164,27 @@ const Profile = () => {
                         <h3 className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal border-b border-[#eae8d8] pb-2">Ordered Items</h3>
                         <div className="divide-y divide-[#eae8d8]/40">
                           {selectedOrder.orderItems.map((item, idx) => (
-                            <div key={idx} className="flex gap-4 py-4 first:pt-0 last:pb-0">
-                              <img
-                                src={getLocalImageUrl(item.image)}
-                                alt={item.title}
-                                className="w-16 h-20 object-cover bg-brand-bg-cream border border-[#eae8d8] shrink-0 rounded-none"
-                              />
-                              <div className="flex-grow flex flex-col justify-between">
-                                <div>
-                                  <h4 className="font-heading font-bold text-sm text-brand-charcoal leading-snug">{item.title}</h4>
-                                  <span className="text-xs font-mono text-brand-muted mt-1 block">Qty: {item.qty}</span>
+                            <div key={idx} className="flex flex-col sm:flex-row gap-3 sm:gap-4 py-4 first:pt-0 last:pb-0 border-b border-[#eae8d8]/40 last:border-b-0">
+                              <div className="flex gap-3 sm:gap-4 items-center sm:items-start min-w-0 flex-1">
+                                <img
+                                  src={getLocalImageUrl(item.image)}
+                                  alt={item.title}
+                                  className="w-16 h-20 object-cover bg-brand-bg-cream border border-[#eae8d8] shrink-0 rounded-none"
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <h4 className="font-heading font-bold text-sm text-brand-charcoal leading-snug break-words line-clamp-2">{item.title}</h4>
+                                  <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-brand-muted font-medium">
+                                    <span>Qty: {item.qty}</span>
+                                    <span>•</span>
+                                    <span>Rs. {item.price.toLocaleString('en-IN')}.00 each</span>
+                                  </div>
                                 </div>
-                                <span className="font-heading font-semibold text-xs text-brand-charcoal">Rs. {item.price.toLocaleString('en-IN')}.00 each</span>
                               </div>
-                              <div className="text-right self-center font-heading font-bold text-base">
-                                Rs. {(item.price * item.qty).toLocaleString('en-IN')}.00
+                              <div className="flex sm:flex-col justify-between sm:justify-center items-center sm:items-end border-t border-[#eae8d8]/30 pt-2 sm:pt-0 sm:border-t-0 shrink-0">
+                                <span className="text-xs font-bold text-brand-muted sm:hidden">Total:</span>
+                                <span className="font-heading font-bold text-sm sm:text-base text-brand-charcoal">
+                                  Rs. {(item.price * item.qty).toLocaleString('en-IN')}.00
+                                </span>
                               </div>
                             </div>
                           ))}
@@ -1184,10 +1192,10 @@ const Profile = () => {
                       </div>
 
                       {/* Right side: Shipping/summary info */}
-                      <div className="bg-brand-bg-cream/40 border border-[#eae8d8] p-6 space-y-6 self-start rounded-none">
+                      <div className="bg-brand-bg-cream/40 border border-[#eae8d8] p-4 sm:p-6 space-y-6 self-start rounded-none w-full">
                         <div>
                           <h4 className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted mb-2">Shipping Coordinate</h4>
-                          <p className="text-xs font-semibold leading-relaxed">
+                          <p className="text-xs font-semibold leading-relaxed break-words">
                             {selectedOrder.customerDetails?.name || selectedOrder.user?.name}<br />
                             {selectedOrder.shippingAddress.address}<br />
                             {selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.postalCode}<br />
@@ -1224,7 +1232,7 @@ const Profile = () => {
                   </div>
                 ) : (
                   /* Orders List View */
-                  <div className="bg-white border border-[#eae8d8] p-6 md:p-8 rounded-none">
+                  <div className="bg-white border border-[#eae8d8] p-4 sm:p-6 md:p-8 rounded-none">
                     <h3 className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal border-b border-[#eae8d8] pb-3 mb-6 text-left">Your Transactions</h3>
 
                     {loadingOrders ? (
@@ -1244,60 +1252,62 @@ const Profile = () => {
                           <motion.div
                             key={order._id}
                             whileHover={{ y: -3, borderColor: '#729855' }}
-                            className="border border-[#eae8d8] p-6 rounded-none space-y-5 transition-colors text-left"
+                            className="border border-[#eae8d8] p-4 sm:p-6 rounded-none space-y-5 transition-colors text-left"
                           >
-                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-[#eae8d8]/40 pb-4">
-                              <div>
-                                <span className="font-heading text-xs font-bold uppercase tracking-widest text-[#729855]">Order Reference</span>
-                                <h4 className="font-mono font-bold text-sm text-brand-charcoal">#{order.orderNumber}</h4>
-                                <span className="text-xs text-brand-muted font-body mt-0.5 block flex items-center gap-1.5">
-                                  <Calendar className="w-3.5 h-3.5" /> Placed on {new Date(order.createdAt).toLocaleDateString()}
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-[#eae8d8]/40 pb-4 w-full">
+                              <div className="min-w-0 flex-1">
+                                <span className="font-heading text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#729855]">Order Reference</span>
+                                <h4 className="font-mono font-bold text-xs sm:text-sm text-brand-charcoal break-all">#{order.orderNumber}</h4>
+                                <span className="text-xs text-brand-muted font-body mt-0.5 flex items-center gap-1.5">
+                                  <Calendar className="w-3.5 h-3.5 shrink-0" /> Placed on {new Date(order.createdAt).toLocaleDateString()}
                                 </span>
                               </div>
-                              <div className="flex gap-2">
-                                <span className={`inline-block px-2 py-0.5 font-heading text-xs font-bold uppercase tracking-widest ${order.paymentStatus === 'Paid' ? 'bg-green-50 border border-green-200 text-brand-green' : 'bg-yellow-50 border border-yellow-200 text-yellow-700'
+                              <div className="flex flex-wrap gap-2 shrink-0">
+                                <span className={`inline-block px-2 py-0.5 font-heading text-[10px] sm:text-xs font-bold uppercase tracking-widest ${order.paymentStatus === 'Paid' ? 'bg-green-50 border border-green-200 text-brand-green' : 'bg-yellow-50 border border-yellow-200 text-yellow-700'
                                   }`}>{order.paymentStatus}</span>
-                                <span className={`inline-block px-2 py-0.5 font-heading text-xs font-bold uppercase tracking-widest ${order.orderStatus === 'Delivered' ? 'bg-green-50 border border-green-200 text-brand-green' : 'bg-blue-50 border border-blue-200 text-blue-700'
+                                <span className={`inline-block px-2 py-0.5 font-heading text-[10px] sm:text-xs font-bold uppercase tracking-widest ${order.orderStatus === 'Delivered' ? 'bg-green-50 border border-green-200 text-brand-green' : 'bg-blue-50 border border-blue-200 text-blue-700'
                                   }`}>{order.orderStatus}</span>
                               </div>
                             </div>
 
-                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                              <div className="flex flex-wrap gap-3 items-center">
-                                {order.orderItems.map((item, idx) => (
-                                  <img
-                                    key={idx}
-                                    src={getLocalImageUrl(item.image)}
-                                    alt={item.title}
-                                    className="w-12 h-16 object-cover bg-brand-bg-cream border border-[#eae8d8] rounded-none shrink-0"
-                                    title={`${item.title} (x${item.qty})`}
-                                  />
-                                ))}
-                                <div className="ml-2">
-                                  <p className="text-xs font-bold text-brand-charcoal leading-snug">
+                            <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-6">
+                              <div className="flex gap-3 items-center min-w-0 flex-1">
+                                <div className="flex -space-x-3 overflow-hidden shrink-0">
+                                  {order.orderItems.map((item, idx) => (
+                                    <img
+                                      key={idx}
+                                      src={getLocalImageUrl(item.image)}
+                                      alt={item.title}
+                                      className="w-12 h-16 object-cover bg-brand-bg-cream border border-white ring-1 ring-[#eae8d8] rounded-none shrink-0"
+                                      title={`${item.title} (x${item.qty})`}
+                                    />
+                                  ))}
+                                </div>
+                                <div className="min-w-0 flex-1 text-xs">
+                                  <p className="font-bold text-brand-charcoal leading-snug">
                                     {order.orderItems.length} {order.orderItems.length === 1 ? 'Product' : 'Products'}
                                   </p>
-                                  <p className="text-xs text-brand-muted truncate max-w-[280px]">
+                                  <p className="text-xs text-brand-muted break-words line-clamp-1 mt-0.5">
                                     {order.orderItems.map(item => item.title).join(', ')}
                                   </p>
                                 </div>
                               </div>
 
-                              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
-                                <div className="text-left md:text-right shrink-0 md:mr-4">
-                                  <span className="block font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Total Paid</span>
+                              <div className="flex flex-wrap sm:flex-nowrap items-center justify-between lg:justify-end gap-4 pt-4 lg:pt-0 border-t border-[#eae8d8]/40 lg:border-t-0 shrink-0">
+                                <div className="text-left sm:text-right shrink-0">
+                                  <span className="block font-heading text-[10px] font-bold uppercase tracking-widest text-brand-muted">Total Paid</span>
                                   <span className="font-heading font-bold text-sm text-brand-charcoal">Rs. {order.totalPrice.toLocaleString('en-IN')}.00</span>
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 w-full sm:w-auto">
                                   <button
                                     onClick={() => setSelectedOrder(order)}
-                                    className="border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white px-4 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer bg-transparent rounded-none flex-1 sm:flex-none text-center"
+                                    className="flex-1 sm:flex-none border border-brand-charcoal text-brand-charcoal hover:bg-brand-charcoal hover:text-white px-4 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer bg-transparent rounded-none text-center"
                                   >
                                     Details
                                   </button>
                                   <button
                                     onClick={() => handleBuyAgain(order)}
-                                    className="bg-brand-charcoal text-white hover:bg-[#729855] px-4 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer border-none rounded-none flex-1 sm:flex-none text-center"
+                                    className="flex-1 sm:flex-none bg-brand-charcoal text-white hover:bg-[#729855] px-4 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer border-none rounded-none text-center"
                                   >
                                     Buy Again
                                   </button>
@@ -1321,13 +1331,13 @@ const Profile = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
                 transition={{ duration: 0.3 }}
-                className="bg-white border border-[#eae8d8] p-6 md:p-8 space-y-6 rounded-none text-left"
+                className="bg-white border border-[#eae8d8] p-4 sm:p-6 md:p-8 space-y-6 rounded-none text-left"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-[#eae8d8] pb-3 gap-4">
                   <h3 className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal">Your Saved Delivery Addresses</h3>
                   <button
                     onClick={handleOpenAddModal}
-                    className="bg-brand-charcoal text-white hover:bg-[#729855] px-4 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none rounded-none"
+                    className="w-full sm:w-auto bg-brand-charcoal text-white hover:bg-[#729855] px-4 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none rounded-none text-center"
                   >
                     <Plus className="w-3.5 h-3.5" /> Add New Address
                   </button>
@@ -1365,7 +1375,7 @@ const Profile = () => {
                       <motion.div
                         key={addr._id}
                         whileHover={{ y: -3, borderColor: '#729855' }}
-                        className={`p-5 border transition-all relative rounded-none flex flex-col justify-between ${addr.isDefault
+                        className={`p-4 sm:p-5 border transition-all relative rounded-none flex flex-col justify-between ${addr.isDefault
                             ? 'border-[#729855] bg-brand-bg-cream/10'
                             : 'border-[#eae8d8]'
                           } font-semibold text-xs leading-relaxed space-y-4`}
@@ -1388,9 +1398,9 @@ const Profile = () => {
                           </div>
 
                           <p className="text-brand-charcoal font-bold text-sm font-heading">{addr.fullName}</p>
-                          <p className="text-brand-muted font-mono text-sm">{addr.phone}</p>
+                          <p className="text-brand-muted font-mono text-sm break-all">{addr.phone}</p>
 
-                          <p className="text-brand-charcoal/80 font-normal font-body text-sm">
+                          <p className="text-brand-charcoal/80 font-normal font-body text-sm break-words">
                             {addr.addressLine1}
                             {addr.addressLine2 && `, ${addr.addressLine2}`}
                             {addr.landmark && <span className="block text-xs text-brand-muted mt-0.5 font-semibold">Landmark: {addr.landmark}</span>}
@@ -1401,17 +1411,17 @@ const Profile = () => {
                           </p>
                         </div>
 
-                        <div className="pt-3 border-t border-[#eae8d8]/40 flex items-center justify-between gap-2 mt-auto">
-                          <div className="flex gap-2">
+                        <div className="pt-3 border-t border-[#eae8d8]/40 flex flex-wrap items-center justify-between gap-2 mt-auto">
+                          <div className="flex flex-wrap gap-1.5">
                             <button
                               onClick={() => handleOpenEditModal(addr)}
-                              className="text-brand-charcoal hover:text-brand-green flex items-center gap-1 px-2.5 py-1.5 border border-[#eae8d8] bg-transparent cursor-pointer font-heading font-bold text-xs uppercase tracking-widest transition-all rounded-none"
+                              className="text-brand-charcoal hover:text-brand-green flex items-center gap-1 px-2.5 py-1.5 border border-[#eae8d8] bg-transparent cursor-pointer font-heading font-bold text-[10px] sm:text-xs uppercase tracking-widest transition-all rounded-none"
                             >
                               <Edit className="w-2.5 h-2.5" /> Edit
                             </button>
                             <button
                               onClick={() => handleDeleteAddress(addr._id)}
-                              className="text-red-600 hover:bg-red-50 hover:border-red-200 flex items-center gap-1 px-2.5 py-1.5 border border-[#eae8d8] bg-transparent cursor-pointer font-heading font-bold text-xs uppercase tracking-widest transition-all rounded-none"
+                              className="text-red-600 hover:bg-red-50 hover:border-red-200 flex items-center gap-1 px-2.5 py-1.5 border border-[#eae8d8] bg-transparent cursor-pointer font-heading font-bold text-[10px] sm:text-xs uppercase tracking-widest transition-all rounded-none"
                             >
                               <Trash className="w-2.5 h-2.5" /> Delete
                             </button>
@@ -1420,7 +1430,7 @@ const Profile = () => {
                           {!addr.isDefault && (
                             <button
                               onClick={() => handleSetDefaultAddress(addr._id)}
-                              className="text-[#729855] hover:bg-[#729855] hover:text-white px-3 py-1.5 border border-[#729855] bg-transparent cursor-pointer font-heading font-bold text-xs uppercase tracking-widest transition-all rounded-none"
+                              className="text-[#729855] hover:bg-[#729855] hover:text-white px-3 py-1.5 border border-[#729855] bg-transparent cursor-pointer font-heading font-bold text-[10px] sm:text-xs uppercase tracking-widest transition-all rounded-none ml-auto"
                             >
                               Set Default
                             </button>
@@ -1441,7 +1451,7 @@ const Profile = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
                 transition={{ duration: 0.3 }}
-                className="bg-white border border-[#eae8d8] p-6 md:p-8 rounded-none text-left"
+                className="bg-white border border-[#eae8d8] p-4 sm:p-6 md:p-8 rounded-none text-left"
               >
                 <h3 className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal border-b border-[#eae8d8] pb-3 mb-6">Your Curated Wishlist</h3>
 
@@ -1457,7 +1467,7 @@ const Profile = () => {
                     </Link>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                     {wishlistItems.map((item) => (
                       <div
                         key={item._id}
@@ -1473,14 +1483,14 @@ const Profile = () => {
                           </Link>
                           <button
                             onClick={() => toggleWishlist(item)}
-                            className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white flex items-center justify-center text-red-500 hover:text-red-700 shadow-sm border-none cursor-pointer"
+                            className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white flex items-center justify-center text-red-500 hover:text-red-700 shadow-sm border-none cursor-pointer z-10"
                             title="Remove from Wishlist"
                           >
                             <Heart className="w-4 h-4" fill="currentColor" />
                           </button>
                         </div>
                         <div className="text-center flex-grow flex flex-col justify-between space-y-2">
-                          <h4 className="font-heading font-medium text-xs md:text-sm text-brand-charcoal hover:text-[#729855] truncate max-w-full block transition-colors leading-snug">
+                          <h4 className="font-heading font-medium text-xs md:text-sm text-brand-charcoal hover:text-[#729855] break-words line-clamp-2 transition-colors leading-snug h-8 sm:h-10">
                             <Link to={`/products/${item.slug}`}>{item.title}</Link>
                           </h4>
                           <p className="font-body text-xs font-semibold text-brand-charcoal">
@@ -1489,7 +1499,7 @@ const Profile = () => {
                           <button
                             onClick={() => handleMoveToCart(item)}
                             disabled={movingWishlistItems.has(item._id?.toString())}
-                            className="w-full py-2 bg-brand-charcoal hover:bg-[#729855] text-white font-heading text-xs font-bold tracking-widest uppercase cursor-pointer border-none rounded-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full py-2 bg-brand-charcoal hover:bg-[#729855] text-white font-heading text-[10px] sm:text-xs font-bold tracking-wider sm:tracking-widest uppercase cursor-pointer border-none rounded-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-center"
                           >
                             {movingWishlistItems.has(item._id?.toString()) ? 'MOVING...' : 'ADD TO BAG'}
                           </button>
@@ -1509,7 +1519,7 @@ const Profile = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
                 transition={{ duration: 0.3 }}
-                className="bg-white border border-[#eae8d8] p-6 md:p-8 rounded-none text-left"
+                className="bg-white border border-[#eae8d8] p-4 sm:p-6 md:p-8 rounded-none text-left"
               >
                 <h3 className="font-heading text-xs font-bold uppercase tracking-widest text-brand-charcoal border-b border-[#eae8d8] pb-3 mb-6">Profile Settings</h3>
 
@@ -1540,9 +1550,9 @@ const Profile = () => {
 
                     <div className="flex flex-col items-center sm:items-start gap-2">
                       <label className="font-heading text-sm font-bold uppercase tracking-widest text-[#333]">Profile Picture</label>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
                         <label
-                          className="bg-brand-charcoal text-white hover:bg-brand-button-hover px-4 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer inline-block select-none rounded-none"
+                          className="bg-brand-charcoal text-white hover:bg-brand-button-hover px-4 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer inline-block select-none rounded-none text-center"
                         >
                           <input
                             type="file"
@@ -1558,13 +1568,13 @@ const Profile = () => {
                             type="button"
                             onClick={handlePhotoRemove}
                             disabled={uploadingPhoto}
-                            className="border border-red-200 text-red-600 hover:bg-red-50 px-4 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer bg-transparent rounded-none"
+                            className="border border-red-200 text-red-600 hover:bg-red-50 px-4 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all cursor-pointer bg-transparent rounded-none text-center"
                           >
                             Remove
                           </button>
                         )}
                       </div>
-                      <span className="text-xs text-brand-muted font-semibold">
+                      <span className="text-xs text-brand-muted font-semibold text-center sm:text-left">
                         Supported formats: JPG, JPEG, PNG, WEBP. Max size: 5MB.
                       </span>
                     </div>
@@ -1629,7 +1639,7 @@ const Profile = () => {
                   <button
                     type="submit"
                     disabled={submittingSettings}
-                    className="bg-[#2f3e10] hover:bg-black text-white px-8 py-3.5 font-heading font-bold text-xs uppercase tracking-widest disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer border-none rounded-none"
+                    className="w-full sm:w-auto bg-[#2f3e10] hover:bg-black text-white px-8 py-3.5 font-heading font-bold text-xs uppercase tracking-widest disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer border-none rounded-none text-center"
                   >
                     {submittingSettings ? <Loader size="small" /> : 'Save Settings'}
                   </button>
@@ -1646,55 +1656,55 @@ const Profile = () => {
                 className="space-y-6 md:space-y-8"
               >
                 {/* Rewards Header / Cards Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                   {/* Card 1: Balance */}
-                  <div className="bg-white border border-[#eae8d8] p-5 rounded-none flex flex-col justify-between text-left select-none shadow-sm">
+                  <div className="bg-white border border-[#eae8d8] p-4 sm:p-5 rounded-none flex flex-col justify-between text-left select-none shadow-sm">
                     <div className="flex justify-between items-start mb-4">
                       <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Current Balance</span>
                       <Award className="w-4 h-4 text-[#729855]" />
                     </div>
-                    <span className="font-heading text-3xl text-brand-charcoal font-semibold">
+                    <span className="font-heading text-2xl sm:text-3xl text-brand-charcoal font-semibold">
                       {user?.rewardPoints || 0} <span className="text-xs font-heading font-bold uppercase tracking-widest text-brand-muted">pts</span>
                     </span>
                   </div>
 
                   {/* Card 2: Lifetime Earned */}
-                  <div className="bg-white border border-[#eae8d8] p-5 rounded-none flex flex-col justify-between text-left select-none shadow-sm">
+                  <div className="bg-white border border-[#eae8d8] p-4 sm:p-5 rounded-none flex flex-col justify-between text-left select-none shadow-sm">
                     <div className="flex justify-between items-start mb-4">
                       <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Lifetime Earned</span>
                       <Award className="w-4 h-4 text-[#729855]" />
                     </div>
-                    <span className="font-heading text-3xl text-[#729855] font-semibold">
+                    <span className="font-heading text-2xl sm:text-3xl text-[#729855] font-semibold">
                       {user?.lifetimeEarned || 0} <span className="text-xs font-heading font-bold uppercase tracking-widest text-brand-muted">pts</span>
                     </span>
                   </div>
 
                   {/* Card 3: Lifetime Redeemed */}
-                  <div className="bg-white border border-[#eae8d8] p-5 rounded-none flex flex-col justify-between text-left select-none shadow-sm">
+                  <div className="bg-white border border-[#eae8d8] p-4 sm:p-5 rounded-none flex flex-col justify-between text-left select-none shadow-sm">
                     <div className="flex justify-between items-start mb-4">
                       <span className="font-heading text-xs font-bold uppercase tracking-widest text-brand-muted">Lifetime Redeemed</span>
                       <Award className="w-4 h-4 text-[#729855]" />
                     </div>
-                    <span className="font-heading text-3xl text-red-500 font-semibold">
+                    <span className="font-heading text-2xl sm:text-3xl text-red-500 font-semibold">
                       {user?.lifetimeRedeemed || 0} <span className="text-xs font-heading font-bold uppercase tracking-widest text-brand-muted">pts</span>
                     </span>
                   </div>
 
                   {/* Card 4: Current Tier */}
-                  <div className="bg-[#faf9f5] border border-[#eae8d8] p-5 rounded-none flex flex-col justify-between text-left select-none shadow-sm">
+                  <div className="bg-[#faf9f5] border border-[#eae8d8] p-4 sm:p-5 rounded-none flex flex-col justify-between text-left select-none shadow-sm">
                     <div className="flex justify-between items-start mb-4">
                       <span className="font-heading text-xs font-bold uppercase tracking-widest text-[#729855]">Current Tier</span>
                       <Award className="w-4 h-4 text-[#729855]" />
                     </div>
-                    <span className="font-heading text-xl text-brand-charcoal font-bold uppercase tracking-widest">
+                    <span className="font-heading text-lg sm:text-xl text-brand-charcoal font-bold uppercase tracking-widest">
                       {rewards.tier} Tier
                     </span>
                   </div>
                 </div>
 
                 {/* Progress Card */}
-                <div className="bg-white border border-[#eae8d8] p-6 rounded-none space-y-4 text-left shadow-sm">
-                  <div className="flex justify-between items-start">
+                <div className="bg-white border border-[#eae8d8] p-4 sm:p-6 rounded-none space-y-4 text-left shadow-sm">
+                  <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
                     <div>
                       <span className="font-heading text-xs font-bold uppercase tracking-widest text-[#729855] block mb-1">Progress to Next Milestone</span>
                       <h4 className="font-heading text-lg text-brand-charcoal font-semibold">{rewards.tierName}</h4>
@@ -1707,11 +1717,11 @@ const Profile = () => {
                 </div>
 
                 {/* Recent Activity / History Table */}
-                <div className="bg-white border border-[#eae8d8] p-6 rounded-none space-y-4 text-left shadow-sm">
+                <div className="bg-white border border-[#eae8d8] p-4 sm:p-6 rounded-none space-y-4 text-left shadow-sm w-full">
                   <h3 className="font-heading text-base font-semibold text-brand-charcoal uppercase tracking-wider">Recent Reward Activity</h3>
                   {user?.rewardHistory && user.rewardHistory.length > 0 ? (
-                    <div className="overflow-x-auto no-scrollbar">
-                      <table className="w-full text-left border-collapse">
+                    <div className="overflow-x-auto no-scrollbar w-full">
+                      <table className="w-full text-left border-collapse min-w-[500px]">
                         <thead>
                           <tr className="border-b border-brand-border font-heading text-[10px] uppercase tracking-widest text-brand-muted">
                             <th className="pb-3 font-bold">Type</th>
@@ -1761,7 +1771,7 @@ const Profile = () => {
       {/* Address Book Modal Dialog */}
       {isAddressModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in no-print">
-          <div className="bg-white border border-[#eae8d8] w-full max-w-lg p-6 md:p-8 space-y-6 relative max-h-[90vh] overflow-y-auto rounded-none text-left">
+          <div className="bg-white border border-[#eae8d8] w-full max-w-lg p-4 sm:p-6 md:p-8 space-y-6 relative max-h-[90vh] overflow-y-auto rounded-none text-left">
             <button
               onClick={() => setIsAddressModalOpen(false)}
               className="absolute top-4 right-4 text-brand-muted hover:text-brand-charcoal bg-transparent border-none cursor-pointer p-1"
@@ -1770,7 +1780,7 @@ const Profile = () => {
             </button>
 
             <div>
-              <h3 className="font-heading text-xl text-brand-charcoal font-semibold">
+              <h3 className="font-heading text-lg sm:text-xl text-brand-charcoal font-semibold">
                 {editingAddress ? 'Edit Delivery Address' : 'Add New Delivery Address'}
               </h3>
               <p className="text-brand-muted text-xs font-body mt-0.5">Enter shipping coordinates for your order invoices.</p>
@@ -1921,18 +1931,18 @@ const Profile = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-[#eae8d8]/40">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-[#eae8d8]/40">
                 <button
                   type="button"
                   onClick={() => setIsAddressModalOpen(false)}
-                  className="px-4 py-2 border border-brand-border text-brand-muted hover:text-brand-charcoal font-heading font-bold text-xs uppercase tracking-widest transition-all bg-transparent cursor-pointer"
+                  className="w-full sm:w-auto px-4 py-2 border border-brand-border text-brand-muted hover:text-brand-charcoal font-heading font-bold text-xs uppercase tracking-widest transition-all bg-transparent cursor-pointer text-center"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingAddress}
-                  className="bg-brand-charcoal hover:bg-brand-button-hover text-white px-6 py-2 font-heading font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-1 cursor-pointer border-none"
+                  className="w-full sm:w-auto bg-brand-charcoal hover:bg-brand-button-hover text-white px-6 py-2.5 font-heading font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-1 cursor-pointer border-none text-center"
                 >
                   {submittingAddress ? <Loader size="small" /> : (editingAddress ? 'Update' : 'Save Address')}
                 </button>

@@ -24,6 +24,9 @@ import AdminBlogs from './AdminBlogs';
 import AdminAnalytics from './AdminAnalytics';
 import AdminSettings from './AdminSettings';
 import AdminContacts from './AdminContacts';
+import AdminSupportTickets from './AdminSupportTickets';
+import AdminTeam from './AdminTeam';
+import AdminPartnerships from './AdminPartnerships';
 
 const AdminDashboardPage = () => {
   const { user, token, loading } = useAuth();
@@ -119,6 +122,15 @@ const AdminDashboardPage = () => {
   }
   if (path === '/admin/contacts') {
     return <AdminContacts contacts={contacts} />;
+  }
+  if (path === '/admin/support') {
+    return <AdminSupportTickets />;
+  }
+  if (path === '/admin/team') {
+    return <AdminTeam />;
+  }
+  if (path === '/admin/partnerships') {
+    return <AdminPartnerships />;
   }
 
   // Default: Stats Overview

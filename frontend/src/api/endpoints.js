@@ -35,4 +35,33 @@ export const ENDPOINTS = {
   // Users (Admin)
   USERS: '/users',
   USER_BY_ID: (id) => `/users/${id}`,
+
+  // CMS
+  CMS_PAGES: '/cms/pages',
+  CMS_PAGE_BY_SLUG: (slug) => `/cms/pages/${slug}`,
+  CMS_PAGE_VERSIONS: (slug) => `/cms/pages/${slug}/versions`,
+
+  // Blogs / Latest News
+  BLOGS: '/blogs',
+  BLOG_BY_SLUG: (slug) => `/blogs/${slug}`,
+  BLOG_CATEGORIES: '/blogs/categories',
+
+  // Support Tickets
+  SUPPORT_TICKETS: '/support',
+  SUPPORT_MY_TICKETS: '/support/my-tickets',
+  SUPPORT_STATS: '/support/stats',
+  SUPPORT_TICKET_BY_ID: (id) => `/support/${id}`,
+  SUPPORT_TICKET_STATUS: (id) => `/support/${id}/status`,
+
+  // Team
+  TEAM: '/team',
+  TEAM_ADMIN: '/team/admin',
+  TEAM_MEMBER_BY_ID: (id) => `/team/${id}`,
+
+  // Partnerships
+  PARTNERSHIPS: '/partnerships',
+  PARTNERSHIP_TYPES: '/partnerships/types',
+  PARTNERSHIP_APPLY: '/partnerships/apply',
+  PARTNERSHIP_BY_ID: (id) => `/partnerships/${id}`,
+  PARTNERSHIP_STATUS: (id) => `/partnerships/${id}/status`,
 };

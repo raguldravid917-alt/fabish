@@ -140,11 +140,11 @@ const Footer = () => {
                 FABISH
               </h3>
               <nav className="flex flex-col gap-[14px]">
-                <Link to="#" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Support Request</Link>
-                <Link to="#" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Our Team</Link>
-                <Link to="#" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Partnership</Link>
-                <Link to="#" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Terms & Condition</Link>
-                <Link to="#" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Latest News</Link>
+                <Link to="/pages/support" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Support Request</Link>
+                <Link to="/pages/our-team" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Our Team</Link>
+                <Link to="/pages/partnership" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Partnership</Link>
+                <Link to="/pages/terms-conditions" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Terms & Conditions</Link>
+                <Link to="/pages/latest-news" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Latest News</Link>
               </nav>
             </div>
           </div>
@@ -211,11 +211,11 @@ const Footer = () => {
                 SHOP
               </h3>
               <nav className="flex flex-col gap-[14px]">
-                <Link to="#" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Shipping & Return</Link>
+                <Link to="/pages/shipping-returns" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Shipping & Return</Link>
                 <Link to="/orders/track" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Track Order</Link>
-                <Link to="#" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>History</Link>
-                <Link to="#" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Promotion</Link>
-                <Link to="#" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Privacy Policy</Link>
+                <Link to="/account/profile?tab=orders" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>History</Link>
+                <Link to="/pages/promotions" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Promotion</Link>
+                <Link to="/pages/privacy-policy" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Privacy Policy</Link>
               </nav>
             </div>
           </div>

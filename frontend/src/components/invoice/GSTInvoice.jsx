@@ -88,6 +88,17 @@ const GSTInvoice = ({ order, onClose }) => {
           margin-bottom: 16px;
         }
 
+        /* Scrollable wrapper for invoice document */
+        .invoice-scroll-wrapper {
+          width: 100%;
+          flex-grow: 1;
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding-bottom: 16px;
+        }
+
         /* Main invoice print container */
         .invoice-container {
           background: white;
@@ -356,6 +367,14 @@ const GSTInvoice = ({ order, onClose }) => {
             display: block !important;
           }
 
+          .invoice-scroll-wrapper {
+            overflow: visible !important;
+            height: auto !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            display: block !important;
+          }
+
           /* Make invoice document take full A4 width */
           .invoice-container {
             width: 100% !important;
@@ -436,9 +455,9 @@ const GSTInvoice = ({ order, onClose }) => {
       `}</style>
 
       {/* ── Overlay modal ── */}
-      <div className="invoice-modal-overlay fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm flex flex-col items-center justify-start p-4 overflow-y-auto">
+      <div className="invoice-modal-overlay fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm flex flex-col items-center justify-start p-4 overflow-hidden">
         {/* ── Action bar (no-print) ── */}
-        <div className="invoice-action-bar no-print sticky top-4 z-10 flex items-center justify-between bg-[#2f3e10] text-white px-6 py-3 rounded-none shadow-xl">
+        <div className="invoice-action-bar no-print flex items-center justify-between bg-[#2f3e10] text-white px-6 py-3 rounded-none shadow-xl">
           <div className="font-heading font-bold text-sm uppercase tracking-widest flex items-center gap-2">
             <Building2 className="w-4 h-4" />
             GST Tax Invoice — {order.invoiceNumber || order.orderNumber}
@@ -459,10 +478,12 @@ const GSTInvoice = ({ order, onClose }) => {
           </div>
         </div>
 
-        {/* ── Invoice document ── */}
-        <div
-          id="gst-invoice-print-area"
-          className="invoice-container text-xs font-sans text-gray-800"
+        {/* ── Scrollable wrapper for invoice document ── */}
+        <div className="invoice-scroll-wrapper">
+          {/* ── Invoice document ── */}
+          <div
+            id="gst-invoice-print-area"
+            className="invoice-container text-xs font-sans text-gray-800"
           style={{ fontFamily: 'Arial, sans-serif' }}
         >
           {/* ═══ HEADER ════════════════════════════════════════════════════════ */}
@@ -752,6 +773,7 @@ const GSTInvoice = ({ order, onClose }) => {
               </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </>

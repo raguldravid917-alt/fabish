@@ -203,7 +203,7 @@ class OrderController {
   // @access  Public
   async getTrackingInfo(req, res, next) {
     try {
-      const trackingData = await orderService.getTrackingInfo(req.params.idOrNumber);
+      const trackingData = await orderService.getTrackingInfo(req.params.idOrNumber, req.query.emailOrPhone);
       res.status(HTTP_STATUS.OK).json({
         success: true,
         data: trackingData,

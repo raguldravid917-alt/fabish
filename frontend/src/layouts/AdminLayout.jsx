@@ -18,7 +18,10 @@ import {
   Menu,
   X,
   Sparkles,
-  MessageSquare
+  MessageSquare,
+  Headphones,
+  Users2,
+  Handshake
 } from 'lucide-react';
 
 const ADMIN_LINKS = [
@@ -32,6 +35,9 @@ const ADMIN_LINKS = [
   { path: '/admin/reviews', label: 'Reviews', icon: Star },
   { path: '/admin/blogs', label: 'Blogs', icon: BookOpen },
   { path: '/admin/contacts', label: 'Contacts', icon: MessageSquare },
+  { path: '/admin/support', label: 'Support Tickets', icon: Headphones },
+  { path: '/admin/team', label: 'Our Team', icon: Users2 },
+  { path: '/admin/partnerships', label: 'Partnerships', icon: Handshake },
   { path: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
   { path: '/admin/settings', label: 'Settings', icon: Settings },
 ];
