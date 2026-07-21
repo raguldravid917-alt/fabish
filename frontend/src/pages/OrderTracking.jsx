@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Search, Truck, MapPin, Calendar, ClipboardList, CheckCircle2, Circle, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Search, Truck, MapPin, Calendar, ClipboardList, CheckCircle2, Circle, AlertCircle, ArrowLeft, Info } from 'lucide-react';
 import { orderService } from '../api/orderService';
+import { api } from '../api/client';
 import Loader from '../components/ui/Loader';
 import { useToast } from '../context/ToastContext';
 import { motion } from 'framer-motion';
@@ -29,6 +30,27 @@ const OrderTracking = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Settings State
+  const [settings, setSettings] = useState(null);
+  const [loadingSettings, setLoadingSettings] = useState(true);
+
+  const fetchSettings = async () => {
+    try {
+      const res = await api.get('/settings');
+      if (res.success && res.data) {
+        setSettings(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to load tracking settings:', err);
+    } finally {
+      setLoadingSettings(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+  
   const fetchTracking = async (numberOrId, checkContact) => {
     if (!numberOrId?.trim()) return;
     setLoading(true);
@@ -63,6 +85,10 @@ const OrderTracking = () => {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
+    if (settings && !settings.trackingEnabled) {
+      showToast('Order tracking is currently offline', 'error');
+      return;
+    }
     if (!searchQuery.trim()) {
       showToast('Please enter an order or tracking number', 'warning');
       return;
@@ -114,7 +140,19 @@ const OrderTracking = () => {
           <p className="text-xs text-brand-muted mt-2 max-w-md mx-auto">
             Enter your unique Tracking/Order ID along with your email or phone number below.
           </p>
-        </div>
+         </div>
+
+        {/* Offline Warning Banner */}
+        {settings && !settings.trackingEnabled && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-900 p-6 shadow-sm mb-8 text-center rounded-none flex flex-col items-center gap-3">
+            <AlertCircle className="w-8 h-8 text-amber-600" />
+            <h3 className="font-heading font-semibold text-base uppercase tracking-wider">Tracking Service Offline</h3>
+            <p className="text-xs text-amber-800/80 max-w-md">
+              Live order tracking is currently disabled by the store administrator. Please contact us at{' '}
+              <strong className="underline">{settings.storeEmail || 'contact@fabish.com'}</strong> for any updates regarding your delivery.
+            </p>
+          </div>
+        )}
 
         {/* Search Bar Form */}
         <div className="bg-white border border-brand-border p-6 md:p-8 shadow-sm mb-8">
@@ -126,7 +164,8 @@ const OrderTracking = () => {
                   placeholder="Order or Tracking ID (e.g. FAB-... / TRK-...)"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-[#f4f7f8] border border-transparent focus:border-[#729855] focus:bg-white px-5 py-4 pl-12 text-sm text-[#333] outline-none transition-all placeholder:text-gray-400 font-medium"
+                  disabled={settings && !settings.trackingEnabled}
+                  className="w-full bg-[#f4f7f8] border border-transparent focus:border-[#729855] focus:bg-white px-5 py-4 pl-12 text-sm text-[#333] outline-none transition-all placeholder:text-gray-400 font-medium disabled:opacity-50"
                 />
                 <ClipboardList className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
               </div>
@@ -136,7 +175,8 @@ const OrderTracking = () => {
                   placeholder="Billing Email ID or Phone Number"
                   value={emailOrPhone}
                   onChange={(e) => setEmailOrPhone(e.target.value)}
-                  className="w-full bg-[#f4f7f8] border border-transparent focus:border-[#729855] focus:bg-white px-5 py-4 pl-12 text-sm text-[#333] outline-none transition-all placeholder:text-gray-400 font-medium"
+                  disabled={settings && !settings.trackingEnabled}
+                  className="w-full bg-[#f4f7f8] border border-transparent focus:border-[#729855] focus:bg-white px-5 py-4 pl-12 text-sm text-[#333] outline-none transition-all placeholder:text-gray-400 font-medium disabled:opacity-50"
                 />
                 <User className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
               </div>
@@ -144,8 +184,8 @@ const OrderTracking = () => {
             <div className="flex justify-end">
               <button
                 type="submit"
-                disabled={loading}
-                className="bg-[#2f3e10] hover:bg-black text-white px-8 py-4 text-xs font-bold tracking-widest uppercase transition-colors shrink-0 border-none cursor-pointer flex items-center justify-center gap-2"
+                disabled={loading || (settings && !settings.trackingEnabled)}
+                className="bg-[#2f3e10] hover:bg-black text-white px-8 py-4 text-xs font-bold tracking-widest uppercase transition-colors shrink-0 border-none cursor-pointer flex items-center justify-center gap-2 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
               >
                 {loading ? 'Searching...' : 'Track Shipment'}
               </button>
@@ -202,7 +242,7 @@ const OrderTracking = () => {
                 <div>
                   <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-1">Shipment Method</span>
                   <h3 className="font-heading text-sm font-bold text-black uppercase leading-tight">{order.trackingNumber || 'Awaiting ID'}</h3>
-                  <p className="text-[11px] text-brand-muted mt-1">Courier: <strong>{order.courierName}</strong></p>
+                  <p className="text-[11px] text-brand-muted mt-1">Courier: <strong>{order.courierName || settings?.trackingProvider || 'Fabish Express'}</strong></p>
                 </div>
               </div>
 
@@ -228,6 +268,13 @@ const OrderTracking = () => {
               <h2 className="font-heading text-base font-bold uppercase tracking-widest text-[#2f3e10] border-b border-[#eae8d8] pb-4 mb-8">
                 Shipment History
               </h2>
+
+              {settings?.customTrackingMsg && (
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-100 text-blue-800 text-xs font-semibold flex items-center gap-2 rounded-none">
+                  <Info className="w-4.5 h-4.5 text-blue-500 shrink-0" />
+                  <span>Status Note: {settings.customTrackingMsg}</span>
+                </div>
+              )}
 
               {isCancelled ? (
                 <div className="bg-red-50 border border-red-200 text-red-800 p-6 flex items-start gap-4">

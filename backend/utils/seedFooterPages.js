@@ -43,6 +43,58 @@ const FooterPage = mongoose.models.FooterPage || mongoose.model('FooterPage', fo
 
 const SEED_PAGES = [
   {
+    title: 'Shipping & Return',
+    slug: 'shipping-returns',
+    shortDescription: 'Understand our delivery timelines, shipping charges, and returns policy.',
+    content: `<h2>Shipping Policy</h2>
+<p>We are committed to delivering your premium organic skincare products in perfect condition and as quickly as possible.</p>
+<h3>Delivery Timelines</h3>
+<ul>
+  <li><strong>Metro Cities:</strong> 2 - 4 business days.</li>
+  <li><strong>Other Cities &amp; Towns:</strong> 3 - 6 business days.</li>
+</ul>
+<h3>Shipping Charges</h3>
+<p>We offer <strong>FREE standard shipping</strong> on all orders above ₹1,000. For orders below ₹1,000, a flat shipping fee of ₹100 applies.</p>
+<hr />
+<h2>Returns &amp; Refunds Policy</h2>
+<p>Due to the personal and organic nature of our products, we accept returns under specific conditions to maintain hygiene standards.</p>
+<h3>Conditions for Returns</h3>
+<ul>
+  <li>Product must be unused, unopened, and in its original retail packaging.</li>
+  <li>Return requests must be initiated within <strong>7 days</strong> of delivery.</li>
+</ul>`,
+    seoTitle: 'Shipping & Returns Policy — Fabish',
+    seoDescription: 'Learn about Fabish shipping timelines, charges, and our returns & refund policy.',
+    seoKeywords: ['shipping', 'delivery', 'returns', 'refunds'],
+    displayOrder: 6,
+  },
+  {
+    title: 'Privacy Policy',
+    slug: 'privacy-policy',
+    shortDescription: 'Learn how Fabish handles, stores, and protects your account details and payment data.',
+    content: `<h2>Privacy Policy</h2>
+<p>At FABISH, we value your trust and are committed to protecting your personal information. This Privacy Policy describes how we collect, use, and share your personal data when you visit or shop on our website.</p>
+<h3>Information We Collect</h3>
+<p>When you purchase products or register an account, we collect the personal information you give us, such as your name, billing address, shipping address, email address, and phone number.</p>
+<h3>Data Security</h3>
+<p>We implement industry-standard security measures, including Secure Sockets Layer (SSL) encryption, to protect your personal data.</p>`,
+    seoTitle: 'Privacy Policy — Fabish',
+    seoDescription: 'Understand how Fabish collects, uses, and protects your personal data.',
+    seoKeywords: ['privacy', 'data protection', 'legal'],
+    displayOrder: 7,
+  },
+  {
+    title: 'Promotions & Offers',
+    slug: 'promotions',
+    shortDescription: 'Check out our latest sales campaigns, active coupon codes, and special seasonal discounts.',
+    content: `<h2>Active Brand Offers</h2>
+<p>Here you will find our latest seasonal offers and special shopping discounts. Use them during checkout to enjoy savings on our premium organic skincare lines!</p>`,
+    seoTitle: 'Offers & Promotions — Fabish',
+    seoDescription: 'Find the latest coupon codes, active discounts, and promotional campaigns at Fabish.',
+    seoKeywords: ['offers', 'coupons', 'discounts', 'promotions'],
+    displayOrder: 8,
+  },
+  {
     title: 'Support Request',
     slug: 'support-request',
     shortDescription: 'Get in touch with our support team for any queries, complaints, or assistance with your orders.',
@@ -149,6 +201,18 @@ const SEED_PAGES = [
     seoKeywords: ['fabish news', 'latest updates', 'product launch', 'skincare news'],
     displayOrder: 5,
   },
+  {
+    title: 'Press Release',
+    slug: 'press-release',
+    shortDescription: 'Stay updated with the latest brand announcements, product launches, and company news from Fabish.',
+    content: `<h2>Fabish Brand Announcements</h2>
+<p>Welcome to the official Fabish press room. Here you will find our latest press releases, corporate announcements, and product launch news. For media inquiries, please reach out to press@fabish.com.</p>`,
+    seoTitle: 'Press Releases — Fabish Cosmetics',
+    seoDescription: 'Read official corporate announcements and media updates from Fabish.',
+    seoKeywords: ['press release', 'news', 'media kit', 'announcements'],
+    displayOrder: 9,
+    showInFooter: false,
+  },
 ];
 
 async function seed() {
@@ -169,6 +233,7 @@ async function seed() {
 
       await FooterPage.create({
         ...page,
+        status: 'Published',
         featuredImage: { url: '', publicId: '', alt: '' },
         bannerImage: { url: '', publicId: '', alt: '' },
         publishedDate: new Date(),

@@ -175,7 +175,7 @@ const Footer = () => {
                 <Link to="/pages/faq" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Faq</Link>
                 <Link to="/blogs/news" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Blog</Link>
                 <Link to="/pages/contact" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Contact</Link>
-                <Link to="#" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Press Release</Link>
+                <Link to="/pages/press-release" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Press Release</Link>
               </nav>
             </div>
 

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import Loader from '../../components/ui/Loader';
-import { Settings, Save, ShieldAlert, BadgePercent, Truck, Mail, FileText, Eye } from 'lucide-react';
+import { Settings, Save, ShieldAlert, BadgePercent, Truck, Mail, FileText, Eye, Info } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { cmsService } from '../../api/cmsService';
+import { api } from '../../api/client';
 
 const AdminSettings = () => {
   useDocumentTitle('Admin - Settings');
@@ -18,7 +19,10 @@ const AdminSettings = () => {
   const [shippingRate, setShippingRate] = useState('1000');
   const [taxPercent, setTaxPercent] = useState('18');
   const [sandbox, setSandbox] = useState(true);
-  const [storeLoading, setStoreLoading] = useState(false);
+  const [trackingProvider, setTrackingProvider] = useState('Delhivery');
+  const [trackingEnabled, setTrackingEnabled] = useState(true);
+  const [customTrackingMsg, setCustomTrackingMsg] = useState('Your package is in transit with Fabish Express.');
+  const [storeLoading, setStoreLoading] = useState(true);
 
   // CMS Settings state
   const [selectedSlug, setSelectedSlug] = useState('shipping-returns');
@@ -27,6 +31,30 @@ const AdminSettings = () => {
   const [cmsLoading, setCmsLoading] = useState(false);
   const [cmsSaving, setCmsSaving] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+
+  // Fetch settings from MongoDB
+  const fetchSettings = async () => {
+    setStoreLoading(true);
+    try {
+      const res = await api.get('/settings/admin', { auth: true });
+      if (res.success && res.data) {
+        setStoreName(res.data.storeName || 'Fabish Cosmetics Store');
+        setStoreEmail(res.data.storeEmail || 'contact@fabish.com');
+        setShippingRate(String(res.data.shippingRate || '1000'));
+        setTaxPercent(String(res.data.taxPercent || '18'));
+        setSandbox(res.data.sandbox !== false);
+        setTrackingProvider(res.data.trackingProvider || 'Delhivery');
+        setTrackingEnabled(res.data.trackingEnabled !== false);
+        setCustomTrackingMsg(res.data.customTrackingMsg || 'Your package is in transit with Fabish Express.');
+      } else {
+        showToast('Failed to load store settings', 'error');
+      }
+    } catch (err) {
+      showToast('Error connecting to settings service', 'error');
+    } finally {
+      setStoreLoading(false);
+    }
+  };
 
   // Fetch CMS page content on mount or slug change
   const fetchCmsPage = async (slug) => {
@@ -47,18 +75,41 @@ const AdminSettings = () => {
   };
 
   useEffect(() => {
-    if (activeTab === 'cms') {
+    if (activeTab === 'store') {
+      fetchSettings();
+    } else if (activeTab === 'cms') {
       fetchCmsPage(selectedSlug);
     }
   }, [activeTab, selectedSlug]);
 
-  const handleStoreSubmit = (e) => {
+  const handleStoreSubmit = async (e) => {
     e.preventDefault();
     setStoreLoading(true);
-    setTimeout(() => {
+    try {
+      const res = await api.put(
+        '/settings/admin',
+        {
+          storeName,
+          storeEmail,
+          shippingRate: Number(shippingRate),
+          taxPercent: Number(taxPercent),
+          sandbox,
+          trackingProvider,
+          trackingEnabled,
+          customTrackingMsg,
+        },
+        { auth: true }
+      );
+      if (res.success) {
+        showToast('Store settings saved successfully!', 'success');
+      } else {
+        showToast(res.message || 'Failed to save store settings', 'error');
+      }
+    } catch (err) {
+      showToast('Connection error. Could not save settings.', 'error');
+    } finally {
       setStoreLoading(false);
-      showToast('Store settings saved successfully!', 'success');
-    }, 800);
+    }
   };
 
   const handleCmsSubmit = async (e) => {
@@ -193,6 +244,54 @@ const AdminSettings = () => {
                 onChange={() => setSandbox(!sandbox)} 
                 className="w-4 h-4 cursor-pointer accent-[#729855]"
               />
+            </div>
+          </div>
+
+          {/* Tracking & Shipment Settings */}
+          <div className="border-t border-[#eae8d8] pt-6 space-y-6">
+            <h3 className="font-heading text-xs font-bold uppercase tracking-widest text-[#2f3e10] border-b border-[#eae8d8] pb-2">Order Tracking Parameters</h3>
+            
+            <div className="flex justify-between items-center bg-[#fcfcfa] border border-[#eae8d8] p-4">
+              <div className="flex gap-3">
+                <Info className="w-5 h-5 text-gray-500 mt-0.5" />
+                <div>
+                  <h4 className="text-xs font-bold text-black uppercase tracking-wider">Enable Live Order Tracking</h4>
+                  <p className="text-[10px] text-gray-500 mt-0.5 leading-relaxed">Toggle tracking service for customers on the storefront.</p>
+                </div>
+              </div>
+              <input 
+                type="checkbox" 
+                checked={trackingEnabled} 
+                onChange={() => setTrackingEnabled(!trackingEnabled)} 
+                className="w-4 h-4 cursor-pointer accent-[#729855]"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555] mb-2 block">Default Tracking Provider</label>
+                <select
+                  value={trackingProvider}
+                  onChange={(e) => setTrackingProvider(e.target.value)}
+                  className="w-full bg-[#fcfcfa] border border-[#eae8d8] px-4 py-3.5 font-body text-sm text-black focus:outline-none focus:border-[#729855] rounded-none cursor-pointer"
+                >
+                  <option value="None">None (Simulated Delivery Only)</option>
+                  <option value="Delhivery">Delhivery</option>
+                  <option value="FedEx">FedEx</option>
+                  <option value="DHL">DHL</option>
+                  <option value="Custom">Custom/Fabish Express</option>
+                </select>
+              </div>
+              <div>
+                <label className="font-heading text-[10px] font-bold uppercase tracking-[0.15em] text-[#555] mb-2 block">Custom Status Message</label>
+                <input 
+                  type="text" 
+                  required
+                  value={customTrackingMsg} 
+                  onChange={(e) => setCustomTrackingMsg(e.target.value)} 
+                  className="w-full bg-[#fcfcfa] border border-[#eae8d8] px-4 py-3.5 font-body text-sm text-black focus:outline-none focus:border-[#729855] rounded-none" 
+                />
+              </div>
             </div>
           </div>
 

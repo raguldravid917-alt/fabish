@@ -25,6 +25,32 @@ const connectDB = async () => {
     }
     console.log('Default product badges verified/seeded successfully');
 
+    // Seed default FooterPages (including Press Release)
+    const FooterPage = require('../models/FooterPage');
+    const defaultPressRelease = {
+      title: 'Press Release',
+      slug: 'press-release',
+      shortDescription: 'Stay updated with the latest brand announcements, product launches, and company news from Fabish.',
+      content: `<h2>Fabish Brand Announcements</h2><p>Welcome to the official Fabish press room. Here you will find our latest press releases, corporate announcements, and product launch news. For media inquiries, please reach out to press@fabish.com.</p>`,
+      seoTitle: 'Press Releases — Fabish Cosmetics',
+      seoDescription: 'Read official corporate announcements and media updates from Fabish.',
+      seoKeywords: ['press release', 'news', 'media kit', 'announcements'],
+      displayOrder: 9,
+      showInFooter: false,
+      status: 'Published',
+    };
+    const existingPressPage = await FooterPage.findOne({ slug: 'press-release' });
+    if (!existingPressPage) {
+      await FooterPage.create(defaultPressRelease);
+      console.log('Seeded default Press Release footer page successfully');
+    } else if (existingPressPage.status !== 'Published') {
+      existingPressPage.status = 'Published';
+      await existingPressPage.save();
+      console.log('Updated existing Press Release page status to Published');
+    } else {
+      console.log('Default Press Release footer page verified successfully (already Published)');
+    }
+
     // Run legacy variant migration automatically to prevent CastToObjectId errors
     const Variant = require('../models/Variant');
     try {

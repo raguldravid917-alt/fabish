@@ -73,8 +73,6 @@ function App() {
                           <Route path="/pages/about-us" element={<AboutUs />} />
                           <Route path="/pages/contact" element={<Contact />} />
                           <Route path="/pages/faq" element={<FAQ />} />
-                          <Route path="/pages/shipping-returns" element={<ShippingReturns />} />
-                          <Route path="/pages/privacy-policy" element={<PrivacyPolicy />} />
                           <Route path="/pages/promotions" element={<Promotions />} />
                           <Route path="/blogs/news" element={<Blog />} />
                           {/* Added route for single blog details to prevent wildcard home redirection */}
@@ -120,6 +118,9 @@ function App() {
                           <Route path="/admin/analytics" element={<AdminDashboardPage />} />
                           <Route path="/admin/settings" element={<AdminDashboardPage />} />
                           <Route path="/admin/contacts" element={<AdminDashboardPage />} />
+                          <Route path="/admin/support" element={<AdminDashboardPage />} />
+                          <Route path="/admin/team" element={<AdminDashboardPage />} />
+                          <Route path="/admin/partnerships" element={<AdminDashboardPage />} />
                           <Route path="/admin/footer-pages" element={<AdminFooterPages />} />
                         </Route>
 

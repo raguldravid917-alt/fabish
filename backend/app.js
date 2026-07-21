@@ -31,6 +31,7 @@ const supportTicketRoutes = require('./src/routes/supportTicketRoutes');
 const teamRoutes = require('./src/routes/teamRoutes');
 const partnerRoutes = require('./src/routes/partnerRoutes');
 const footerPageRoutes = require('./src/routes/footerPageRoutes');
+const settingsRoutes = require('./src/routes/settingsRoutes');
 
 const app = express();
 
@@ -156,6 +157,7 @@ app.use('/api/sitemap.xml', sitemapRoutes);
 app.use('/api/support', supportTicketRoutes);
 app.use('/api/team', teamRoutes);
 app.use('/api/partnerships', partnerRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Footer Pages CMS — public storefront
 app.use('/api/footer-pages', footerPageRoutes);
