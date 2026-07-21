@@ -4,6 +4,10 @@
  * Implements exponential backoff retry and fails fast using connection timeouts.
  */
 const nodemailer = require('nodemailer');
+const dns = require("node:dns");
+
+// Resolve IPv4 first to avoid connection delays on environments like Render/Fly.io
+dns.setDefaultResultOrder("ipv4first");
 
 let transporter = null;
 
@@ -58,11 +62,13 @@ const getTransporter = async () => {
       user,
       pass,
     },
-    connectionTimeout: 30000, // 30s connection timeout
-    greetingTimeout: 30000,    // 30s greeting timeout
-    socketTimeout: 30000,      // 30s socket timeout
+    connectionTimeout: 30000,
+    greetingTimeout: 30000,
+    socketTimeout: 30000,
+    name: process.env.SMTP_HELO_NAME || "fabish.onrender.com",
     tls: {
-      rejectUnauthorized: false, // Permit self-signed certs in container/proxy environments
+      // Production-ல் true ஆகவும், Local / Self-signed certificate-களுக்கு false ஆகவும் மாற்றுமளவிற்கு அமைக்கப்பட்டுள்ளது.
+      rejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED === 'true' || process.env.NODE_ENV === 'production',
     },
   });
 
