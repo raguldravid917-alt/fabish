@@ -319,7 +319,6 @@ class AuthController {
    * @public
    */
   async forgotPassword(req, res, next) {
-    const SAFE_MSG = 'If an account with that email exists, a reset link has been sent';
     const { email } = req.body ?? {};
 
     // 1. Logging: Incoming Request
@@ -339,11 +338,14 @@ class AuthController {
         logger.info(`[AuthController] forgotPassword: User Found — email: ${email}`);
         logger.info(`[AuthController] forgotPassword: Token Generated`);
       } catch (authError) {
-        // Prevent email enumeration: return success even if user not found
-        if (authError.message.includes('No account found')) {
-          logger.info(`[AuthController] forgotPassword: Safe return (non-existent email) — email: ${email}`);
-          logger.info(`[AuthController] forgotPassword: Response Returned`);
-          return ok(res, HTTP_STATUS.OK, SAFE_MSG);
+        // Safe Return-ஐத் தடுத்து, நேரடியாக "மின்னஞ்சல் பதிவு செய்யப்படவில்லை" என்று பிழையைக் காட்டுகிறது
+        if (
+          authError.message.toLowerCase().includes('no account found') ||
+          authError.message.toLowerCase().includes('not found')
+        ) {
+          logger.info(`[AuthController] forgotPassword: Non-existent email — email: ${email}`);
+          logger.info(`[AuthController] forgotPassword: Response Returned Failure`);
+          return fail(res, HTTP_STATUS.NOT_FOUND || 404, 'This email address is not registered', 'forgotPassword');
         }
         throw authError;
       }
@@ -398,7 +400,7 @@ class AuthController {
       } catch (smtpError) {
         logger.error(`[AuthController] forgotPassword error: SMTP Send Fail for ${email}`);
         logger.error(smtpError.stack || smtpError.message);
-        
+
         // Handle ETIMEDOUT or other connection timeout / SMTP errors specifically
         const isTimeout = smtpError.message.includes('timeout') || smtpError.code === 'ETIMEDOUT';
         return res.status(500).json({
@@ -410,7 +412,7 @@ class AuthController {
       }
 
       logger.info(`[AuthController] forgotPassword: Response Returned`);
-      return ok(res, HTTP_STATUS.OK, SAFE_MSG);
+      return ok(res, HTTP_STATUS.OK, 'Password reset link has been sent successfully');
     } catch (error) {
       logger.error(`[AuthController] forgotPassword top-level error: ${error.message}`);
       logger.error(error.stack);
