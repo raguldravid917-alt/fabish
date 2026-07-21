@@ -1,21 +1,16 @@
 /**
- * Email Service — Consolidated Production Implementation.
- * Supports Resend API (HTTP) for production (Render) and falls back to Nodemailer SMTP for local development.
+ * Email Service — Consolidated Production SMTP Implementation.
+ * Supports Gmail App Passkey on Localhost & Brevo SMTP on Live (Render).
+ * Standardizes environment variables: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM_EMAIL.
+ * Automatically trims whitespace/newlines from configurations to prevent authentication errors.
  */
 const nodemailer = require('nodemailer');
-const { Resend } = require('resend');
 const dns = require("node:dns");
 
 // Resolve IPv4 first to avoid connection delays on environments like Render/Fly.io
 dns.setDefaultResultOrder("ipv4first");
 
 let transporter = null;
-let resendClient = null;
-
-// Initialize Resend Client if API key is provided
-if (process.env.RESEND_API_KEY) {
-  resendClient = new Resend(process.env.RESEND_API_KEY);
-}
 
 /**
  * Configure and retrieve the Nodemailer transporter instance.
@@ -23,10 +18,33 @@ if (process.env.RESEND_API_KEY) {
 const getTransporter = async () => {
   if (transporter) return transporter;
 
-  const host = process.env.SMTP_HOST;
-  const port = parseInt(process.env.SMTP_PORT || '587', 10);
-  const user = process.env.SMTP_USER || process.env.EMAIL_USER;
-  const pass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
+  // Render Environment Variables-ல் காப்பி-பேஸ்ட் செய்யும்போது விழும் தேவையற்ற இடைவெளிகளை (spaces/newlines) நீக்குகிறது
+  const host = process.env.SMTP_HOST ? process.env.SMTP_HOST.trim() : null;
+  const portRaw = process.env.SMTP_PORT ? process.env.SMTP_PORT.trim() : '587';
+  const port = parseInt(portRaw, 10);
+
+  // Local environment-ல் EMAIL_USER / EMAIL_PASS இருந்தால் அதையும் சப்போர்ட் செய்யும் வகையில் அமைக்கப்பட்டுள்ளது
+  const userRaw = process.env.SMTP_USER || process.env.EMAIL_USER;
+  const user = userRaw ? userRaw.trim() : null;
+
+  const passRaw = process.env.SMTP_PASS || process.env.EMAIL_PASS;
+  const pass = passRaw ? passRaw.trim() : null;
+
+  // Diagnostic Logs (பாதுகாப்புடன் Credentials அளவை அச்சிட்டு ஏதேனும் தவறு உள்ளதா எனத் திரையில் காட்டும்)
+  console.log('--- EmailService Connection Debug ---');
+  console.log(`SMTP_HOST: "${host}"`);
+  console.log(`SMTP_PORT: ${port}`);
+  if (user) {
+    console.log(`SMTP_USER: "${user.substring(0, 3)}...${user.substring(user.length - 3)}" (Length: ${user.length})`);
+  } else {
+    console.log('SMTP_USER: Missing');
+  }
+  if (pass) {
+    console.log(`SMTP_PASS: "${pass.substring(0, 3)}...${pass.substring(pass.length - 3)}" (Length: ${pass.length})`);
+  } else {
+    console.log('SMTP_PASS: Missing');
+  }
+  console.log('------------------------------------');
 
   if (!host || !user || !pass) {
     // Ethereal fallback for local development if credentials are empty/placeholder
@@ -85,14 +103,9 @@ const getTransporter = async () => {
 };
 
 /**
- * Verify SMTP connection or Resend API key configuration.
+ * Verify SMTP connection. Only run during startup.
  */
 const verifyConnection = async () => {
-  if (resendClient) {
-    console.log('✓ Email Service: Resend API mode active (verified API key configuration)');
-    return true;
-  }
-  
   try {
     const t = await getTransporter();
     await t.verify();
@@ -108,7 +121,8 @@ const verifyConnection = async () => {
  * Core send mail wrapper with exponential backoff retry mechanism.
  */
 const sendEmail = async ({ to, subject, html, text }) => {
-  const fromEmail = process.env.RESEND_FROM_EMAIL || process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || process.env.EMAIL_USER || 'onboarding@resend.dev';
+  const fromEmailRaw = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || process.env.EMAIL_USER;
+  const fromEmail = fromEmailRaw ? fromEmailRaw.trim() : null;
   const from = fromEmail.includes('<') ? fromEmail : `"Fabish Support" <${fromEmail}>`;
 
   let attempt = 0;
@@ -118,35 +132,17 @@ const sendEmail = async ({ to, subject, html, text }) => {
   while (attempt < maxRetries) {
     try {
       attempt++;
-      if (resendClient) {
-        console.log(`[EmailService] Sending email via Resend to ${to}. Attempt ${attempt}/${maxRetries}...`);
-        const { data, error } = await resendClient.emails.send({
-          from,
-          to: [to],
-          subject,
-          html,
-          text,
-        });
-
-        if (error) {
-          throw new Error(error.message || JSON.stringify(error));
-        }
-
-        console.log(`[EmailService] Email sent successfully via Resend to ${to}. MessageID: ${data.id}`);
-        return { success: true, messageId: data.id };
-      } else {
-        console.log(`[EmailService] Sending email via SMTP to ${to}. Attempt ${attempt}/${maxRetries}...`);
-        const t = await getTransporter();
-        const info = await t.sendMail({
-          from,
-          to,
-          subject,
-          html,
-          text,
-        });
-        console.log(`[EmailService] Email sent successfully via SMTP to ${to}. MessageID: ${info.messageId}`);
-        return { success: true, messageId: info.messageId };
-      }
+      console.log(`[EmailService] Sending email to ${to}. Attempt ${attempt}/${maxRetries}...`);
+      const t = await getTransporter();
+      const info = await t.sendMail({
+        from,
+        to,
+        subject,
+        html,
+        text,
+      });
+      console.log(`[EmailService] Email sent successfully to ${to}. MessageID: ${info.messageId}`);
+      return { success: true, messageId: info.messageId };
     } catch (err) {
       console.warn(`[EmailService] Attempt ${attempt} failed: ${err.message}`);
       if (attempt >= maxRetries) {
@@ -159,9 +155,43 @@ const sendEmail = async ({ to, subject, html, text }) => {
   }
 };
 
+/**
+ * Generic Password Reset Email Template.
+ * Handles forgot-password logic safely.
+ */
+const sendPasswordResetEmail = async ({ to, name, resetUrl, token }) => {
+  const finalUrl = resetUrl || `${process.env.CLIENT_URL || 'http://localhost:5173'}/pages/reset-password/${token}`;
+
+  return sendEmail({
+    to,
+    subject: 'Password Reset Request — Fabish',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+        <h2 style="color: #8B5A2B;">Reset Your Password</h2>
+        <p>Hi <strong>${name || 'User'}</strong>,</p>
+        <p>We received a request to reset the password for your Fabish account.</p>
+        <p>Please click the button below to set a new password. This link is valid for 1 hour:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${finalUrl}" style="background-color: #8B5A2B; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">Reset Password</a>
+        </div>
+        <p>If the button doesn't work, copy and paste this link into your browser:</p>
+        <p style="word-break: break-all;"><a href="${finalUrl}" style="color: #8B5A2B;">${finalUrl}</a></p>
+        <p>If you did not request this, please ignore this email.</p>
+        <p style="margin-top: 30px; font-size: 12px; color: #999;">— The Fabish Support Team</p>
+      </div>
+    `,
+    text: `Hi, reset your password by visiting this link: ${finalUrl}`,
+  });
+};
+
 const emailService = {
   sendEmail,
   verifyConnection,
+
+  // பாஸ்வேர்ட் ரீசெட் செய்யும்போது பிழைகள் வராமல் தடுக்க அலியாஸ் (Aliases)
+  sendPasswordResetEmail,
+  sendForgotPasswordEmail: sendPasswordResetEmail,
+  sendResetPasswordEmail: sendPasswordResetEmail,
 
   /**
    * Send ticket creation confirmation to customer.
