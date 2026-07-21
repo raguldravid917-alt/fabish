@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 import { contactService } from '../api/contactService';
+import { useFooterPages } from '../hooks/useFooterPages';
 
 /* ── Social Icon Helpers ──────────────────────────────────────── */
 const TwitterIcon = ({ size = 18 }) => (
@@ -36,6 +37,7 @@ const Footer = () => {
   const { showToast } = useToast();
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const { pages: footerPages, loading: footerLoading } = useFooterPages();
 
   const handleSubscribe = async (e) => {
     e.preventDefault();
@@ -134,17 +136,29 @@ const Footer = () => {
               </a>
             </div>
 
-            {/* FABISH Section */}
+            {/* FABISH Section — dynamic CMS footer links */}
             <div>
               <h3 className="text-[13px] font-extrabold tracking-[0.2em] uppercase text-black mt-0 mb-[24px]" style={{ fontFamily: '"Outfit", sans-serif' }}>
                 FABISH
               </h3>
               <nav className="flex flex-col gap-[14px]">
-                <Link to="/pages/support" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Support Request</Link>
-                <Link to="/pages/our-team" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Our Team</Link>
-                <Link to="/pages/partnership" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Partnership</Link>
-                <Link to="/pages/terms-conditions" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Terms & Conditions</Link>
-                <Link to="/pages/latest-news" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Latest News</Link>
+                {footerLoading ? (
+                  /* Loading skeleton shimmer */
+                  [...Array(5)].map((_, i) => (
+                    <div key={i} className="h-4 bg-gray-200 animate-pulse rounded w-3/4" />
+                  ))
+                ) : footerPages.length > 0 ? (
+                  footerPages.map((page) => (
+                    <Link
+                      key={page._id}
+                      to={`/pages/${page.slug}`}
+                      className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]"
+                      style={{ textDecoration: 'none' }}
+                    >
+                      {page.title}
+                    </Link>
+                  ))
+                ) : null}
               </nav>
             </div>
           </div>

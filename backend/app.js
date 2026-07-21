@@ -30,6 +30,7 @@ const sitemapRoutes = require('./src/routes/sitemapRoutes');
 const supportTicketRoutes = require('./src/routes/supportTicketRoutes');
 const teamRoutes = require('./src/routes/teamRoutes');
 const partnerRoutes = require('./src/routes/partnerRoutes');
+const footerPageRoutes = require('./src/routes/footerPageRoutes');
 
 const app = express();
 
@@ -155,6 +156,11 @@ app.use('/api/sitemap.xml', sitemapRoutes);
 app.use('/api/support', supportTicketRoutes);
 app.use('/api/team', teamRoutes);
 app.use('/api/partnerships', partnerRoutes);
+
+// Footer Pages CMS — public storefront
+app.use('/api/footer-pages', footerPageRoutes);
+// Footer Pages CMS — admin CRUD (routes internally enforce adminOnly guard)
+app.use('/api/admin/footer-pages', footerPageRoutes);
 
 app.post('/api/log-error', (req, res) => {
   // Only log in development to avoid flooding production logs with client-side errors

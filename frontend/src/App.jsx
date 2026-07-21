@@ -47,6 +47,8 @@ const OurTeam = lazy(() => import('./pages/OurTeam'));
 const Partnership = lazy(() => import('./pages/Partnership'));
 const TermsConditions = lazy(() => import('./pages/TermsConditions'));
 const LatestNews = lazy(() => import('./pages/LatestNews'));
+const FooterPage = lazy(() => import('./pages/FooterPage'));
+const AdminFooterPages = lazy(() => import('./pages/admin/AdminFooterPages'));
 
 function App() {
   return (
@@ -88,6 +90,10 @@ function App() {
                           <Route path="/pages/terms-conditions" element={<TermsConditions />} />
                           <Route path="/pages/latest-news" element={<LatestNews />} />
                           <Route path="/pages/latest-news/:slug" element={<LatestNews />} />
+
+                          {/* ── Dynamic CMS Footer Pages ── */}
+                          {/* Catch-all for any /pages/:slug not matched above */}
+                          <Route path="/pages/:slug" element={<FooterPage />} />
                         </Route>
 
                         {/* Authentication Layout Routes (Minimal Centered, No Header/Footer) */}
@@ -114,6 +120,7 @@ function App() {
                           <Route path="/admin/analytics" element={<AdminDashboardPage />} />
                           <Route path="/admin/settings" element={<AdminDashboardPage />} />
                           <Route path="/admin/contacts" element={<AdminDashboardPage />} />
+                          <Route path="/admin/footer-pages" element={<AdminFooterPages />} />
                         </Route>
 
                         {/* Fallback redirects */}

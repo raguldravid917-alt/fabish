@@ -320,14 +320,25 @@ class AuthController {
    */
   async forgotPassword(req, res, next) {
     const SAFE_MSG = 'If an account with that email exists, a reset link has been sent';
-    try {
-      const { email } = req.body ?? {};
+    const { email } = req.body ?? {};
 
+    try {
       if (!email?.trim() || !isValidEmail(email)) {
         return fail(res, HTTP_STATUS.BAD_REQUEST, 'Valid email is required', 'forgotPassword');
       }
 
-      const resetToken = await authService.forgotPassword(email.trim().toLowerCase());
+      let resetToken;
+      try {
+        resetToken = await authService.forgotPassword(email.trim().toLowerCase());
+      } catch (authError) {
+        // Prevent email enumeration: return success even if user not found
+        if (authError.message.includes('No account found')) {
+          logger.info(`[AuthController] forgotPassword: Safe return for non-existent email — ${email}`);
+          return ok(res, HTTP_STATUS.OK, SAFE_MSG);
+        }
+        throw authError;
+      }
+
       logger.info(`[AuthController] forgotPassword token generated — ${email}`);
 
       const clientUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -357,16 +368,26 @@ class AuthController {
         </div>
       `;
 
-      await sendEmail({
-        email: email.trim().toLowerCase(),
-        subject: 'Fabish Storefront — Password Reset Request',
-        message,
-        html,
-      });
+      try {
+        await sendEmail({
+          email: email.trim().toLowerCase(),
+          subject: 'Fabish Storefront — Password Reset Request',
+          message,
+          html,
+        });
+      } catch (smtpError) {
+        logger.error(`[AuthController] SMTP Send Fail for ${email}: ${smtpError.message}`);
+        // Return 500 Internal Server Error instead of 400 Bad Request
+        return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+          success: false,
+          code: 'SMTP_ERROR',
+          message: 'Unable to send reset email. Please try again later.',
+        });
+      }
 
       return ok(res, HTTP_STATUS.OK, SAFE_MSG);
     } catch (error) {
-      logger.error(`[AuthController] forgotPassword error: ${error.message}`);
+      logger.error(`[AuthController] forgotPassword top-level error: ${error.message}`);
       return fail(res, HTTP_STATUS.BAD_REQUEST, error.message, 'forgotPassword');
     }
   }

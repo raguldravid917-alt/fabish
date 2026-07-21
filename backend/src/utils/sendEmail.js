@@ -14,9 +14,9 @@ const nodemailer = require('nodemailer');
 const sendEmail = async (options) => {
   let host = process.env.SMTP_HOST || 'smtp.gmail.com';
   let port = parseInt(process.env.SMTP_PORT, 10) || 587;
-  let user = process.env.EMAIL_USER;
-  let pass = process.env.EMAIL_PASS;
-  let from = process.env.MAIL_FROM;
+  let user = process.env.EMAIL_USER || process.env.SMTP_USER;
+  let pass = process.env.EMAIL_PASS || process.env.SMTP_PASS;
+  let from = process.env.MAIL_FROM || user;
 
   const isPlaceholder = 
     !user || 
@@ -40,14 +40,14 @@ const sendEmail = async (options) => {
 User: ${user}
 Pass: ${pass}
 ================================================================================
-`;
+\n`;
       process.stdout.write(consoleMsg);
     } catch (err) {
       throw new Error('SMTP credentials are missing and Ethereal Email test account generation failed: ' + err.message);
     }
   }
 
-  // Configure transporter using SMTP details
+  // Configure transporter using SMTP details with optimized timeouts and TLS settings
   const transporter = nodemailer.createTransport({
     host,
     port,
@@ -56,13 +56,15 @@ Pass: ${pass}
       user,
       pass,
     },
-    connectionTimeout: 10000, // 10s timeout
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
+    // Prevent blocking or hanging connections on Render
+    connectionTimeout: 5000, // 5s connection timeout
+    greetingTimeout: 5000,    // 5s greeting timeout
+    socketTimeout: 8000,      // 8s socket timeout
+    tls: {
+      // Allow self-signed or internal certificates in containerized setups (e.g. Render/Docker)
+      rejectUnauthorized: false,
+    },
   });
-
-  // Verify connection configuration
-  await transporter.verify();
 
   const mailOptions = {
     from: `"${process.env.FROM_NAME || 'Fabish'}" <${from || user}>`,
@@ -72,20 +74,46 @@ Pass: ${pass}
     html: options.html || `<div style="font-family: sans-serif; line-height: 1.5; color: #333;">${options.message.replace(/\n/g, '<br/>')}</div>`,
   };
 
-  const info = await transporter.sendMail(mailOptions);
+  // Connection validation
+  try {
+    await transporter.verify();
+  } catch (verifyError) {
+    console.error('[SMTP VERIFICATION ERROR]', verifyError);
+    throw new Error(`SMTP connection verification failed: ${verifyError.message}`);
+  }
 
-  if (isPlaceholder) {
-    const previewUrl = nodemailer.getTestMessageUrl(info);
-    const consoleMsg = `
+  // Retry sending the email with exponential backoff
+  const maxRetries = 3;
+  let attempt = 0;
+  let delay = 1000; // start with 1s delay
+
+  while (attempt < maxRetries) {
+    try {
+      attempt++;
+      const info = await transporter.sendMail(mailOptions);
+
+      if (isPlaceholder) {
+        const previewUrl = nodemailer.getTestMessageUrl(info);
+        const consoleMsg = `
 ================================================================================
 [ETHEREAL SMTP BACKEND] Password reset email sent!
 Preview URL: ${previewUrl}
 ================================================================================
-`;
-    process.stdout.write(consoleMsg);
-  }
+\n`;
+        process.stdout.write(consoleMsg);
+      }
 
-  return info;
+      return info;
+    } catch (sendError) {
+      console.warn(`[SMTP SEND ATTEMPT ${attempt} FAILED]`, sendError.message);
+      if (attempt >= maxRetries) {
+        throw new Error(`Failed to send email after ${maxRetries} attempts: ${sendError.message}`);
+      }
+      // Wait before retrying
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      delay *= 2; // exponential backoff
+    }
+  }
 };
 
 module.exports = sendEmail;

@@ -21,7 +21,8 @@ import {
   MessageSquare,
   Headphones,
   Users2,
-  Handshake
+  Handshake,
+  FileText,
 } from 'lucide-react';
 
 const ADMIN_LINKS = [
@@ -38,6 +39,7 @@ const ADMIN_LINKS = [
   { path: '/admin/support', label: 'Support Tickets', icon: Headphones },
   { path: '/admin/team', label: 'Our Team', icon: Users2 },
   { path: '/admin/partnerships', label: 'Partnerships', icon: Handshake },
+  { path: '/admin/footer-pages', label: 'Footer Pages', icon: FileText },
   { path: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
   { path: '/admin/settings', label: 'Settings', icon: Settings },
 ];

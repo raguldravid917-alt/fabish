@@ -64,4 +64,19 @@ export const ENDPOINTS = {
   PARTNERSHIP_APPLY: '/partnerships/apply',
   PARTNERSHIP_BY_ID: (id) => `/partnerships/${id}`,
   PARTNERSHIP_STATUS: (id) => `/partnerships/${id}/status`,
+
+  // Footer Pages CMS — Public
+  FOOTER_PAGES_PUBLIC: '/footer-pages/public',
+  FOOTER_PAGE_BY_SLUG: (slug) => `/footer-pages/slug/${slug}`,
+
+  // Footer Pages CMS — Admin
+  ADMIN_FOOTER_PAGES: '/admin/footer-pages',
+  ADMIN_FOOTER_PAGE_BY_ID: (id) => `/admin/footer-pages/${id}`,
+  ADMIN_FOOTER_PAGE_TOGGLE_STATUS: (id) => `/admin/footer-pages/${id}/toggle-status`,
+  ADMIN_FOOTER_PAGE_TOGGLE_FOOTER: (id) => `/admin/footer-pages/${id}/toggle-footer`,
+  ADMIN_FOOTER_PAGE_DUPLICATE: (id) => `/admin/footer-pages/${id}/duplicate`,
+  ADMIN_FOOTER_PAGE_RESTORE: (id) => `/admin/footer-pages/${id}/restore`,
+  ADMIN_FOOTER_PAGE_HARD_DELETE: (id) => `/admin/footer-pages/${id}/hard`,
+  ADMIN_FOOTER_PAGES_REORDER: '/admin/footer-pages/reorder',
+  ADMIN_FOOTER_PAGES_BULK: '/admin/footer-pages/bulk',
 };

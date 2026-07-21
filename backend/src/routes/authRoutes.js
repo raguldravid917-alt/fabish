@@ -1,7 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
-const { registerRules, loginRules, updateProfileRules } = require('../validators/authValidator');
+const {
+  registerRules,
+  loginRules,
+  updateProfileRules,
+  forgotPasswordRules,
+  resetPasswordRules,
+} = require('../validators/authValidator');
 const { authenticate } = require('../middleware/authMiddleware');
 const { authLimiter, googleOAuthLimiter } = require('../middleware/rateLimiter');
 
@@ -21,8 +27,8 @@ router.route('/profile')
   .put(authenticate, updateProfileRules, authController.updateProfile);
 
 // Password recovery public routes
-router.post('/forgot-password', authController.forgotPassword);
-router.post('/reset-password', authController.resetPassword);
-router.post('/reset-password/:token', authController.resetPassword);
+router.post('/forgot-password', authLimiter, forgotPasswordRules, authController.forgotPassword);
+router.post('/reset-password', authLimiter, resetPasswordRules, authController.resetPassword);
+router.post('/reset-password/:token', authLimiter, resetPasswordRules, authController.resetPassword);
 
 module.exports = router;

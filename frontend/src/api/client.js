@@ -32,6 +32,7 @@ export const invalidateApiCache = () => {
 // Create Axios Instance
 const client = axios.create({
   baseURL: ENV.API_URL,
+  timeout: 15000, // 15 seconds request timeout
   headers: {
     'Content-Type': 'application/json',
   },
