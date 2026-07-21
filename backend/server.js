@@ -7,6 +7,7 @@ dotenv.config({ path: path.resolve(__dirname, './.env') });
 const app = require('./app');
 const connectDB = require('./src/config/db');
 const cloudinaryConfig = require('./src/config/cloudinary');
+const emailService = require('./src/services/emailService');
 
 const PORT = process.env.PORT || 5000;
 
@@ -15,6 +16,9 @@ const startServer = async () => {
     // 1. Establish MongoDB Connection & Seed & Migrate
     await connectDB();
     console.log('✓ MongoDB Connected');
+
+    // 2. Verify SMTP Connection (once at startup)
+    await emailService.verifyConnection();
 
     // 2. Start Express Server
     const server = app.listen(PORT, () => {

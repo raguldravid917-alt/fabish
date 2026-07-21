@@ -1,7 +1,7 @@
 'use strict';
 
 const authService = require('../services/authService');
-const sendEmail = require('../utils/sendEmail');
+const emailService = require('../services/emailService');
 const { HTTP_STATUS } = require('../constants');
 
 // ─── Inline Logger (no external dependency) ───────────────────────────────────
@@ -322,27 +322,45 @@ class AuthController {
     const SAFE_MSG = 'If an account with that email exists, a reset link has been sent';
     const { email } = req.body ?? {};
 
+    // 1. Logging: Incoming Request
+    logger.info(`[AuthController] forgotPassword: Incoming Request — email: ${email}`);
+
     try {
+      // 2. Email validation
       if (!email?.trim() || !isValidEmail(email)) {
+        logger.warn(`[AuthController] forgotPassword: Email validation failed — email: ${email}`);
         return fail(res, HTTP_STATUS.BAD_REQUEST, 'Valid email is required', 'forgotPassword');
       }
 
       let resetToken;
       try {
+        // 3. User lookup, Token generation, Database update (handled by authService)
         resetToken = await authService.forgotPassword(email.trim().toLowerCase());
+        logger.info(`[AuthController] forgotPassword: User Found — email: ${email}`);
+        logger.info(`[AuthController] forgotPassword: Token Generated`);
       } catch (authError) {
         // Prevent email enumeration: return success even if user not found
         if (authError.message.includes('No account found')) {
-          logger.info(`[AuthController] forgotPassword: Safe return for non-existent email — ${email}`);
+          logger.info(`[AuthController] forgotPassword: Safe return (non-existent email) — email: ${email}`);
+          logger.info(`[AuthController] forgotPassword: Response Returned`);
           return ok(res, HTTP_STATUS.OK, SAFE_MSG);
         }
         throw authError;
       }
 
-      logger.info(`[AuthController] forgotPassword token generated — ${email}`);
+      // 4. Reset URL Generation (Must use process.env.CLIENT_URL)
+      const clientUrl = process.env.CLIENT_URL;
+      if (!clientUrl) {
+        logger.error(`[AuthController] forgotPassword error: CLIENT_URL environment variable is missing`);
+        return res.status(500).json({
+          success: false,
+          code: 'CLIENT_URL_MISSING',
+          message: 'Server configuration error. Please try again later.',
+        });
+      }
 
-      const clientUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
       const resetUrl = `${clientUrl}/account/reset-password/${resetToken}`;
+      logger.info(`[AuthController] forgotPassword: Reset URL: ${resetUrl}`);
 
       const message = `You are receiving this email because a password reset request was made for your Fabish account. Please click on the following link, or paste it into your browser to complete the process:\n\n${resetUrl}\n\nThis link is valid for 30 minutes. If you did not request this, please ignore this email and your password will remain unchanged.\n`;
 
@@ -368,26 +386,34 @@ class AuthController {
         </div>
       `;
 
+      // 5. Mail sending
       try {
-        await sendEmail({
-          email: email.trim().toLowerCase(),
+        const mailResult = await emailService.sendEmail({
+          to: email.trim().toLowerCase(),
           subject: 'Fabish Storefront — Password Reset Request',
-          message,
+          text: message,
           html,
         });
+        logger.info(`[AuthController] forgotPassword: Email Sent — MessageId: ${mailResult.messageId}`);
       } catch (smtpError) {
-        logger.error(`[AuthController] SMTP Send Fail for ${email}: ${smtpError.message}`);
-        // Return 500 Internal Server Error instead of 400 Bad Request
-        return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+        logger.error(`[AuthController] forgotPassword error: SMTP Send Fail for ${email}`);
+        logger.error(smtpError.stack || smtpError.message);
+        
+        // Handle ETIMEDOUT or other connection timeout / SMTP errors specifically
+        const isTimeout = smtpError.message.includes('timeout') || smtpError.code === 'ETIMEDOUT';
+        return res.status(500).json({
           success: false,
-          code: 'SMTP_ERROR',
-          message: 'Unable to send reset email. Please try again later.',
+          code: isTimeout ? 'SMTP_TIMEOUT' : 'SMTP_ERROR',
+          message: 'Unable to send password reset email.',
+          details: smtpError.message,
         });
       }
 
+      logger.info(`[AuthController] forgotPassword: Response Returned`);
       return ok(res, HTTP_STATUS.OK, SAFE_MSG);
     } catch (error) {
       logger.error(`[AuthController] forgotPassword top-level error: ${error.message}`);
+      logger.error(error.stack);
       return fail(res, HTTP_STATUS.BAD_REQUEST, error.message, 'forgotPassword');
     }
   }

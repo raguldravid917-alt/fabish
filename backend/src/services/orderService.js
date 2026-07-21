@@ -9,7 +9,7 @@ const User = require('../models/User');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
 const Coupon = require('../models/Coupon');
-const sendEmail = require('../utils/sendEmail');
+const emailService = require('./emailService');
 
 // Seller configuration
 const SELLER_STATE = process.env.SELLER_STATE || 'Tamil Nadu';
@@ -162,10 +162,10 @@ const sendOrderConfirmationEmail = async (email, order) => {
       </div>
     `;
 
-    await sendEmail({
-      email,
+    await emailService.sendEmail({
+      to: email,
       subject: `Order Confirmed — ${order.orderNumber} | Fabish`,
-      message: `Thank you for your order! Order: ${order.orderNumber}. Invoice: ${order.invoiceNumber || 'N/A'}. Total: Rs. ${order.totalPrice}.`,
+      text: `Thank you for your order! Order: ${order.orderNumber}. Invoice: ${order.invoiceNumber || 'N/A'}. Total: Rs. ${order.totalPrice}.`,
       html,
     });
   } catch (err) {
