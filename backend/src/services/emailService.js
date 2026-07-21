@@ -1,15 +1,21 @@
 /**
- * Email Service — Consolidated Production SMTP Implementation.
- * Standardizes environment variables: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM_EMAIL.
- * Implements exponential backoff retry and fails fast using connection timeouts.
+ * Email Service — Consolidated Production Implementation.
+ * Supports Resend API (HTTP) for production (Render) and falls back to Nodemailer SMTP for local development.
  */
 const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const dns = require("node:dns");
 
 // Resolve IPv4 first to avoid connection delays on environments like Render/Fly.io
 dns.setDefaultResultOrder("ipv4first");
 
 let transporter = null;
+let resendClient = null;
+
+// Initialize Resend Client if API key is provided
+if (process.env.RESEND_API_KEY) {
+  resendClient = new Resend(process.env.RESEND_API_KEY);
+}
 
 /**
  * Configure and retrieve the Nodemailer transporter instance.
@@ -19,8 +25,8 @@ const getTransporter = async () => {
 
   const host = process.env.SMTP_HOST;
   const port = parseInt(process.env.SMTP_PORT || '587', 10);
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  const user = process.env.SMTP_USER || process.env.EMAIL_USER;
+  const pass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
 
   if (!host || !user || !pass) {
     // Ethereal fallback for local development if credentials are empty/placeholder
@@ -79,9 +85,14 @@ const getTransporter = async () => {
 };
 
 /**
- * Verify SMTP connection. Only run during startup.
+ * Verify SMTP connection or Resend API key configuration.
  */
 const verifyConnection = async () => {
+  if (resendClient) {
+    console.log('✓ Email Service: Resend API mode active (verified API key configuration)');
+    return true;
+  }
+  
   try {
     const t = await getTransporter();
     await t.verify();
@@ -97,14 +108,8 @@ const verifyConnection = async () => {
  * Core send mail wrapper with exponential backoff retry mechanism.
  */
 const sendEmail = async ({ to, subject, html, text }) => {
-  const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER;
-  const mailOptions = {
-    from: `"Fabish Support" <${fromEmail}>`,
-    to,
-    subject,
-    html,
-    text,
-  };
+  const fromEmail = process.env.RESEND_FROM_EMAIL || process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || process.env.EMAIL_USER || 'onboarding@resend.dev';
+  const from = fromEmail.includes('<') ? fromEmail : `"Fabish Support" <${fromEmail}>`;
 
   let attempt = 0;
   const maxRetries = 3;
@@ -113,11 +118,35 @@ const sendEmail = async ({ to, subject, html, text }) => {
   while (attempt < maxRetries) {
     try {
       attempt++;
-      console.log(`[EmailService] Sending email to ${to}. Attempt ${attempt}/${maxRetries}...`);
-      const t = await getTransporter();
-      const info = await t.sendMail(mailOptions);
-      console.log(`[EmailService] Email sent successfully to ${to}. MessageID: ${info.messageId}`);
-      return { success: true, messageId: info.messageId };
+      if (resendClient) {
+        console.log(`[EmailService] Sending email via Resend to ${to}. Attempt ${attempt}/${maxRetries}...`);
+        const { data, error } = await resendClient.emails.send({
+          from,
+          to: [to],
+          subject,
+          html,
+          text,
+        });
+
+        if (error) {
+          throw new Error(error.message || JSON.stringify(error));
+        }
+
+        console.log(`[EmailService] Email sent successfully via Resend to ${to}. MessageID: ${data.id}`);
+        return { success: true, messageId: data.id };
+      } else {
+        console.log(`[EmailService] Sending email via SMTP to ${to}. Attempt ${attempt}/${maxRetries}...`);
+        const t = await getTransporter();
+        const info = await t.sendMail({
+          from,
+          to,
+          subject,
+          html,
+          text,
+        });
+        console.log(`[EmailService] Email sent successfully via SMTP to ${to}. MessageID: ${info.messageId}`);
+        return { success: true, messageId: info.messageId };
+      }
     } catch (err) {
       console.warn(`[EmailService] Attempt ${attempt} failed: ${err.message}`);
       if (attempt >= maxRetries) {
