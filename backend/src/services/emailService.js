@@ -35,9 +35,10 @@ const getTransporter = async () => {
             user: testAccount.user,
             pass: testAccount.pass,
           },
-          connectionTimeout: 30000,
-          greetingTimeout: 30000,
-          socketTimeout: 30000,
+          connectionTimeout: 10000,
+          greetingTimeout: 10000,
+          socketTimeout: 10000,
+          family: 4,
           tls: { rejectUnauthorized: false },
         });
         console.log(`[EmailService] Ethereal SMTP test account generated: ${testAccount.user}`);
@@ -62,13 +63,15 @@ const getTransporter = async () => {
       user,
       pass,
     },
-    connectionTimeout: 30000,
-    greetingTimeout: 30000,
-    socketTimeout: 30000,
+    connectionTimeout: 5000,
+    greetingTimeout: 5000,
+    socketTimeout: 5000,
     name: process.env.SMTP_HELO_NAME || "fabish.onrender.com",
+    family: 4,
     tls: {
-      // Production-ல் true ஆகவும், Local / Self-signed certificate-களுக்கு false ஆகவும் மாற்றுமளவிற்கு அமைக்கப்பட்டுள்ளது.
-      rejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED === 'true' || process.env.NODE_ENV === 'production',
+      rejectUnauthorized: process.env.NODE_ENV === 'production'
+        ? process.env.SMTP_REJECT_UNAUTHORIZED !== 'false'
+        : false,
     },
   });
 
