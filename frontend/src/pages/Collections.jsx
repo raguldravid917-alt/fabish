@@ -756,112 +756,112 @@ const Collections = () => {
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          DESKTOP VIEW (≥ 768px): Original Unchanged UI
+          DESKTOP VIEW (≥ 768px): Modern 2026 Category Discovery Grid
       ═══════════════════════════════════════════════════════════════════════ */}
       <div className="hidden md:block">
-        {/* TOP HEADER HERO BANNER */}
+        {/* TOP HEADER HERO BANNER (UNTOUCHED) */}
         <div className="catalog-banner">
           <h1>All Collections</h1>
         </div>
 
-        {/* ITERATING PARENT CATEGORY GROUPS SEQUENTIALLY */}
-        <div className="w-full">
-          {parentCategories.map((parentCat) => {
-            const categoryProducts = getProductsForCategory(parentCat);
-            const subCategories = getSubcategoriesForCategory(parentCat);
-            const parentLink = `/collections/${parentCat.slug}`;
-            const isCollapsed = !!collapsedCategories[parentCat._id];
+        {/* 2026 THUMBNAIL-BASED CATEGORY DISCOVERY EXPLORER GRID */}
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10 py-12 md:py-16">
+          
+          {/* Section Header */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 pb-4 border-b border-[#E5E3D4] gap-4">
+            <div>
+              <span className="text-[11px] font-heading font-extrabold uppercase tracking-[0.2em] text-[#729855] block mb-1">
+                Explore Collections
+              </span>
+              <h2 className="text-2xl md:text-3xl font-heading font-bold text-[#111827] tracking-tight">
+                Curated Organic Beauty Categories
+              </h2>
+            </div>
+            <p className="text-xs md:text-sm text-[#6B7280] font-body max-w-md">
+              Browse clean formulations, skincare, haircare, and wellness ranges crafted with pure botanical ingredients.
+            </p>
+          </div>
 
-            return (
-              <section key={parentCat._id} className="cat-section">
-                <div className="cat-content-container">
+          {/* 3-Column Responsive Category Cards Grid (3 desktop, 2 tablet, 1 mobile) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {parentCategories.map((parentCat) => {
+              const categoryProducts = getProductsForCategory(parentCat);
+              const subCategories = getSubcategoriesForCategory(parentCat);
+              const parentLink = `/collections/${parentCat.slug}`;
 
-                  {/* Accordion Dropdown Bar - Clickable Category Row */}
-                  <div
-                    className="cat-header"
-                    onClick={() => toggleCategory(parentCat._id)}
-                    title="Click to Expand/Collapse"
-                  >
-                    <div className="cat-title-container">
-                      <h2 className="cat-title">{parentCat.name}</h2>
-                      {categoryProducts.length > 0 && (
-                        <span className="cat-count-badge">
-                          {categoryProducts.length} items
-                        </span>
-                      )}
-                      <span className="cat-toggle-chevron">
-                        {isCollapsed ? '▼' : '▲'}
+              // Resolve thumbnail image for this category
+              const rawImg = parentCat.image || (categoryProducts[0]?.images?.[0] || categoryProducts[0]?.image);
+              const catImg = rawImg ? getLocalImageUrl(ensureAbsolutePath(rawImg)) : '/assets/homepage/P1.jpg';
+
+              return (
+                <Link
+                  key={parentCat._id}
+                  to={parentLink}
+                  onClick={() => window.scrollTo(0, 0)}
+                  className="group relative bg-[#FAFAF5] rounded-3xl border border-[#E5E3D4] p-5 shadow-xs hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 flex flex-col justify-between h-full text-left overflow-hidden no-underline cursor-pointer"
+                >
+                  <div>
+                    {/* Large Category Thumbnail Image Container */}
+                    <div className="relative w-full aspect-[4/3] bg-[#EEF3E8] rounded-2xl overflow-hidden mb-5 border border-[#D8E8C8]/60">
+                      <img
+                        src={catImg}
+                        alt={parentCat.name}
+                        loading="lazy"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                        onError={(e) => { e.target.src = '/assets/homepage/P1.jpg'; }}
+                      />
+                      
+                      {/* Floating Product Count Badge */}
+                      <span className="absolute top-3.5 right-3.5 bg-white/95 backdrop-blur-md text-[#2f3e10] text-[11px] font-heading font-extrabold px-3 py-1 rounded-full shadow-xs border border-[#E5E3D4]">
+                        {categoryProducts.length} Product{categoryProducts.length !== 1 ? 's' : ''}
                       </span>
                     </div>
-                    <Link
-                      to={parentLink}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.scrollTo(0, 0);
-                      }}
-                      className="cat-view-all"
-                    >
-                      View All &nbsp;&rsaquo;
-                    </Link>
-                  </div>
 
-                  {/* Conditional Rendering of Nested Subcategories and Products Grid */}
-                  {!isCollapsed && (
-                    <>
-                      {/* Subcategory pill buttons */}
-                      {subCategories.length > 0 && (
-                        <div className="subcat-row">
-                          {subCategories.map((sub) => (
-                            <Link
-                              key={sub._id}
-                              to={`/collections/${sub.slug}`}
-                              onClick={() => window.scrollTo(0, 0)}
-                              className="subcat-pill"
-                            >
-                              {sub.name}
-                            </Link>
-                          ))}
-                        </div>
-                      )}
+                    {/* Category Title */}
+                    <h3 className="font-heading text-xl font-bold text-[#111827] group-hover:text-[#729855] transition-colors leading-snug mb-2">
+                      {parentCat.name}
+                    </h3>
 
-                      {/* Top 4 Products Mini-Grid */}
-                      <div className="prod-grid">
-                        {categoryProducts.slice(0, 4).map((product) => {
-                          const productImg = getLocalImageUrl(
-                            ensureAbsolutePath(product.images?.[0] || product.image || '/assets/14.jpg')
-                          );
-                          return (
-                            <Link
-                              key={product._id}
-                              to={`/products/${product.slug}`}
-                              onClick={() => window.scrollTo(0, 0)}
-                              className="prod-card"
-                            >
-                              <div className="prod-img-box">
-                                <img src={productImg} alt={product.title} loading="lazy" />
-                              </div>
-                              <div className="prod-info">
-                                <h3 className="prod-title">{product.title}</h3>
-                                <p className="prod-price">
-                                  Rs. {product.price.toLocaleString('en-IN')}.00 INR
-                                </p>
-                              </div>
-                            </Link>
-                          );
-                        })}
+                    {/* Category Description */}
+                    {parentCat.description && (
+                      <p className="text-xs text-[#6B7280] font-body line-clamp-2 leading-relaxed mb-4">
+                        {parentCat.description}
+                      </p>
+                    )}
 
-                        {categoryProducts.length === 0 && (
-                          <div className="empty-showcase">
-                            No products currently assigned to this collection.
-                          </div>
+                    {/* Subcategories Pills Preview */}
+                    {subCategories.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-5">
+                        {subCategories.slice(0, 4).map((sub) => (
+                          <span
+                            key={sub._id}
+                            className="text-[11px] font-medium text-[#4B5563] bg-white border border-[#E5E3D4] px-2.5 py-1 rounded-full"
+                          >
+                            {sub.name}
+                          </span>
+                        ))}
+                        {subCategories.length > 4 && (
+                          <span className="text-[10px] font-bold text-[#729855] bg-[#729855]/10 px-2 py-1 rounded-full">
+                            +{subCategories.length - 4} More
+                          </span>
                         )}
                       </div>
-                    </>
-                  )}
-                </div>
-              </section>
-            );
-          })}
+                    )}
+                  </div>
+
+                  {/* Card Bottom CTA Bar */}
+                  <div className="pt-4 border-t border-[#EDEBD8] flex items-center justify-between mt-4">
+                    <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-[#729855] group-hover:text-[#2f3e10] transition-colors flex items-center gap-1.5">
+                      Explore Collection
+                    </span>
+                    <span className="w-8 h-8 rounded-full bg-[#729855] group-hover:bg-[#2f3e10] text-white flex items-center justify-center transition-colors shadow-xs group-hover:translate-x-1 transition-transform">
+                      <ArrowRight className="w-4 h-4" />
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

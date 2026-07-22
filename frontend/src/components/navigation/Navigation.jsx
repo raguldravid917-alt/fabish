@@ -53,175 +53,176 @@ const Navigation = ({ bestSellers = [], toggleWishlist, addToCart, isInWishlist,
           </svg>
         </Link>
 
-        <div className="absolute left-1/2 -translate-x-1/2 w-[100vw] bg-[#F9F9EB] shadow-[0_20px_30px_-10px_rgba(0,0,0,0.1)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 border-t border-[#eae8d8] cursor-default pb-20 pt-12 top-[66px]">
-          <div className="max-w-[1440px] w-full mx-auto px-6 lg:px-12 flex justify-between gap-6">
-            {/* Column 1: Cleansers */}
-            <div className="text-center w-[22%]">
-              <h4 className="font-heading text-[13px] font-bold uppercase tracking-[0.1em] text-[#111] mb-8">
+        {/* ── Skin Care Luxury 2026 Dropdown ── */}
+        <div className="absolute left-1/2 -translate-x-1/2 w-[100vw] bg-[#FAFAF5] shadow-[0_24px_60px_-12px_rgba(0,0,0,0.12)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 border-t border-[#E5E3D4] cursor-default py-10 top-[66px]">
+          <div className="max-w-[1440px] w-full mx-auto px-8 lg:px-12 grid grid-cols-12 gap-8">
+            
+            {/* Column 1: Cleansers (2 cols) */}
+            <div className="col-span-2 border-r border-[#E5E3D4]/80 pr-4">
+              <h4 className="font-heading text-[13px] font-extrabold uppercase tracking-[0.12em] text-[#111111] mb-6 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#729855]"></span>
                 Cleansers
               </h4>
-              <ul className="space-y-4 flex flex-col items-center">
-                <li><Link to="/collections/cleansers" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Creamy Foam Cleanser</Link></li>
-                <li><Link to="/collections/cleansers" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Erotic Ayruvedic Lotion</Link></li>
-                <li><Link to="/collections/cleansers" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Sensitive Skin Gel Face Wash</Link></li>
-                <li><Link to="/collections/cleansers" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Oil Skin Cleaning Lotion</Link></li>
-                <li><Link to="/collections/cleansers" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Anit Polution Face Cream</Link></li>
-                <li><Link to="/collections/cleansers" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Nourish Honey Gel Face Cream</Link></li>
-                <li><Link to="/collections/cleansers" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Dry Skin Glow Face Cleanser</Link></li>
-                <li><Link to="/collections/cleansers" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Skin Hydrating Foaming Cleanser</Link></li>
-                <li><Link to="/collections/cleansers" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Gentle Skin Face Cleanser</Link></li>
-                <li><Link to="/collections/cleansers" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Alove Oil Dry Skin Cleanser</Link></li>
-                <li><Link to="/collections/cleansers" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Oil Free Vitamin Face Cream</Link></li>
+              <ul className="space-y-3.5 flex flex-col">
+                {[
+                  { name: 'Cream Cleanser', slug: 'cleansers' },
+                  { name: 'Gel Cleanser', slug: 'cleansers' },
+                  { name: 'Foam Cleanser', slug: 'cleansers' },
+                  { name: 'Oil Cleanser', slug: 'cleansers' },
+                  { name: 'Face Wash', slug: 'cleansers' },
+                  { name: 'Micellar Water', slug: 'cleansers' },
+                ].map((item, idx) => (
+                  <li key={idx}>
+                    <Link
+                      to={`/collections/${item.slug}`}
+                      className="group/item inline-flex items-center gap-2 text-[14px] font-medium text-[#374151] hover:text-[#729855] font-body transition-all duration-200 cursor-pointer"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#729855] opacity-0 group-hover/item:opacity-100 transition-opacity duration-200"></span>
+                      <span className="group-hover/item:translate-x-1 transition-transform duration-200">
+                        {item.name}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </div>
 
-            {/* Column 2: Moisturizers */}
-            <div className="text-center w-[22%]">
-              <h4 className="font-heading text-[13px] font-bold uppercase tracking-[0.1em] text-[#111] mb-8">
+            {/* Column 2: Moisturizers (2 cols) */}
+            <div className="col-span-2 border-r border-[#E5E3D4]/80 pr-4">
+              <h4 className="font-heading text-[13px] font-extrabold uppercase tracking-[0.12em] text-[#111111] mb-6 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#729855]"></span>
                 Moisturizers
               </h4>
-              <ul className="space-y-4 flex flex-col items-center">
-                <li><Link to="/collections/moisturizers" className="inline-block font-medium text-[14px] text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Aloe Vera Freshness Cream</Link></li>
-                <li><Link to="/collections/moisturizers" className="inline-block font-medium text-[14px] text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Azalea Fields Soothing Cream</Link></li>
-                <li><Link to="/collections/moisturizers" className="inline-block font-medium text-[14px] text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Hydro Boost Moisturizing Cream</Link></li>
-                <li><Link to="/collections/moisturizers" className="inline-block font-medium text-[14px] text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Oil Free Vitamin Face Cream</Link></li>
-                <li><Link to="/collections/moisturizers" className="inline-block font-medium text-[14px] text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Daily Use Vitamin C Cream</Link></li>
-                <li><Link to="/collections/moisturizers" className="inline-block font-medium text-[14px] text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Honey Drop Moisturizing Lotion</Link></li>
-                <li><Link to="/collections/moisturizers" className="inline-block font-medium text-[14px] text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Oil Absorption Moisturizing Cream</Link></li>
-                <li><Link to="/collections/moisturizers" className="inline-block font-medium text-[14px] text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Strawberry Flavour Face Care Gel</Link></li>
-                <li><Link to="/collections/moisturizers" className="inline-block font-medium text-[14px] text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Multi Vitamin Daily Use</Link></li>
-                <li><Link to="/collections/moisturizers" className="inline-block font-medium text-[14px] text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Birch Butter Silkiness Cream</Link></li>
-                <li><Link to="/collections/moisturizers" className="inline-block font-medium text-[14px] text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Fragrance Free Multi Vitamin Cream</Link></li>
+              <ul className="space-y-3.5 flex flex-col">
+                {[
+                  { name: 'Day Cream', slug: 'moisturizers' },
+                  { name: 'Night Cream', slug: 'moisturizers' },
+                  { name: 'Moisturizer', slug: 'moisturizers' },
+                  { name: 'Face Cream', slug: 'moisturizers' },
+                  { name: 'Hydrating Cream', slug: 'moisturizers' },
+                  { name: 'Brightening Cream', slug: 'moisturizers' },
+                ].map((item, idx) => (
+                  <li key={idx}>
+                    <Link
+                      to={`/collections/${item.slug}`}
+                      className="group/item inline-flex items-center gap-2 text-[14px] font-medium text-[#374151] hover:text-[#729855] font-body transition-all duration-200 cursor-pointer"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#729855] opacity-0 group-hover/item:opacity-100 transition-opacity duration-200"></span>
+                      <span className="group-hover/item:translate-x-1 transition-transform duration-200">
+                        {item.name}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </div>
 
-            {/* Column 3: Serums */}
-            <div className="text-center w-[22%]">
-              <h4 className="font-heading text-[13px] font-bold uppercase tracking-[0.1em] text-[#111] mb-8">
-                Serums
+            {/* Column 3: Serums & Treatments (3 cols) */}
+            <div className="col-span-3 border-r border-[#E5E3D4]/80 pr-6">
+              <h4 className="font-heading text-[13px] font-extrabold uppercase tracking-[0.12em] text-[#111111] mb-6 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#729855]"></span>
+                Serums &amp; Treatments
               </h4>
-              <ul className="space-y-4 flex flex-col items-center">
-                <li><Link to="/collections/serums" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Skin Naturals BB Cream VitaminC</Link></li>
-                <li><Link to="/collections/serums" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Vitamin C Glow Skin Serum</Link></li>
-                <li><Link to="/collections/serums" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Glow Face Vitamin E Serum</Link></li>
-                <li><Link to="/collections/serums" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Skin Brighten Green Tea Serum</Link></li>
-                <li><Link to="/collections/serums" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Anti Aging Face Serum</Link></li>
-                <li><Link to="/collections/serums" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Skin Brightening Fruit Serum</Link></li>
-                <li><Link to="/collections/serums" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Ance Fighting Cucumber Serum</Link></li>
-                <li><Link to="/collections/serums" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Dead Skin Cell Removal Serum</Link></li>
-                <li><Link to="/collections/serums" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Skin Hydrate Face Serum</Link></li>
-                <li><Link to="/collections/serums" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Vitamin Repair Serum</Link></li>
-                <li><Link to="/collections/serums" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Natural Glow Serum</Link></li>
-                <li><Link to="/collections/serums" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Hydrating Night Serum</Link></li>
+              <ul className="space-y-3.5 flex flex-col">
+                {[
+                  { name: 'Vitamin C', slug: 'serums' },
+                  { name: 'Hyaluronic Acid', slug: 'serums' },
+                  { name: 'Niacinamide', slug: 'serums' },
+                  { name: 'Retinol', slug: 'serums' },
+                  { name: 'Anti Aging', slug: 'serums' },
+                  { name: 'Acne Care', slug: 'serums' },
+                ].map((item, idx) => (
+                  <li key={idx}>
+                    <Link
+                      to={`/collections/${item.slug}`}
+                      className="group/item inline-flex items-center gap-2 text-[14px] font-medium text-[#374151] hover:text-[#729855] font-body transition-all duration-200 cursor-pointer"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#729855] opacity-0 group-hover/item:opacity-100 transition-opacity duration-200"></span>
+                      <span className="group-hover/item:translate-x-1 transition-transform duration-200">
+                        {item.name}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </div>
 
-            {/* Column 4: Best Sellers */}
-            <div className="w-[32%] pl-6">
-              <div className="flex items-center justify-between mb-8">
-                <h4 className="font-heading text-[13px] font-bold uppercase tracking-[0.1em] text-[#111]">
-                  Best Sellers
+            {/* Column 4: Featured Collection (5 cols - Spacious 2-card grid) */}
+            <div className="col-span-5 pl-2">
+              <div className="flex items-center justify-between mb-6">
+                <h4 className="font-heading text-[13px] font-extrabold uppercase tracking-[0.12em] text-[#111111] flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#729855]"></span>
+                  Featured Collection
                 </h4>
-                <Link to="/collections/all">
-                  <ArrowRight className="w-5 h-5 text-[#111] hover:text-[#729855] transition-colors" />
+                <Link
+                  to="/collections/all"
+                  className="text-[11px] font-heading font-bold text-[#729855] hover:text-[#2f3e10] uppercase tracking-wider transition-colors flex items-center gap-1"
+                >
+                  Shop All <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
-              <div className="grid grid-cols-2 gap-6">
-                {bestSellers && bestSellers.length > 0 ? (
-                  bestSellers.map((product, idx) => {
-                    if (!product) return null;
-                    const prodImg = product.images && product.images[0]
-                      ? (typeof product.images[0] === 'string' ? product.images[0] : (product.images[0].secure_url || product.images[0].url || ''))
-                      : (idx === 0 ? '/assets/1.jpg' : '/assets/3.jpg');
 
-                    return (
-                      <Link
-                        key={product._id}
-                        to={`/products/${product.slug}`}
-                        className="bg-white group/item cursor-pointer text-center flex flex-col h-full shadow-sm hover:shadow-lg transition-shadow"
-                      >
-                        <div className="relative aspect-square bg-[#f0f2eb] flex items-center justify-center p-0 overflow-hidden">
+              {/* 2 Spacious Product Cards Grid */}
+              <div className="grid grid-cols-2 gap-5">
+                {(bestSellers && bestSellers.length >= 2 ? bestSellers.slice(0, 2) : [
+                  {
+                    _id: 'feat-1',
+                    title: 'Aura Natural Face Cream',
+                    slug: 'aura-natural-face-cream',
+                    price: 2400,
+                    image: '/assets/homepage/P1.jpg'
+                  },
+                  {
+                    _id: 'feat-2',
+                    title: 'Hydrating Glow Serum',
+                    slug: 'aura-natural-face-cream',
+                    price: 2900,
+                    image: '/assets/homepage/P13.jpg'
+                  }
+                ]).map((product, idx) => {
+                  if (!product) return null;
+                  const prodImg = product.images && product.images[0]
+                    ? (typeof product.images[0] === 'string' ? product.images[0] : (product.images[0].secure_url || product.images[0].url || ''))
+                    : (product.image || (idx === 0 ? '/assets/homepage/P1.jpg' : '/assets/homepage/P13.jpg'));
+
+                  return (
+                    <Link
+                      key={product._id || idx}
+                      to={`/products/${product.slug || 'aura-natural-face-cream'}`}
+                      className="group/card bg-white rounded-2xl p-4 border border-[#E5E3D4] shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between h-full min-h-[310px] cursor-pointer text-left overflow-hidden"
+                    >
+                      <div className="flex flex-col gap-2.5">
+                        {/* Full Product Thumbnail Container */}
+                        <div className="relative w-full aspect-[4/3] bg-[#EEF3E8] rounded-xl overflow-hidden">
                           <img
-                            src={prodImg || (idx === 0 ? '/assets/1.jpg' : '/assets/3.jpg')}
+                            src={prodImg}
                             alt={product.title}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-105"
-                            onError={(e) => {
-                              e.target.src = '/assets/14.jpg';
-                            }}
+                            className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-500"
+                            onError={(e) => { e.target.src = '/assets/homepage/P1.jpg'; }}
                           />
-
-                          {/* Hover Actions - Icons (Top Right) */}
-                          <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 translate-x-4 group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all duration-300">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                if (navigate) navigate(`/products/${product.slug}`);
-                              }}
-                              className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-black hover:text-white transition-colors text-black"
-                              aria-label="Quick View"
-                            >
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                            </button>
-                            {toggleWishlist && (
-                              <button
-                                type="button"
-                                onClick={async (e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  await toggleWishlist(product);
-                                }}
-                                className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-colors ${isInWishlist && isInWishlist(product._id) ? 'bg-black text-white' : 'bg-white text-black hover:bg-black hover:text-white'}`}
-                                aria-label={isInWishlist && isInWishlist(product._id) ? 'Remove from Wishlist' : 'Add to Wishlist'}
-                              >
-                                <Heart className={`w-4 h-4 ${isInWishlist && isInWishlist(product._id) ? 'fill-current' : ''}`} />
-                              </button>
-                            )}
-                          </div>
-
-                          {/* Hover Action - Add to Cart Button */}
-                          {addToCart && (
-                            <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 translate-y-4 group-hover/item:opacity-100 group-hover/item:translate-y-0 transition-all duration-300">
-                              <button
-                                type="button"
-                                onClick={async (e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  const success = await addToCart(product, 1);
-                                  if (showToast) {
-                                    if (success) {
-                                      showToast(`Added ${product.title} to cart!`, 'success');
-                                    } else {
-                                      showToast('Failed to add product to cart', 'error');
-                                    }
-                                  }
-                                }}
-                                className="w-[78%] mx-auto py-3 bg-[#2f3e10] hover:bg-black text-white text-[11px] font-bold uppercase tracking-[0.15em] transition-colors"
-                              >
-                                Add Cart
-                              </button>
-                            </div>
-                          )}
                         </div>
-                        <div className="p-6 flex flex-col flex-grow justify-between">
-                          <h5 className="text-[15px] font-heading font-bold text-[#111] leading-[1.4] mb-3 group-hover/item:text-[#729855] transition-colors">
-                            {product.title}
-                          </h5>
-                          <span className="text-[13px] text-[#555] font-body">
-                            Rs. {Number(product.price || 0).toLocaleString('en-IN')}.00 INR
-                          </span>
-                        </div>
-                      </Link>
-                    );
-                  })
-                ) : (
-                  <div className="col-span-2 text-center text-[13px] text-gray-500 py-10 font-body">
-                    Loading best sellers...
-                  </div>
-                )}
+
+                        {/* Product Title (Max 2 lines, no clipping) */}
+                        <h5 className="text-[13.5px] font-heading font-bold text-[#111111] line-clamp-2 leading-snug group-hover/card:text-[#729855] transition-colors">
+                          {product.title}
+                        </h5>
+                      </div>
+
+                      {/* Price & Shop Now Button Section */}
+                      <div className="pt-3 border-t border-[#F0EFE6] flex flex-col gap-2.5 mt-3">
+                        <span className="text-[13px] font-bold text-[#2f3e10] font-body block">
+                          Rs. {Number(product.price || 0).toLocaleString('en-IN')}.00 INR
+                        </span>
+                        <span className="w-full py-2 px-3 bg-[#729855] group-hover/card:bg-[#2f3e10] text-white text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                          Shop Now <ArrowRight className="w-3.5 h-3.5" />
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
+
           </div>
         </div>
       </div>

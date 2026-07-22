@@ -38,9 +38,9 @@ const app = express();
 // Trust proxy to ensure correct client IP is identified behind reverse proxies (like Render)
 app.set('trust proxy', 1);
 
-// 1. Security Headers with explicit CSP for Razorpay, Cloudinary, Google Fonts
+// 1. Security Headers with explicit CSP for Razorpay, Cloudinary, Google Fonts & Google OAuth
 app.use(helmet({
-  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+  crossOriginOpenerPolicy: { policy: 'unsafe-none' },
   crossOriginResourcePolicy: false, // Allow public loading of local uploads
   contentSecurityPolicy: {
     directives: {
@@ -50,6 +50,7 @@ app.use(helmet({
         "'unsafe-inline'",       // Required for Razorpay & React inline scripts
         "https://checkout.razorpay.com",
         "https://api.razorpay.com",
+        "https://accounts.google.com",
       ],
       styleSrc: [
         "'self'",
@@ -71,6 +72,8 @@ app.use(helmet({
         "'self'",
         "https://api.razorpay.com",
         "https://lumberjack.razorpay.com",
+        "https://accounts.google.com",
+        "https://oauth2.googleapis.com",
         process.env.BACKEND_URL || "http://localhost:5000",
         process.env.FRONTEND_URL || "http://localhost:5173",
       ],
@@ -78,6 +81,7 @@ app.use(helmet({
         "'self'",
         "https://api.razorpay.com",
         "https://checkout.razorpay.com",
+        "https://accounts.google.com",
       ],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null,

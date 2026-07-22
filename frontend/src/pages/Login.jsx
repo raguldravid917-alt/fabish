@@ -11,7 +11,6 @@ const Login = () => {
   const { showToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const [googleWidth, setGoogleWidth] = useState("340");
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -20,27 +19,6 @@ const Login = () => {
 
   const params = new URLSearchParams(location.search);
   const redirect = params.get('redirect') || '/';
-
-  // Responsive Google button width calculator protecting narrow screens (down to 320px)
-  useEffect(() => {
-    const updateWidth = () => {
-      const width = window.innerWidth;
-      if (width < 360) {
-        setGoogleWidth("240");
-      } else if (width < 400) {
-        setGoogleWidth("280");
-      } else if (width < 640) {
-        setGoogleWidth("310");
-      } else {
-        setGoogleWidth("340");
-      }
-    };
-
-    updateWidth();
-    window.addEventListener("resize", updateWidth);
-
-    return () => window.removeEventListener("resize", updateWidth);
-  }, []);
 
   React.useEffect(() => {
     if (user) {
@@ -77,6 +55,13 @@ const Login = () => {
     setError('');
     setLoading(true);
     try {
+      if (!credentialResponse?.credential) {
+        const msg = 'No credential token returned from Google.';
+        setError(msg);
+        showToast(msg, 'error');
+        setLoading(false);
+        return;
+      }
       const result = await googleLogin(credentialResponse.credential);
       setLoading(false);
       if (result?.success !== false) {
@@ -206,7 +191,7 @@ const Login = () => {
           <span className="block text-[10px] font-bold text-gray-400 tracking-[0.2em] uppercase mb-4 text-center">
             Or Sign In with
           </span>
-          <div className="w-full flex justify-center overflow-hidden">
+          <div className="w-full flex justify-center max-w-[320px] mx-auto overflow-visible">
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
               onError={() => {
@@ -216,7 +201,7 @@ const Login = () => {
               theme="outline"
               size="large"
               shape="rectangular"
-              width={googleWidth}
+              width={typeof window !== 'undefined' ? String(Math.min(320, Math.max(240, window.innerWidth - 80))) : "320"}
             />
           </div>
         </div>

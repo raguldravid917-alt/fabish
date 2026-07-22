@@ -1,12 +1,12 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { authService } from '../api/authService';
 import { profileService } from '../api/profileService';
+import { useAuthStore } from '../store/useStore';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const { user, token, setAuth, setUser, logout: zustandLogout } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -16,8 +16,7 @@ export const AuthProvider = ({ children }) => {
       if (!storedToken || storedToken === 'undefined' || storedToken === 'null') {
         localStorage.removeItem('token');
         localStorage.removeItem('userInfo');
-        setToken(null);
-        setUser(null);
+        zustandLogout();
         setLoading(false);
         return;
       }
@@ -25,13 +24,11 @@ export const AuthProvider = ({ children }) => {
       try {
         const res = await authService.getMe();
         if (res.success && res.data) {
-          setUser(res.data);
+          setAuth(res.data, storedToken);
         } else {
           if (res.status === 401 || res.status === 403) {
-            setUser(null);
-            localStorage.removeItem('token');
+            zustandLogout();
             localStorage.removeItem('userInfo');
-            setToken(null);
           } else {
             console.warn('Transient failure fetching user profile:', res.message || res);
           }
@@ -44,7 +41,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     fetchProfile();
-  }, [token]);
+  }, [token, setAuth, zustandLogout]);
 
   const login = async (email, password) => {
     setError(null);
@@ -62,11 +59,8 @@ export const AuthProvider = ({ children }) => {
           return { success: false, message: "Token missing from server." };
         }
 
-        localStorage.setItem('token', actualToken);
-        setToken(actualToken);
-        setUser(data.user || data);
+        setAuth(data.user || data, actualToken);
         setLoading(false);
-        // Notify WishlistContext to sync guest items after login
         window.dispatchEvent(new CustomEvent('wishlist-auth-change', { detail: { type: 'login' } }));
         return { success: true, user: data.user || data };
       } else {
@@ -81,12 +75,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Google OAuth Login Action
   const googleLogin = async (idToken) => {
     setError(null);
     setLoading(true);
     try {
-      // Call frontend authService mapped API call for Google
       const result = await authService.googleLogin(idToken);
 
       if (result.success) {
@@ -99,11 +91,8 @@ export const AuthProvider = ({ children }) => {
           return { success: false, message: "Token missing from server." };
         }
 
-        localStorage.setItem('token', actualToken);
-        setToken(actualToken);
-        setUser(data.user || data);
+        setAuth(data.user || data, actualToken);
         setLoading(false);
-        // Notify WishlistContext to sync guest items after Google login
         window.dispatchEvent(new CustomEvent('wishlist-auth-change', { detail: { type: 'login' } }));
         return { success: true, user: data.user || data };
       } else {
@@ -112,9 +101,10 @@ export const AuthProvider = ({ children }) => {
         return { success: false, message: result.message || 'Google Login failed' };
       }
     } catch (err) {
-      setError('Server connection failed');
+      const errMsg = err?.response?.data?.message || err?.message || 'Server connection failed';
+      setError(errMsg);
       setLoading(false);
-      return { success: false, message: 'Server connection failed' };
+      return { success: false, message: errMsg };
     }
   };
 
@@ -126,9 +116,7 @@ export const AuthProvider = ({ children }) => {
 
       if (result.success) {
         const data = result.data;
-        localStorage.setItem('token', data.token);
-        setToken(data.token);
-        setUser(data.user || data);
+        setAuth(data.user || data, data.token);
         setLoading(false);
         return { success: true, user: data.user || data };
       } else {
@@ -149,11 +137,8 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.warn('Backend logout cleanup warning:', err.message);
     } finally {
-      localStorage.removeItem('token');
-      setToken(null);
-      setUser(null);
+      zustandLogout();
       setError(null);
-      // Notify WishlistContext to switch to guest mode
       window.dispatchEvent(new CustomEvent('wishlist-auth-change', { detail: { type: 'logout' } }));
     }
   };
@@ -167,11 +152,7 @@ export const AuthProvider = ({ children }) => {
         const data = result.data;
         const actualUser = data.user || data;
         const actualToken = data.token || result.token || data.accessToken || result.accessToken;
-        if (actualToken) {
-          localStorage.setItem('token', actualToken);
-          setToken(actualToken);
-        }
-        setUser(actualUser);
+        setAuth(actualUser, actualToken || token);
         return { success: true, user: actualUser };
       } else {
         return { success: false, message: result.message || 'Update failed' };
@@ -231,7 +212,7 @@ export const AuthProvider = ({ children }) => {
         loading,
         error,
         login,
-        googleLogin, // Added to global provider context securely
+        googleLogin,
         register,
         logout,
         updateProfile,

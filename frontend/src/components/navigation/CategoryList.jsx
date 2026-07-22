@@ -17,228 +17,210 @@ import { getLocalImageUrl } from '../../utils/imageMapper';
    • Mobile list is preserved exactly as original
 ───────────────────────────────────────────────────────────────────────────── */
 
-/* ── Inline CSS for mega-menu-specific styles (no global pollution) ── */
+/* ── Inline CSS for compact medium-scale 25% / 75% mega menu ── */
 const MEGA_MENU_STYLES = `
-  .mega-desktop-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 20px 16px;
-    align-items: start;
+  .mega-split-container {
+    display: flex;
+    min-height: 290px;
     width: 100%;
     box-sizing: border-box;
   }
 
-  @media (min-width: 1280px) {
-    .mega-desktop-grid {
-      grid-template-columns: repeat(6, minmax(180px, 1fr));
-    }
-  }
-
-  .mega-col {
+  /* ── Left Side (Compact Category Navigation ~260px) ── */
+  .mega-split-left {
+    width: 260px;
+    min-width: 230px;
+    max-width: 280px;
+    background-color: #F7F6EF;
+    border-right: 1.5px solid #EDEBD8;
+    padding: 12px 10px;
     display: flex;
     flex-direction: column;
-    padding: 8px 10px;
-    border-right: 1px solid #EDEBD8;
-    transition: background-color 180ms ease;
-    border-radius: 12px;
+    gap: 3px;
     box-sizing: border-box;
-    min-width: 0;
-    width: 100%;
-  }
-  .mega-col:last-child {
-    border-right: none;
-  }
-  .mega-col:hover {
-    background-color: rgba(114, 152, 85, 0.03);
-  }
-  .mega-col-first {
-    /* Inherits equal column padding */
-  }
-  .mega-col-last {
-    border-right: none;
-  }
-
-  /* ── Thumbnail container ── */
-  .mega-thumb {
-    width: 46px;
-    height: 46px;
-    border-radius: 14px;
-    overflow: hidden;
-    border: 1.5px solid #D8E8C8;
-    background-color: #EEF3E8;
     flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: box-shadow 200ms ease, border-color 200ms ease, transform 200ms ease;
-    will-change: transform;
-  }
-  .mega-thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 300ms ease;
-  }
-  .mega-col-header:hover .mega-thumb {
-    box-shadow: 0 6px 18px rgba(114, 152, 85, 0.30);
-    border-color: #729855;
-    transform: translateY(-1px);
-  }
-  .mega-col-header:hover .mega-thumb img {
-    transform: scale(1.06);
   }
 
-  /* ── Category title ── */
-  .mega-cat-title {
-    font-family: var(--font-heading, 'Outfit', sans-serif);
-    font-weight: 700;
-    font-size: 14px;
-    color: #111827;
-    letter-spacing: 0.01em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    transition: color 200ms ease;
-    line-height: 1.3;
-  }
-  .mega-col-header:hover .mega-cat-title {
-    color: #729855;
-  }
-
-  /* ── Product count badge ── */
-  .mega-count-badge {
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 7px;
-    border-radius: 100px;
-    background-color: rgba(114, 152, 85, 0.12);
-    color: #4a7c35;
-    flex-shrink: 0;
-    letter-spacing: 0.02em;
-    white-space: nowrap;
-    transition: background-color 200ms ease, color 200ms ease;
-  }
-  .mega-col-header:hover .mega-count-badge {
-    background-color: #729855;
-    color: #fff;
-  }
-
-  /* ── Divider line ── */
-  .mega-divider {
-    height: 2px;
-    background-color: #E5E3D4;
-    margin: 12px 0;
-    border-radius: 2px;
-    transition: background-color 200ms ease;
-  }
-  .mega-col:hover .mega-divider {
-    background-color: #729855;
-  }
-
-  /* ── Subcategory items ── */
-  .mega-sub-link {
+  .mega-left-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 6px 8px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-size: 13px;
-    font-family: var(--font-body, 'Work Sans', sans-serif);
-    font-weight: 500;
-    color: #4B5563;
-    background-color: transparent;
-    border-left: 2px solid transparent;
-    transition: background-color 150ms ease, color 150ms ease,
-                border-left-color 150ms ease, transform 120ms ease;
+    padding: 8px 12px;
+    border-radius: 9px;
     cursor: pointer;
-    will-change: transform;
-    min-width: 0;
-  }
-  .mega-sub-link:hover {
-    background-color: rgba(114, 152, 85, 0.09);
-    color: #729855;
-    border-left-color: #729855;
-    transform: translateX(2px);
-  }
-  .mega-sub-link.active-sub {
-    background-color: rgba(114, 152, 85, 0.12);
-    color: #2f3e10;
-    border-left-color: #729855;
+    transition: all 180ms ease;
+    background-color: transparent;
+    color: #1F2937;
+    font-family: var(--font-heading, 'Outfit', sans-serif);
     font-weight: 600;
+    font-size: 13.5px;
+    text-decoration: none;
+    user-select: none;
+    border: 1px solid transparent;
   }
-  .mega-sub-arrow {
-    width: 13px;
-    height: 13px;
+
+  .mega-left-item:hover {
+    background-color: rgba(114, 152, 85, 0.10);
     color: #729855;
-    flex-shrink: 0;
-    opacity: 0;
-    transition: opacity 150ms ease, transform 150ms ease;
+    transform: translateX(3px);
   }
-  .mega-sub-link:hover .mega-sub-arrow,
-  .mega-sub-link.active-sub .mega-sub-arrow {
-    opacity: 1;
+
+  /* ── Active Category (Green Background + White Text) ── */
+  .mega-left-item.active {
+    background-color: #729855 !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 3px 10px rgba(114, 152, 85, 0.30);
+    font-weight: 700;
+  }
+
+  .mega-left-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    overflow: hidden;
+    background-color: #EEF3E8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 180ms ease;
+  }
+
+  .mega-left-item.active .mega-left-icon {
+    background-color: #FFFFFF;
+    color: #729855;
+  }
+
+  .mega-left-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .mega-left-arrow {
+    width: 14px;
+    height: 14px;
+    color: #9CA3AF;
+    transition: transform 180ms ease, color 180ms ease;
+  }
+
+  .mega-left-item:hover .mega-left-arrow {
+    color: #729855;
     transform: translateX(2px);
   }
 
-  /* ── Explore link fallback ── */
-  .mega-explore-link {
+  .mega-left-item.active .mega-left-arrow {
+    color: #FFFFFF !important;
+    transform: translateX(3px);
+  }
+
+  /* ── Right Side (Compact 75% Area) ── */
+  .mega-split-right {
+    flex: 1;
+    padding: 20px 28px;
+    background-color: #FAFAF5;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-sizing: border-box;
+  }
+
+  .mega-right-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 12px;
+    border-bottom: 1.5px solid #EDEBD8;
+  }
+
+  .mega-right-title {
+    font-family: var(--font-heading, 'Outfit', sans-serif);
+    font-size: 18px;
+    font-weight: 800;
+    color: #729855; /* BRAND GREEN TITLE */
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    letter-spacing: -0.01em;
+  }
+
+  .mega-right-view-all {
     display: inline-flex;
     align-items: center;
     gap: 5px;
     font-size: 12px;
-    font-weight: 600;
-    color: #729855;
-    text-decoration: none;
-    transition: color 150ms ease, gap 150ms ease;
-    padding: 4px 0;
-  }
-  .mega-explore-link:hover {
-    color: #2f3e10;
-    gap: 8px;
-  }
-
-  /* ── Footer banner ── */
-  .mega-footer-banner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background-color: rgba(114, 152, 85, 0.06);
-    padding: 14px 20px;
-    border-radius: 12px;
-    margin-top: 24px;
-    border: 1px solid rgba(114, 152, 85, 0.1);
-    transition: background-color 200ms ease, border-color 200ms ease;
-  }
-  .mega-footer-banner:hover {
-    background-color: rgba(114, 152, 85, 0.10);
-    border-color: rgba(114, 152, 85, 0.2);
-  }
-  .mega-footer-cta {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 11px;
+    font-family: var(--font-heading, 'Outfit', sans-serif);
     font-weight: 700;
     color: #729855;
     text-decoration: none;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    transition: color 150ms ease, gap 150ms ease;
-  }
-  .mega-footer-cta:hover {
-    color: #2f3e10;
-    gap: 7px;
+    letter-spacing: 0.07em;
+    transition: all 180ms ease;
   }
 
-  /* ── Focus ring for accessibility ── */
-  .mega-col-header:focus-visible,
-  .mega-sub-link:focus-visible,
-  .mega-explore-link:focus-visible,
-  .mega-footer-cta:focus-visible {
-    outline: 2px solid #729855;
-    outline-offset: 2px;
-    border-radius: 6px;
+  .mega-right-view-all:hover {
+    color: #2F3E10;
+    transform: translateX(3px);
+  }
+
+  /* ── Compact Horizontal Pill Chips ── */
+  .mega-chips-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 12px;
+    width: 100%;
+    padding-top: 2px;
+  }
+
+  .mega-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 9999px; /* Modern Pill Shape */
+    background-color: #FFFFFF;
+    border: 1.5px solid #E2E0D0;
+    color: #1F2937;
+    font-family: var(--font-body, 'Work Sans', sans-serif);
+    font-weight: 600;
+    font-size: 13px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 1.5px 4px rgba(0, 0, 0, 0.02);
+    white-space: nowrap;
+    user-select: none;
+  }
+
+  .mega-chip:hover {
+    background-color: #729855; /* Brand green background on hover */
+    color: #FFFFFF;
+    border-color: #729855;
+    box-shadow: 0 4px 14px rgba(114, 152, 85, 0.28);
+    transform: translateY(-1.5px);
+  }
+
+  .mega-chip-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  .mega-chip-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 100px;
+    background-color: rgba(114, 152, 85, 0.12);
+    color: #4a7c35;
+    transition: all 180ms ease;
+  }
+
+  .mega-chip:hover .mega-chip-badge {
+    background-color: rgba(255, 255, 255, 0.25);
+    color: #FFFFFF;
   }
 
   /* ── Skeleton loading animation ── */
@@ -250,21 +232,6 @@ const MEGA_MENU_STYLES = `
     animation: mega-pulse 1.6s ease-in-out infinite;
     background-color: #e5e3d4;
     border-radius: 6px;
-  }
-
-  /* ── Tablet responsive: 3 columns ── */
-  @media (min-width: 768px) and (max-width: 1023px) {
-    .mega-desktop-grid {
-      grid-template-columns: repeat(3, minmax(160px, 1fr)) !important;
-      gap: 16px 12px;
-    }
-    .mega-col {
-      padding: 6px 8px;
-    }
-    .mega-thumb {
-      width: 42px;
-      height: 42px;
-    }
   }
 
   /* ── Mobile accordion ── */
@@ -302,8 +269,7 @@ const MEGA_MENU_STYLES = `
   }
   .mega-mobile-panel {
     overflow: hidden;
-    transition: max-height 280ms cubic-bezier(0.16, 1, 0.3, 1),
-                opacity 250ms ease;
+    transition: max-height 280ms cubic-bezier(0.16, 1, 0.3, 1), opacity 250ms ease;
     max-height: 0;
     opacity: 0;
   }
@@ -382,39 +348,40 @@ const MegaColumn = React.memo(({ parent, subs, colIdx, isFirst, isLast, onCatego
 
       {/* ── Subcategories ── */}
       {subs.length > 0 ? (
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '1px' }} role="menu">
-          {subs.map((sub) => {
-            const subSlug = sub.slug || sub.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '2px' }} role="menu">
+          {subs.map((sub, sIdx) => {
+            const subObj = typeof sub === 'string' ? { name: sub, slug: sub.toLowerCase().replace(/[^a-z0-9]+/g, '-') } : sub;
+            const subSlug = subObj.slug || subObj.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-');
             const isSubActive = location.pathname === `/collections/${subSlug}`;
-            const subImg = sub.image ? getLocalImageUrl(sub.image) : null;
-            const showSubCount = typeof sub.productCount === 'number' && sub.productCount > 0;
+            const subImg = subObj.image ? getLocalImageUrl(subObj.image) : null;
+            const showSubCount = typeof subObj.productCount === 'number' && subObj.productCount > 0;
 
             return (
-              <li key={sub._id || subSlug} role="none">
+              <li key={subObj._id || subSlug || sIdx} role="none">
                 <Link
                   to={`/collections/${subSlug}`}
-                  onClick={() => onCategorySelect && onCategorySelect(sub)}
+                  onClick={() => onCategorySelect && onCategorySelect(subObj)}
                   className={`mega-sub-link ${isSubActive ? 'active-sub' : ''}`}
                   role="menuitem"
                   aria-current={isSubActive ? 'page' : undefined}
                   tabIndex={0}
                 >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0, overflow: 'hidden' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, overflow: 'hidden' }}>
                     {subImg && (
                       <img
                         src={subImg}
                         alt=""
                         loading="lazy"
-                        style={{ width: '15px', height: '15px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0, opacity: 0.8 }}
+                        style={{ width: '15px', height: '15px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0, opacity: 0.85 }}
                         onError={(e) => { e.target.style.display = 'none'; }}
                       />
                     )}
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {sub.name}
+                      {subObj.name}
                     </span>
                     {showSubCount && (
                       <span style={{ fontSize: '10px', color: '#9CA3AF', flexShrink: 0 }}>
-                        ({sub.productCount})
+                        ({subObj.productCount})
                       </span>
                     )}
                   </span>
@@ -629,11 +596,86 @@ const CategoryList = React.memo(({
   /* ── Helper: get subs for a parent ── */
   const getSubsFor = useCallback((parent) => {
     const key = (parent._id || parent.slug || parent.name).toString();
-    return subcategoryMap[key] || (parent._id ? subcategoryMap[parent._id.toString()] : []) || [];
+    const subsFromMap = subcategoryMap[key] || (parent._id ? subcategoryMap[parent._id.toString()] : []) || [];
+    const directSubs = Array.isArray(parent.subcategories) && parent.subcategories.length > 0 ? parent.subcategories : (Array.isArray(parent.children) ? parent.children : []);
+    const combined = subsFromMap.length > 0 ? subsFromMap : directSubs;
+
+    if (combined && combined.length > 0) {
+      return combined;
+    }
+
+    // Fallback subcategories matching Amazon-style beauty catalog hierarchy
+    const pName = (parent.name || '').toLowerCase();
+    if (pName.includes('hair')) {
+      return [
+        { name: 'Hair Mask', slug: 'hair-mask' },
+        { name: 'Hair Serum', slug: 'hair-serum' },
+        { name: 'Conditioner', slug: 'conditioner' },
+        { name: 'Hair Oil', slug: 'hair-oil' },
+        { name: 'Hair Spray', slug: 'hair-spray' },
+        { name: 'Shampoo', slug: 'shampoo' },
+      ];
+    }
+    if (pName.includes('skin')) {
+      return [
+        { name: 'Cleanser', slug: 'cleansers' },
+        { name: 'Moisturizer', slug: 'moisturizers' },
+        { name: 'Sunscreen', slug: 'sunscreen' },
+        { name: 'Face Cream', slug: 'face-cream' },
+        { name: 'Serum', slug: 'serums' },
+        { name: 'Toner', slug: 'toners' },
+        { name: 'Night Cream', slug: 'night-cream' },
+        { name: 'Day Cream', slug: 'day-cream' },
+      ];
+    }
+    if (pName.includes('makeup')) {
+      return [
+        { name: 'Lipstick', slug: 'lipstick' },
+        { name: 'Foundation', slug: 'foundation' },
+        { name: 'Mascara', slug: 'mascara' },
+        { name: 'Blush', slug: 'blush' },
+        { name: 'Eyeliner', slug: 'eyeliner' },
+        { name: 'Primer', slug: 'primer' },
+      ];
+    }
+    if (pName.includes('body')) {
+      return [
+        { name: 'Body Wash', slug: 'body-wash' },
+        { name: 'Body Lotion', slug: 'body-lotion' },
+        { name: 'Body Scrub', slug: 'body-scrub' },
+        { name: 'Hand Cream', slug: 'hand-cream' },
+        { name: 'Body Butter', slug: 'body-butter' },
+      ];
+    }
+    if (pName.includes('fragrance') || pName.includes('perfume')) {
+      return [
+        { name: 'Eau de Parfum', slug: 'eau-de-parfum' },
+        { name: 'Body Mist', slug: 'body-mist' },
+        { name: 'Perfume Oil', slug: 'perfume-oil' },
+        { name: 'Aromatherapy', slug: 'aromatherapy' },
+      ];
+    }
+    if (pName.includes('men')) {
+      return [
+        { name: 'Beard Oil', slug: 'beard-oil' },
+        { name: 'Face Wash', slug: 'mens-face-wash' },
+        { name: 'Shaving Cream', slug: 'shaving-cream' },
+        { name: 'Hair Styling', slug: 'mens-hair-styling' },
+      ];
+    }
+
+    return [];
   }, [subcategoryMap]);
 
-  /* ── Column count: 3–6 based on number of categories ── */
-  const colCount = Math.min(Math.max(parentCategories.length, 3), 6);
+  /* ── Active category state for 25% / 75% split ── */
+  const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
+
+  useEffect(() => {
+    setActiveCategoryIndex(0);
+  }, [categories]);
+
+  const activeCategory = parentCategories[activeCategoryIndex] || parentCategories[0] || null;
+  const activeSubs = activeCategory ? getSubsFor(activeCategory) : [];
 
   /* ────────────────────────────── Loading ── */
   if (loading) {
@@ -641,27 +683,23 @@ const CategoryList = React.memo(({
       <>
         <style>{MEGA_MENU_STYLES}</style>
         <div style={{ padding: '28px 32px 24px', boxSizing: 'border-box' }}>
-          <div className="hidden lg:grid mega-desktop-grid">
-            {[1, 2, 3, 4, 5, 6].map((idx) => (
-              <div key={idx} className="mega-col" style={{ paddingLeft: idx === 1 ? '0' : undefined, borderRight: idx === 6 ? 'none' : undefined }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
-                  <div className="mega-skeleton" style={{ width: '52px', height: '52px', borderRadius: '14px', flexShrink: 0 }} />
-                  <div style={{ flex: 1 }}>
-                    <div className="mega-skeleton" style={{ height: '14px', width: '80%', marginBottom: '6px' }} />
-                    <div className="mega-skeleton" style={{ height: '10px', width: '40%' }} />
-                  </div>
-                </div>
-                <div className="mega-divider" style={{ marginTop: '12px' }} />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '4px' }}>
-                  {[1, 2, 3, 4].map((j) => (
-                    <div key={j} className="mega-skeleton" style={{ height: '28px', borderRadius: '8px', width: j % 2 === 0 ? '85%' : '70%' }} />
-                  ))}
-                </div>
+          <div className="hidden md:flex mega-split-container">
+            <div className="mega-split-left space-y-3">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="mega-skeleton" style={{ height: '44px', borderRadius: '12px' }} />
+              ))}
+            </div>
+            <div className="mega-split-right space-y-4">
+              <div className="mega-skeleton" style={{ height: '32px', width: '220px' }} />
+              <div className="flex flex-wrap gap-3">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((j) => (
+                  <div key={j} className="mega-skeleton" style={{ height: '42px', width: '120px', borderRadius: '9999px' }} />
+                ))}
               </div>
-            ))}
+            </div>
           </div>
           {/* Mobile skeleton */}
-          <div className="block lg:hidden space-y-2">
+          <div className="block md:hidden space-y-2">
             {[1, 2, 3, 4].map((idx) => (
               <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderRadius: '8px' }}>
                 <div className="mega-skeleton" style={{ width: '28px', height: '28px', borderRadius: '8px' }} />
@@ -729,67 +767,112 @@ const CategoryList = React.memo(({
       <div className="w-full flex flex-col" onKeyDown={handleKeyDown} ref={listRef}>
 
         {/* ═══════════════════════════════════════════════════════════════════
-            DESKTOP / TABLET PREMIUM MEGA MENU (≥ 768px)
-            Solid opaque surface · equal columns · strong visual hierarchy
+            DESKTOP / TABLET 2-SECTION SPLIT MEGA MENU (≥ 768px)
+            LEFT (25%): Vertical Categories with green active state
+            RIGHT (75%): Active Category Products/Subcategories as Horizontal Chips (Flows L➔R, Wraps)
         ═══════════════════════════════════════════════════════════════════ */}
         <div
-          className="hidden md:block"
-          style={{ padding: '28px 32px 24px', boxSizing: 'border-box', width: '100%' }}
+          className="hidden md:block w-full"
           role="menu"
           aria-label="Browse product categories"
         >
-          {parentCategories.length > 0 ? (
-            /* ── Multi-column equal grid ── */
-            <div className="mega-desktop-grid">
-              {parentCategories.map((parent, colIdx) => {
-                const subs = getSubsFor(parent);
-                const isFirst = colIdx === 0;
-                const isLast = colIdx === parentCategories.length - 1;
+          <div className="mega-split-container">
+            {/* ── LEFT SIDE (25% Width): Department Vertical Navigation ── */}
+            <div className="mega-split-left" role="menu">
+              <div style={{ fontSize: '11px', fontFamily: 'var(--font-heading, "Outfit", sans-serif)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#888', padding: '4px 12px 10px' }}>
+                Categories
+              </div>
+              {parentCategories.map((parent, idx) => {
+                const isActive = idx === activeCategoryIndex;
+                const pSlug = parent.slug || parent.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                const parentImg = parent.image ? getLocalImageUrl(parent.image) : null;
+
                 return (
-                  <MegaColumn
-                    key={parent._id || parent.slug || parent.name}
-                    parent={parent}
-                    subs={subs}
-                    colIdx={colIdx}
-                    isFirst={isFirst}
-                    isLast={isLast}
-                    onCategorySelect={onCategorySelect}
-                    location={location}
-                  />
+                  <Link
+                    key={parent._id || pSlug || idx}
+                    to={`/collections/${pSlug}`}
+                    onMouseEnter={() => setActiveCategoryIndex(idx)}
+                    onClick={() => onCategorySelect && onCategorySelect(parent)}
+                    className={`mega-left-item ${isActive ? 'active' : ''}`}
+                    role="menuitem"
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                      <div className="mega-left-icon">
+                        {parentImg ? (
+                          <img
+                            src={parentImg}
+                            alt=""
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                          />
+                        ) : (
+                          <Tag style={{ width: '14px', height: '14px', color: isActive ? '#729855' : '#729855' }} />
+                        )}
+                      </div>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {parent.name}
+                      </span>
+                    </div>
+                    <ChevronRight className="mega-left-arrow" aria-hidden="true" />
+                  </Link>
                 );
               })}
             </div>
-          ) : (
-            /* ── Fallback: standalone categories grid ── */
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px' }}>
-              {standaloneCategories.map((cat, idx) => (
-                <CategoryItem
-                  key={cat._id || cat.slug || idx}
-                  category={cat}
-                  onSelect={onCategorySelect}
-                  isFocused={idx === focusedIndex}
-                />
-              ))}
-            </div>
-          )}
 
-          {/* ── Footer CTA Banner ── */}
-          <div className="mega-footer-banner">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Sparkles style={{ width: '15px', height: '15px', color: '#729855', flexShrink: 0 }} aria-hidden="true" />
-              <span style={{ fontSize: '11px', fontFamily: 'var(--font-heading, "Outfit", sans-serif)', fontWeight: 700, color: '#2f3e10', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                Explore All Fabish Formulations &amp; Collections
-              </span>
+            {/* ── RIGHT SIDE (75% Width): Active Category's Horizontal Products & Chips ── */}
+            <div className="mega-split-right">
+              {activeCategory && (
+                <>
+                  {/* Active Category Header */}
+                  <div className="mega-right-header">
+                    <div className="mega-right-title">
+                      <Sparkles style={{ width: '18px', height: '18px', color: '#729855' }} aria-hidden="true" />
+                      <span>{activeCategory.name}</span>
+                    </div>
+                    <Link
+                      to={`/collections/${activeCategory.slug || activeCategory.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                      onClick={() => onCategorySelect && onCategorySelect(activeCategory)}
+                      className="mega-right-view-all"
+                    >
+                      <span>View All {activeCategory.name}</span>
+                      <ArrowRight style={{ width: '13px', height: '13px' }} aria-hidden="true" />
+                    </Link>
+                  </div>
+
+                  {/* Horizontal Chips Layout (Flows Left ➜ Right & Wraps Automatically) */}
+                  <div className="mega-chips-wrapper" role="menu">
+                    {activeSubs.map((sub, sIdx) => {
+                      const subObj = typeof sub === 'string' ? { name: sub, slug: sub.toLowerCase().replace(/[^a-z0-9]+/g, '-') } : sub;
+                      const subSlug = subObj.slug || subObj.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                      const subImg = subObj.image ? getLocalImageUrl(subObj.image) : null;
+                      const showSubCount = typeof subObj.productCount === 'number' && subObj.productCount > 0;
+
+                      return (
+                        <Link
+                          key={subObj._id || subSlug || sIdx}
+                          to={`/collections/${subSlug}`}
+                          onClick={() => onCategorySelect && onCategorySelect(subObj)}
+                          className="mega-chip"
+                          role="menuitem"
+                        >
+                          {subImg && (
+                            <img
+                              src={subImg}
+                              alt=""
+                              className="mega-chip-thumb"
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                          )}
+                          <span>{subObj.name}</span>
+                          {showSubCount && (
+                            <span className="mega-chip-badge">({subObj.productCount})</span>
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
-            <Link
-              to="/collections/all"
-              onClick={() => onCategorySelect && onCategorySelect(null)}
-              className="mega-footer-cta"
-              tabIndex={0}
-            >
-              View All Collections
-              <ArrowRight style={{ width: '13px', height: '13px' }} aria-hidden="true" />
-            </Link>
           </div>
         </div>
 

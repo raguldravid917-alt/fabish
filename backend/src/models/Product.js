@@ -249,6 +249,10 @@ const productSchema = new mongoose.Schema(
 // Create compound and text indexes for search optimizations
 productSchema.index({ title: 'text', description: 'text', tags: 'text' });
 productSchema.index({ price: 1, ratings: -1 });
+productSchema.index({ category: 1, status: 1, createdAt: -1 });
+productSchema.index({ featured: 1, status: 1 });
+productSchema.index({ bestSeller: 1, status: 1 });
+productSchema.index({ newArrival: 1, status: 1 });
 
 
 // Pre-save middleware to sync productName with title

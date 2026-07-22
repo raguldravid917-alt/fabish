@@ -1,70 +1,66 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './index.css'
 import App from './App.jsx'
 
-// Prevent duplicate Google Identity Services initializations
-(function() {
-  if (typeof window === 'undefined') return;
-  
-  let rawId = null;
-  let initialized = false;
-  let initParams = {};
-
-  window.google = window.google || {};
-  window.google.accounts = window.google.accounts || {};
-
-  Object.defineProperty(window.google.accounts, 'id', {
-    configurable: true,
-    enumerable: true,
-    get() {
-      return rawId;
+// Create a client with production-ready default stale time (5 mins) and deduplication
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      gcTime: 30 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      retry: 1,
     },
-    set(newId) {
-      rawId = newId;
-      if (newId && typeof newId === 'object') {
-        let originalInit = newId.initialize;
-        Object.defineProperty(newId, 'initialize', {
-          configurable: true,
-          enumerable: true,
-          get() {
-            return function(options) {
-              // Merge all options (like client_id, callback, etc.)
-              Object.assign(initParams, options);
-              
-              if (options.callback || options.native_callback) {
-                // If this call has a callback, initialize immediately
-                if (!initialized) {
-                  initialized = true;
-                  if (originalInit) {
-                    originalInit.call(newId, initParams);
-                  }
-                }
-              } else {
-                // If it doesn't have a callback, defer it for a short time
-                // to see if a call with a callback comes (e.g. from GoogleLogin).
-                setTimeout(() => {
-                  if (!initialized) {
-                    initialized = true;
-                    if (originalInit) {
-                      originalInit.call(newId, initParams);
-                    }
-                  }
-                }, 100);
-              }
-            };
-          },
-          set(newInitVal) {
-            originalInit = newInitVal;
-          }
-        });
-      }
+  },
+});
+
+// Single-initialization guard for Google Identity Services
+if (typeof window !== 'undefined') {
+  let isInitialized = false;
+  let activeClientId = null;
+
+  const setupGuard = () => {
+    if (window.google?.accounts?.id && !window.google.accounts.id._guarded) {
+      const origInit = window.google.accounts.id.initialize;
+      window.google.accounts.id.initialize = function (config) {
+        if (isInitialized && activeClientId === config?.client_id) {
+          // Already initialized for this client_id — skip duplicate GSI logger warnings
+          return;
+        }
+        isInitialized = true;
+        activeClientId = config?.client_id;
+        return origInit.call(this, config);
+      };
+      window.google.accounts.id._guarded = true;
     }
-  });
-})();
+  };
+
+  if (window.google?.accounts?.id) {
+    setupGuard();
+  } else {
+    let _g = window.google;
+    Object.defineProperty(window, 'google', {
+      configurable: true,
+      enumerable: true,
+      get() {
+        return _g;
+      },
+      set(val) {
+        _g = val;
+        if (val?.accounts?.id) {
+          setTimeout(setupGuard, 0);
+        }
+      }
+    });
+  }
+}
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <QueryClientProvider client={queryClient}>
+      <App />
+    </QueryClientProvider>
   </StrictMode>,
 )

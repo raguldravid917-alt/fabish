@@ -109,13 +109,12 @@ const CatalogDropdown = () => {
       </Link>
 
       {/* ══════════════════════════════════════════════════════════════════
-          MEGA MENU PANEL
-          ─ Fixed so it always floats above page content
-          ─ Solid opaque background (NO transparency, NO backdrop-blur)
-          ─ Perfectly centered, full content-width
-          ─ Large rounded corners + premium layered shadow
-          ─ Smooth 180ms fade + slide-down animation
-          ─ z-index 9999 covers every section including heroes & banners
+          MEGA MENU PANEL (2026 Amazon-inspired Full-Width Mega Menu)
+          ─ Floating fixed panel positioned below header
+          ─ Fills available screen width (up to 1440px max content width)
+          ─ Opaque solid background (#FAFAF5) - NO transparency/blur
+          ─ Smooth dropdown fade & slide transition (180ms)
+          ─ z-index 9999 floating above all hero sections and banners
       ══════════════════════════════════════════════════════════════════ */}
       <div
         id="catalog-mega-menu"
@@ -128,33 +127,33 @@ const CatalogDropdown = () => {
           top: '66px',
           left: '50%',
 
-          /* ── Size: fills viewport minus 24px gutter each side, capped at 1400px ── */
-          width: 'min(1400px, calc(100vw - 48px))',
+          /* ── Size: Full width across viewport, max 1440px container ── */
+          width: 'min(1440px, calc(100vw - 32px))',
           maxWidth: '100%',
           boxSizing: 'border-box',
 
-          /* ── Transform: center + slide animation ── */
+          /* ── Transform: Center & slide animation ── */
           transform: isOpen
             ? 'translateX(-50%) translateY(0)'
             : 'translateX(-50%) translateY(-10px)',
 
-          /* ── Solid opaque background — NO transparency ── */
+          /* ── Solid opaque background ── */
           backgroundColor: '#FAFAF5',
 
-          /* ── Premium card aesthetics ── */
-          borderRadius: '20px',
+          /* ── Modern surface aesthetics ── */
+          borderRadius: '18px',
           border: '1px solid #E5E3D4',
           boxShadow:
-            '0 4px 6px -1px rgba(0,0,0,0.04), ' +
-            '0 20px 60px -10px rgba(0,0,0,0.16), ' +
-            '0 10px 28px -6px rgba(0,0,0,0.08)',
+            '0 4px 6px -1px rgba(0, 0, 0, 0.03), ' +
+            '0 24px 48px -8px rgba(0, 0, 0, 0.14), ' +
+            '0 12px 24px -6px rgba(0, 0, 0, 0.06)',
 
-          /* ── Always above everything ── */
+          /* ── High Z-index overlay ── */
           zIndex: 9999,
           height: 'auto',
           overflow: 'hidden',
 
-          /* ── Smooth open/close (180ms) ── */
+          /* ── Smooth open/close ── */
           transition: 'opacity 180ms ease-out, transform 180ms ease-out',
           opacity: isOpen ? 1 : 0,
           pointerEvents: isOpen ? 'auto' : 'none',
@@ -168,7 +167,7 @@ const CatalogDropdown = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '13px 40px',
+            padding: '10px 24px',
             borderBottom: '1px solid #E5E3D4',
             backgroundColor: '#F2F0E6',
           }}

@@ -129,15 +129,17 @@ class ProductRepository {
         filter.status = { $ne: PRODUCT_STATUS.DELETED };
       }
 
-      const count = await Product.countDocuments(filter);
-      const products = await Product.find(filter)
-        .populate('category')
-        .populate('variants')
-        .populate('badges')
-        .sort(sort)
-        .skip(skip)
-        .limit(sanitizedLimit)
-        .lean();
+      const [count, products] = await Promise.all([
+        Product.countDocuments(filter),
+        Product.find(filter)
+          .populate('category')
+          .populate('variants')
+          .populate('badges')
+          .sort(sort)
+          .skip(skip)
+          .limit(sanitizedLimit)
+          .lean()
+      ]);
 
       if (products && Array.isArray(products)) {
         products.forEach(p => this.logMalformedProduct(p));
