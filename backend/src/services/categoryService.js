@@ -1,6 +1,7 @@
 const categoryRepository = require('../repositories/categoryRepository');
 const uploadService = require('./uploadService');
 const Category = require('../models/Category');
+const Product = require('../models/Product');
 
 const getSlug = (text) =>
   text
@@ -11,7 +12,60 @@ const getSlug = (text) =>
 
 class CategoryService {
   async getCategories(includeDeleted = false) {
-    return await categoryRepository.findAll(includeDeleted);
+    const categories = await categoryRepository.findAll(includeDeleted);
+    try {
+      const counts = await Product.aggregate([
+        { $match: { isDeleted: { $ne: true } } },
+        { $group: { _id: '$category', count: { $sum: 1 } } }
+      ]);
+      const directCountMap = {};
+      counts.forEach((c) => {
+        if (c._id) {
+          directCountMap[c._id.toString()] = c.count;
+        }
+      });
+
+      // Build parent -> children map to include descendant category counts
+      const childrenMap = {};
+      categories.forEach((cat) => {
+        const catObj = cat.toObject ? cat.toObject() : cat;
+        const pId = catObj.parentCategory
+          ? typeof catObj.parentCategory === 'object'
+            ? catObj.parentCategory._id
+            : catObj.parentCategory
+          : null;
+        if (pId) {
+          const pIdStr = pId.toString();
+          if (!childrenMap[pIdStr]) childrenMap[pIdStr] = [];
+          const catIdStr = catObj._id ? catObj._id.toString() : catObj.id;
+          if (catIdStr) childrenMap[pIdStr].push(catIdStr);
+        }
+      });
+
+      const getDescendantTotal = (catIdStr, visited = new Set()) => {
+        if (!catIdStr || visited.has(catIdStr)) return 0;
+        visited.add(catIdStr);
+
+        let total = directCountMap[catIdStr] || 0;
+        const children = childrenMap[catIdStr] || [];
+        for (const childIdStr of children) {
+          total += getDescendantTotal(childIdStr, visited);
+        }
+        return total;
+      };
+
+      return categories.map((cat) => {
+        const catObj = cat.toObject ? cat.toObject() : { ...cat };
+        const catIdStr = catObj._id ? catObj._id.toString() : null;
+        return {
+          ...catObj,
+          productCount: catIdStr ? getDescendantTotal(catIdStr) : (directCountMap[catObj.slug] || 0),
+        };
+      });
+    } catch (err) {
+      console.error('Error calculating category product counts:', err);
+      return categories.map((cat) => ({ ...cat, productCount: 0 }));
+    }
   }
 
   async getCategoryBySlug(slug) {

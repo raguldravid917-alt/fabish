@@ -631,6 +631,8 @@ const ProductListing = () => {
           <p className="text-[10px] font-heading font-bold uppercase tracking-widest text-[#729855]">
             <Link to="/" onClick={() => window.scrollTo(0, 0)} className="hover:text-black transition-colors">Home</Link>
             <span className="mx-2 text-gray-400">/</span>
+            <Link to="/collections" onClick={() => window.scrollTo(0, 0)} className="hover:text-black transition-colors">Catalog</Link>
+            <span className="mx-2 text-gray-400">/</span>
             <span className="text-black">{displayTitle}</span>
           </p>
         </div>

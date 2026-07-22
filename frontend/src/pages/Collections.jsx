@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { getLocalImageUrl } from '../utils/imageMapper';
 import { productService } from '../api/productService'; // Imports backend service natively
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { Search, X, ChevronDown, Tag, ArrowRight } from 'lucide-react';
 
 // Helper to securely map database paths and prevent image breakage
 const ensureAbsolutePath = (path) => {
@@ -33,11 +34,24 @@ const Collections = () => {
   const [products, setProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(true);
 
-  // Accordion toggle state: key is category ID, value is boolean (true = collapsed)
+  // Desktop Accordion toggle state: key is category ID, value is boolean (true = collapsed)
   const [collapsedCategories, setCollapsedCategories] = useState({});
+
+  // Mobile Accordion expansion state: key is category ID, value is boolean (true = expanded)
+  const [mobileExpandedCardIds, setMobileExpandedCardIds] = useState({});
+
+  // Mobile Instant Search filter query
+  const [mobileSearchQuery, setMobileSearchQuery] = useState('');
 
   const toggleCategory = (id) => {
     setCollapsedCategories((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  const toggleMobileExpand = (id) => {
+    setMobileExpandedCardIds((prev) => ({
       ...prev,
       [id]: !prev[id],
     }));
@@ -107,10 +121,21 @@ const Collections = () => {
     });
   };
 
+  // Mobile search filtering
+  const mobileFilteredParentCategories = parentCategories.filter((parentCat) => {
+    if (!mobileSearchQuery.trim()) return true;
+    const query = mobileSearchQuery.toLowerCase().trim();
+    const nameMatch = parentCat.name?.toLowerCase().includes(query);
+    const descMatch = parentCat.description?.toLowerCase().includes(query);
+    const subCats = getSubcategoriesForCategory(parentCat);
+    const subMatch = subCats.some((sub) => sub.name?.toLowerCase().includes(query));
+    return nameMatch || descMatch || subMatch;
+  });
+
   return (
     <div className="w-full bg-white text-left select-none">
       <style>{`
-        /* BANNER */
+        /* BANNER (DESKTOP) */
         .catalog-banner {
           width: 100%;
           height: 240px;
@@ -147,7 +172,7 @@ const Collections = () => {
           border-bottom: 1px solid #f2f0e4;
         }
         .cat-section:nth-child(even) {
-          background-color: #faf9f5; /* Clean light band separation */
+          background-color: #faf9f5;
         }
         .cat-section:last-child {
           border-bottom: none;
@@ -158,12 +183,12 @@ const Collections = () => {
           padding: 0 40px;
         }
         
-        /* CATEGORY TITLE CONTAINER with signature vertical left indicator bar */
+        /* CATEGORY TITLE CONTAINER */
         .cat-title-container {
           display: flex;
           align-items: center;
           gap: 12px;
-          border-left: 3px solid #729855; /* Left visual indicator bar */
+          border-left: 3px solid #729855;
           padding-left: 14px;
         }
         
@@ -181,7 +206,7 @@ const Collections = () => {
           transition: background-color 0.2s ease;
         }
         .cat-header:hover {
-          background-color: rgba(114, 152, 85, 0.04); /* Interactive subtle green highlight */
+          background-color: rgba(114, 152, 85, 0.04);
         }
         
         .cat-title {
@@ -203,7 +228,6 @@ const Collections = () => {
           white-space: nowrap;
         }
         
-        /* Dropdown toggle arrow indicators */
         .cat-toggle-chevron {
           font-size: 15px;
           color: #729855;
@@ -227,7 +251,7 @@ const Collections = () => {
           color: #2f3e10;
         }
 
-        /* SUBCATEGORY PILL CHIPS with directional indicators */
+        /* SUBCATEGORY PILL CHIPS */
         .subcat-row {
           display: flex;
           flex-wrap: wrap;
@@ -327,7 +351,6 @@ const Collections = () => {
           font-weight: 600;
         }
 
-        /* Empty state styling */
         .empty-showcase {
           grid-column: span 4;
           padding: 40px;
@@ -338,149 +361,508 @@ const Collections = () => {
           font-size: 13px;
         }
 
-        /* Webkit scrollbars customized to match the warm-neutral beige palette of the About Us page */
-        ::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-          background: #faf9f5;
-        }
-        ::-webkit-scrollbar-thumb {
-          background: #b1b0a3;
-          border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-          background: #4b4a48;
-        }
-
-        /* Responsive Grid viewports */
+        /* Responsive Grid viewports for desktop/tablet */
         @media (max-width: 1024px) {
           .prod-grid {
             grid-template-columns: repeat(3, 1fr);
           }
         }
-        @media (max-width: 768px) {
-          .prod-grid {
-            grid-template-columns: repeat(2, 1fr);
+
+        /* ═══════════════════════════════════════════════════════════════════
+           PREMIUM 2026 MOBILE STOREFRONT STYLES (< 768px)
+        ═══════════════════════════════════════════════════════════════════ */
+        @media (max-width: 767px) {
+          .mobile-collections-wrapper {
+            padding: 20px 16px 40px;
+            background-color: #F7F6F0;
+            min-height: 100vh;
           }
-          .cat-section {
-            padding: 30px 0;
-          }
-          .cat-content-container {
-            padding: 0 20px;
-          }
-        }
-        @media (max-width: 480px) {
-          .prod-grid {
+          .mobile-cat-grid {
+            display: grid;
             grid-template-columns: 1fr;
+            gap: 16px;
+          }
+          @media (min-width: 540px) and (max-width: 767px) {
+            .mobile-cat-grid {
+              grid-template-columns: repeat(2, 1fr);
+            }
           }
         }
       `}</style>
 
-      {/* TOP HEADER HERO BANNER */}
-      <div className="catalog-banner">
-        <h1>All Collections</h1>
-      </div>
+      {/* ═══════════════════════════════════════════════════════════════════════
+          MOBILE VIEW (< 768px): Premium 2026 Shopify Storefront Card Grid
+      ═══════════════════════════════════════════════════════════════════════ */}
+      <div className="block md:hidden mobile-collections-wrapper">
+        {/* Mobile Header Title */}
+        <div style={{ marginBottom: '16px' }}>
+          <span
+            style={{
+              fontSize: '11px',
+              fontFamily: 'var(--font-heading, "Outfit", sans-serif)',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.12em',
+              color: '#729855',
+            }}
+          >
+            Formulations &amp; Ranges
+          </span>
+          <h1
+            style={{
+              fontFamily: 'var(--font-heading, "Outfit", "Work Sans", sans-serif)',
+              fontSize: '24px',
+              fontWeight: 700,
+              color: '#111827',
+              margin: '2px 0 0 0',
+            }}
+          >
+            Explore Collections
+          </h1>
+        </div>
 
-      {/* ITERATING PARENT CATEGORY GROUPS SEQUENTIALLY */}
-      <div className="w-full">
-        {parentCategories.map((parentCat) => {
-          const categoryProducts = getProductsForCategory(parentCat);
-          const subCategories = getSubcategoriesForCategory(parentCat);
-          const parentLink = `/collections/${parentCat.slug}`;
-          const isCollapsed = !!collapsedCategories[parentCat._id]; // Safety boolean check
+        {/* Lightweight Search Box */}
+        <div style={{ position: 'relative', marginBottom: '20px' }}>
+          <Search
+            style={{
+              position: 'absolute',
+              left: '14px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              width: '18px',
+              height: '18px',
+              color: '#729855',
+              pointerEvents: 'none',
+            }}
+          />
+          <input
+            type="text"
+            value={mobileSearchQuery}
+            onChange={(e) => setMobileSearchQuery(e.target.value)}
+            placeholder="Search collections or subcategories..."
+            aria-label="Search collections"
+            style={{
+              width: '100%',
+              padding: '12px 40px 12px 42px',
+              borderRadius: '14px',
+              border: '1.5px solid #E5E3D4',
+              backgroundColor: '#FFFFFF',
+              fontFamily: 'var(--font-body, "Work Sans", sans-serif)',
+              fontSize: '14px',
+              color: '#111827',
+              outline: 'none',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)',
+              boxSizing: 'border-box',
+            }}
+          />
+          {mobileSearchQuery && (
+            <button
+              type="button"
+              onClick={() => setMobileSearchQuery('')}
+              aria-label="Clear search"
+              style={{
+                position: 'absolute',
+                right: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'transparent',
+                border: 'none',
+                color: '#888',
+                padding: '4px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <X style={{ width: '16px', height: '16px' }} />
+            </button>
+          )}
+        </div>
 
-          return (
-            <section key={parentCat._id} className="cat-section">
-              <div className="cat-content-container">
+        {/* Mobile Collections Card Grid */}
+        {mobileFilteredParentCategories.length > 0 ? (
+          <div className="mobile-cat-grid">
+            {mobileFilteredParentCategories.map((parentCat) => {
+              const catProducts = getProductsForCategory(parentCat);
+              const subCategories = getSubcategoriesForCategory(parentCat);
+              const isExpanded = !!mobileExpandedCardIds[parentCat._id];
+              const parentLink = `/collections/${parentCat.slug}`;
 
-                {/* Accordion Dropdown Bar - Clickable Category Row */}
+              // Determine image path using ensureAbsolutePath & getLocalImageUrl
+              const rawImg = parentCat.image || (catProducts[0]?.images?.[0] || catProducts[0]?.image);
+              const catImg = rawImg ? getLocalImageUrl(ensureAbsolutePath(rawImg)) : null;
+
+              // Quick Preview: show first 3 subcategories when collapsed, all when expanded
+              const visibleSubCategories = isExpanded ? subCategories : subCategories.slice(0, 3);
+              const remainingCount = subCategories.length - 3;
+
+              return (
                 <div
-                  className="cat-header"
-                  onClick={() => toggleCategory(parentCat._id)}
-                  title="Click to Expand/Collapse"
+                  key={parentCat._id}
+                  style={{
+                    backgroundColor: '#FAFAF5',
+                    border: '1px solid #EDEBD8',
+                    borderRadius: '18px',
+                    padding: '16px',
+                    boxShadow: '0 4px 18px rgba(0, 0, 0, 0.04)',
+                    boxSizing: 'border-box',
+                    transition: 'box-shadow 200ms ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                  }}
                 >
-                  <div className="cat-title-container">
-                    <h2 className="cat-title">{parentCat.name}</h2>
-                    {categoryProducts.length > 0 && (
-                      <span className="cat-count-badge">
-                        {categoryProducts.length} items
-                      </span>
-                    )}
-                    <span className="cat-toggle-chevron">
-                      {isCollapsed ? '▼' : '▲'}
-                    </span>
-                  </div>
-                  <Link
-                    to={parentLink}
-                    onClick={(e) => {
-                      e.stopPropagation(); // Stops toggleCategory from executing on View All click
-                      window.scrollTo(0, 0);
-                    }}
-                    className="cat-view-all"
-                  >
-                    View All &nbsp;&rsaquo;
-                  </Link>
-                </div>
+                  {/* Card Main Row: Thumbnail + Info + Chevron */}
+                  <div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: '14px',
+                        alignItems: 'flex-start',
+                        cursor: 'pointer',
+                      }}
+                      onClick={() => toggleMobileExpand(parentCat._id)}
+                    >
+                      {/* Collection Thumbnail */}
+                      <Link
+                        to={parentLink}
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label={`Open ${parentCat.name} collection`}
+                        style={{ flexShrink: 0, textDecoration: 'none' }}
+                      >
+                        <div
+                          style={{
+                            width: '72px',
+                            height: '72px',
+                            borderRadius: '14px',
+                            overflow: 'hidden',
+                            backgroundColor: '#EEF3E8',
+                            border: '1.5px solid #D8E8C8',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          {catImg ? (
+                            <img
+                              src={catImg}
+                              alt={parentCat.name}
+                              loading="lazy"
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <Tag style={{ width: '24px', height: '24px', color: '#729855' }} />
+                          )}
+                        </div>
+                      </Link>
 
-                {/* Conditional Rendering of Nested Subcategories and Products Grid based on Accordion toggle state */}
-                {!isCollapsed && (
-                  <>
-                    {/* Category Sub-navigation (Subcategory pill buttons with up-right arrows) */}
-                    {subCategories.length > 0 && (
-                      <div className="subcat-row">
-                        {subCategories.map((sub) => (
-                          <Link
-                            key={sub._id}
-                            to={`/collections/${sub.slug}`}
-                            onClick={() => window.scrollTo(0, 0)}
-                            className="subcat-pill"
+                      {/* Info Header */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                          <h2
+                            style={{
+                              fontFamily: 'var(--font-heading, "Outfit", sans-serif)',
+                              fontSize: '17px',
+                              fontWeight: 700,
+                              color: '#111827',
+                              margin: 0,
+                              lineHeight: 1.25,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
                           >
-                            {sub.name}
-                          </Link>
-                        ))}
+                            {parentCat.name}
+                          </h2>
+                          <ChevronDown
+                            style={{
+                              width: '18px',
+                              height: '18px',
+                              color: '#729855',
+                              flexShrink: 0,
+                              transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                              transition: 'transform 250ms ease',
+                            }}
+                            aria-hidden="true"
+                          />
+                        </div>
+
+                        {/* Product count badge */}
+                        <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                          {catProducts.length > 0 && (
+                            <span
+                              style={{
+                                fontSize: '10px',
+                                fontWeight: 700,
+                                padding: '2px 8px',
+                                borderRadius: '100px',
+                                backgroundColor: 'rgba(114, 152, 85, 0.12)',
+                                color: '#4A7C35',
+                                letterSpacing: '0.02em',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {catProducts.length} Product{catProducts.length !== 1 ? 's' : ''}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Subcategories Quick Preview / Expandable Pills */}
+                    {subCategories.length > 0 && (
+                      <div
+                        style={{
+                          marginTop: '14px',
+                          paddingTop: '12px',
+                          borderTop: '1px solid #EDEBD8',
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: '6px',
+                            transition: 'max-height 300ms ease-out',
+                          }}
+                        >
+                          {visibleSubCategories.map((sub) => (
+                            <Link
+                              key={sub._id}
+                              to={`/collections/${sub.slug}`}
+                              onClick={(e) => e.stopPropagation()}
+                              style={{
+                                fontSize: '12px',
+                                fontFamily: 'var(--font-body, "Work Sans", sans-serif)',
+                                fontWeight: 500,
+                                color: '#4B5563',
+                                backgroundColor: '#FFFFFF',
+                                border: '1px solid #E5E3D4',
+                                borderRadius: '20px',
+                                padding: '5px 12px',
+                                textDecoration: 'none',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                transition: 'background-color 150ms ease, color 150ms ease',
+                              }}
+                            >
+                              <span>{sub.name}</span>
+                            </Link>
+                          ))}
+
+                          {/* "+X More" Pill Button */}
+                          {!isExpanded && remainingCount > 0 && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleMobileExpand(parentCat._id);
+                              }}
+                              style={{
+                                fontSize: '11px',
+                                fontFamily: 'var(--font-heading, "Outfit", sans-serif)',
+                                fontWeight: 700,
+                                color: '#729855',
+                                backgroundColor: 'rgba(114, 152, 85, 0.10)',
+                                border: '1px solid rgba(114, 152, 85, 0.25)',
+                                borderRadius: '20px',
+                                padding: '5px 10px',
+                                cursor: 'pointer',
+                                transition: 'background-color 150ms ease',
+                              }}
+                            >
+                              +{remainingCount} More
+                            </button>
+                          )}
+                        </div>
                       </div>
                     )}
+                  </div>
 
-                    {/* Top 4 Products Mini-Grid */}
-                    <div className="prod-grid">
-                      {categoryProducts.slice(0, 4).map((product) => {
-                        const productImg = getLocalImageUrl(
-                          ensureAbsolutePath(product.images?.[0] || product.image || '/assets/14.jpg')
-                        );
-                        return (
-                          <Link
-                            key={product._id}
-                            to={`/products/${product.slug}`}
-                            onClick={() => window.scrollTo(0, 0)}
-                            className="prod-card"
-                          >
-                            <div className="prod-img-box">
-                              <img src={productImg} alt={product.title} loading="lazy" />
-                            </div>
-                            <div className="prod-info">
-                              <h3 className="prod-title">{product.title}</h3>
-                              <p className="prod-price">
-                                Rs. {product.price.toLocaleString('en-IN')}.00 INR
-                              </p>
-                            </div>
-                          </Link>
-                        );
-                      })}
+                  {/* Card Footer CTA */}
+                  <div
+                    style={{
+                      marginTop: '14px',
+                      paddingTop: '10px',
+                      borderTop: subCategories.length === 0 ? '1px solid #EDEBD8' : undefined,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <Link
+                      to={parentLink}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        fontSize: '11px',
+                        fontFamily: 'var(--font-heading, "Outfit", sans-serif)',
+                        fontWeight: 700,
+                        color: '#729855',
+                        textDecoration: 'none',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.08em',
+                        padding: '4px 0',
+                        minHeight: '44px',
+                      }}
+                    >
+                      Explore Collection
+                      <ArrowRight style={{ width: '13px', height: '13px' }} aria-hidden="true" />
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          /* Empty search result state */
+          <div
+            style={{
+              padding: '40px 20px',
+              textAlign: 'center',
+              backgroundColor: '#FAFAF5',
+              borderRadius: '18px',
+              border: '1px dashed #EDEBD8',
+            }}
+          >
+            <p style={{ fontSize: '14px', color: '#6B7280', marginBottom: '12px' }}>
+              No collections found matching &quot;{mobileSearchQuery}&quot;
+            </p>
+            <button
+              type="button"
+              onClick={() => setMobileSearchQuery('')}
+              style={{
+                fontSize: '12px',
+                fontWeight: 700,
+                color: '#729855',
+                background: 'transparent',
+                border: '1px solid #729855',
+                borderRadius: '20px',
+                padding: '6px 16px',
+                cursor: 'pointer',
+              }}
+            >
+              Clear Search
+            </button>
+          </div>
+        )}
+      </div>
 
-                      {categoryProducts.length === 0 && (
-                        <div className="empty-showcase">
-                          No products currently assigned to this collection.
+      {/* ═══════════════════════════════════════════════════════════════════════
+          DESKTOP VIEW (≥ 768px): Original Unchanged UI
+      ═══════════════════════════════════════════════════════════════════════ */}
+      <div className="hidden md:block">
+        {/* TOP HEADER HERO BANNER */}
+        <div className="catalog-banner">
+          <h1>All Collections</h1>
+        </div>
+
+        {/* ITERATING PARENT CATEGORY GROUPS SEQUENTIALLY */}
+        <div className="w-full">
+          {parentCategories.map((parentCat) => {
+            const categoryProducts = getProductsForCategory(parentCat);
+            const subCategories = getSubcategoriesForCategory(parentCat);
+            const parentLink = `/collections/${parentCat.slug}`;
+            const isCollapsed = !!collapsedCategories[parentCat._id];
+
+            return (
+              <section key={parentCat._id} className="cat-section">
+                <div className="cat-content-container">
+
+                  {/* Accordion Dropdown Bar - Clickable Category Row */}
+                  <div
+                    className="cat-header"
+                    onClick={() => toggleCategory(parentCat._id)}
+                    title="Click to Expand/Collapse"
+                  >
+                    <div className="cat-title-container">
+                      <h2 className="cat-title">{parentCat.name}</h2>
+                      {categoryProducts.length > 0 && (
+                        <span className="cat-count-badge">
+                          {categoryProducts.length} items
+                        </span>
+                      )}
+                      <span className="cat-toggle-chevron">
+                        {isCollapsed ? '▼' : '▲'}
+                      </span>
+                    </div>
+                    <Link
+                      to={parentLink}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.scrollTo(0, 0);
+                      }}
+                      className="cat-view-all"
+                    >
+                      View All &nbsp;&rsaquo;
+                    </Link>
+                  </div>
+
+                  {/* Conditional Rendering of Nested Subcategories and Products Grid */}
+                  {!isCollapsed && (
+                    <>
+                      {/* Subcategory pill buttons */}
+                      {subCategories.length > 0 && (
+                        <div className="subcat-row">
+                          {subCategories.map((sub) => (
+                            <Link
+                              key={sub._id}
+                              to={`/collections/${sub.slug}`}
+                              onClick={() => window.scrollTo(0, 0)}
+                              className="subcat-pill"
+                            >
+                              {sub.name}
+                            </Link>
+                          ))}
                         </div>
                       )}
-                    </div>
-                  </>
-                )}
-              </div>
-            </section>
-          );
-        })}
+
+                      {/* Top 4 Products Mini-Grid */}
+                      <div className="prod-grid">
+                        {categoryProducts.slice(0, 4).map((product) => {
+                          const productImg = getLocalImageUrl(
+                            ensureAbsolutePath(product.images?.[0] || product.image || '/assets/14.jpg')
+                          );
+                          return (
+                            <Link
+                              key={product._id}
+                              to={`/products/${product.slug}`}
+                              onClick={() => window.scrollTo(0, 0)}
+                              className="prod-card"
+                            >
+                              <div className="prod-img-box">
+                                <img src={productImg} alt={product.title} loading="lazy" />
+                              </div>
+                              <div className="prod-info">
+                                <h3 className="prod-title">{product.title}</h3>
+                                <p className="prod-price">
+                                  Rs. {product.price.toLocaleString('en-IN')}.00 INR
+                                </p>
+                              </div>
+                            </Link>
+                          );
+                        })}
+
+                        {categoryProducts.length === 0 && (
+                          <div className="empty-showcase">
+                            No products currently assigned to this collection.
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </section>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

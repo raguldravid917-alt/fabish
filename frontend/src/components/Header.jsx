@@ -1,28 +1,15 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, Search, Heart, ShoppingBag, User as UserIcon, Trash2, ArrowRight, Eye, Home as HomeIcon } from 'lucide-react';
+import { Menu, X, Search, Heart, ShoppingBag, User as UserIcon, Trash2, ArrowRight, Eye, Home as HomeIcon, ChevronDown } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
 import { WishlistContext } from '../context/WishlistContext';
 import { useToast } from '../context/ToastContext';
+import { useCategories } from '../context/CategoryContext';
 import { getLocalImageUrl } from '../utils/imageMapper';
 import { api } from '../api/client'; // Added API import for fetching real products
 import { productService } from '../api/productService';
-
-const NavLink = ({ to, label, active }) => (
-  <Link
-    to={to}
-    className="text-[16px] font-heading font-normal transition-colors py-[5px] px-[16px] h-full flex items-center"
-    style={{
-      color: active ? '#729855' : '#000000',
-      textDecoration: 'none',
-    }}
-    onMouseEnter={e => e.currentTarget.style.color = '#729855'}
-    onMouseLeave={e => e.currentTarget.style.color = active ? '#729855' : '#000000'}
-  >
-    {label}
-  </Link>
-);
+import Navigation from './navigation/Navigation';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -31,8 +18,10 @@ const Header = () => {
   const { cartItems, itemsCount, addToCart, removeFromCart, updateQty, totalPrice } = useContext(CartContext);
   const { wishlistItems, toggleWishlist, removeFromWishlist, isInWishlist } = useContext(WishlistContext);
   const { showToast } = useToast();
+  const { categories, loading: categoriesLoading } = useCategories();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCatalogAccordionOpen, setIsCatalogAccordionOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -196,175 +185,14 @@ const Header = () => {
           </div>
 
           {/* Center: Desktop Nav */}
-          <nav className="hidden lg:flex items-center h-full">
-            <NavLink to="/" label="Home" active={currentPath === '/'} />
-            <NavLink to="/collections" label="Catalog" active={currentPath === '/collections'} />
-
-            {/* Skin Care Mega Menu Dropdown */}
-            <div className="group h-full flex items-center">
-              <Link to="/collections/all" className="flex items-center gap-1.5 text-[16px] font-heading font-normal py-[5px] px-[16px] text-black group-hover:text-[#729855] transition-colors h-full" style={{ textDecoration: 'none' }}>
-                Skin Care
-                <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-300 group-hover:-scale-y-100 mt-0.5"><path d="M1 1L5 5L9 1" /></svg>
-              </Link>
-
-              <div className="absolute left-1/2 -translate-x-1/2 w-[100vw] bg-[#F9F9EB] shadow-[0_20px_30px_-10px_rgba(0,0,0,0.1)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 border-t border-[#eae8d8] cursor-default pb-20 pt-12 top-[66px]">
-                <div className="max-w-[1440px] w-full mx-auto px-6 lg:px-12 flex justify-between gap-6">
-
-                  {/* Column 1: Cleansers */}
-                  <div className="text-center w-[22%]">
-                    <h4 className="font-heading text-[13px] font-bold uppercase tracking-[0.1em] text-[#111] mb-8">Cleansers</h4>
-                    <ul className="space-y-4 flex flex-col items-center">
-                      <li><Link to="/collections/cleansers" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Creamy Foam Cleanser</Link></li>
-                      <li><Link to="/collections/cleansers" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Erotic Ayruvedic Lotion</Link></li>
-                      <li><Link to="/collections/cleansers" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Sensitive Skin Gel Face Wash</Link></li>
-                      <li><Link to="/collections/cleansers" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Oil Skin Cleaning Lotion</Link></li>
-                      <li><Link to="/collections/cleansers" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Anit Polution Face Cream</Link></li>
-                      <li><Link to="/collections/cleansers" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Nourish Honey Gel Face Cream</Link></li>
-                      <li><Link to="/collections/cleansers" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Dry Skin Glow Face Cleanser</Link></li>
-                      <li><Link to="/collections/cleansers" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Skin Hydrating Foaming Cleanser</Link></li>
-                      <li><Link to="/collections/cleansers" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Gentle Skin Face Cleanser</Link></li>
-                      <li><Link to="/collections/cleansers" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Alove Oil Dry Skin Cleanser</Link></li>
-                      <li><Link to="/collections/cleansers" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Oil Free Vitamin Face Cream</Link></li>
-                    </ul>
-                  </div>
-
-                  {/* Column 2: Moisturizers */}
-                  <div className="text-center w-[22%]">
-                    <h4 className="font-heading text-[13px] font-bold uppercase tracking-[0.1em] text-[#111] mb-8">Moisturizers</h4>
-                    <ul className="space-y-4 flex flex-col items-center">
-                      <li><Link to="/collections/moisturizers" className="inline-block font-medium text-[14px] text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Aloe Vera Freshness Cream</Link></li>
-                      <li><Link to="/collections/moisturizers" className="inline-block font-medium text-[14px] text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Azalea Fields Soothing Cream</Link></li>
-                      <li><Link to="/collections/moisturizers" className="inline-block font-medium text-[14px] text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Hydro Boost Moisturizing Cream</Link></li>
-                      <li><Link to="/collections/moisturizers" className="inline-block font-medium text-[14px] text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Oil Free Vitamin Face Cream</Link></li>
-                      <li><Link to="/collections/moisturizers" className="inline-block font-medium text-[14px] text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Daily Use Vitamin C Cream</Link></li>
-                      <li><Link to="/collections/moisturizers" className="inline-block font-medium text-[14px] text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Honey Drop Moisturizing Lotion</Link></li>
-                      <li><Link to="/collections/moisturizers" className="inline-block font-medium text-[14px] text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Oil Absorption Moisturizing Cream</Link></li>
-                      <li><Link to="/collections/moisturizers" className="inline-block font-medium text-[14px] text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Strawberry Flavour Face Care Gel</Link></li>
-                      <li><Link to="/collections/moisturizers" className="inline-block font-medium text-[14px] text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Multi Vitamin Daily Use</Link></li>
-                      <li><Link to="/collections/moisturizers" className="inline-block font-medium text-[14px] text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Birch Butter Silkiness Cream</Link></li>
-                      <li><Link to="/collections/moisturizers" className="inline-block font-medium text-[14px] text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Fragrance Free Multi Vitamin Cream</Link></li>
-                    </ul>
-                  </div>
-
-                  {/* Column 3: Scerums */}
-                  <div className="text-center w-[22%]">
-                    <h4 className="font-heading text-[13px] font-bold uppercase tracking-[0.1em] text-[#111] mb-8">Scerums</h4>
-                    <ul className="space-y-4 flex flex-col items-center">
-                      <li><Link to="/collections/scerums" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Skin Naturals BB Cream VitaminC</Link></li>
-                      <li><Link to="/collections/scerums" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Vitamin C Glow Skin Serum</Link></li>
-                      <li><Link to="/collections/scerums" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Glow Face Vitamin E Serum</Link></li>
-                      <li><Link to="/collections/scerums" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Skin Brighten Green Tea Serum</Link></li>
-                      <li><Link to="/collections/scerums" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Anti Aging Face Serum</Link></li>
-                      <li><Link to="/collections/scerums" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Skin Brightening Fruit Serum</Link></li>
-                      <li><Link to="/collections/scerums" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Ance Fighting Cucumber Serum</Link></li>
-                      <li><Link to="/collections/scerums" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Dead Skin Cell Removal Serum</Link></li>
-                      <li><Link to="/collections/scerums" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Skin Hydrate Face Serum</Link></li>
-                      <li><Link to="/collections/scerums" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Vitamin Repair Serum</Link></li>
-                      <li><Link to="/collections/scerums" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Natural Glow Serum</Link></li>
-                      <li><Link to="/collections/scerums" className="inline-block text-[14px] font-medium text-[#222] hover:text-[#729855] hover:translate-x-1.5 font-body transition-all duration-300">Hydrating Night Serum</Link></li>
-                    </ul>
-                  </div>
-
-                  {/* Column 4: Best Sellers (DYNAMIC REAL PRODUCTS FETCHED FROM API) */}
-                  <div className="w-[32%] pl-6">
-                    <div className="flex items-center justify-between mb-8">
-                      <h4 className="font-heading text-[13px] font-bold uppercase tracking-[0.1em] text-[#111]">Best Sellers</h4>
-                      <Link to="/collections/all"><ArrowRight className="w-5 h-5 text-[#111] hover:text-[#729855] transition-colors" /></Link>
-                    </div>
-                    <div className="grid grid-cols-2 gap-6">
-
-                      {bestSellers.length > 0 ? (
-                        bestSellers.map((product, idx) => {
-                          if (!product) return null;
-                          // Use dynamic image or fallback
-                          const prodImg = product.images && product.images[0] ? getLocalImageUrl(product.images[0]) : (idx === 0 ? '/assets/1.jpg' : '/assets/3.jpg');
-
-                          return (
-                            <Link key={product._id} to={`/products/${product.slug}`} className="bg-white group/item cursor-pointer text-center flex flex-col h-full shadow-sm hover:shadow-lg transition-shadow">
-                              <div className="relative aspect-square bg-[#f0f2eb] flex items-center justify-center p-0 overflow-hidden">
-                                <img src={prodImg} alt={product.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-105" onError={(e) => { e.target.src = '/assets/14.jpg'; }} />
-
-                                {/* Hover Actions - Icons (Top Right) */}
-                                <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 translate-x-4 group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all duration-300">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      navigate(`/products/${product.slug}`);
-                                    }}
-                                    className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-black hover:text-white transition-colors text-black"
-                                    aria-label="Quick View"
-                                  >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={async (e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      await toggleWishlist(product);
-                                    }}
-                                    className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-colors ${isInWishlist(product._id) ? 'bg-black text-white' : 'bg-white text-black hover:bg-black hover:text-white'}`}
-                                    aria-label={isInWishlist(product._id) ? 'Remove from Wishlist' : 'Add to Wishlist'}
-                                  >
-                                    <Heart className={`w-4 h-4 ${isInWishlist(product._id) ? 'fill-current' : ''}`} />
-                                  </button>
-                                </div>
-
-                                {/* Hover Action - Add to Cart Button */}
-                                <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 translate-y-4 group-hover/item:opacity-100 group-hover/item:translate-y-0 transition-all duration-300">
-                                  <button
-                                    type="button"
-                                    onClick={async (e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      const success = await addToCart(product, 1);
-                                      if (success) {
-                                        showToast(`Added ${product.title} to cart!`, 'success');
-                                      } else {
-                                        showToast('Failed to add product to cart', 'error');
-                                      }
-                                    }}
-                                    className="w-[78%] mx-auto py-3 bg-[#2f3e10] hover:bg-black text-white text-[11px] font-bold uppercase tracking-[0.15em] transition-colors"
-                                  >
-                                    Add Cart
-                                  </button>
-                                </div>
-                              </div>
-                              <div className="p-6 flex flex-col flex-grow justify-between">
-                                <h5 className="text-[15px] font-heading font-bold text-[#111] leading-[1.4] mb-3 group-hover/item:text-[#729855] transition-colors">{product.title}</h5>
-                                <span className="text-[13px] text-[#555] font-body">Rs. {Number(product.price || 0).toLocaleString('en-IN')}.00 INR</span>
-                              </div>
-                            </Link>
-                          );
-                        })
-                      ) : (
-                        <div className="col-span-2 text-center text-[13px] text-gray-500 py-10 font-body">Loading best sellers...</div>
-                      )}
-
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <NavLink to="/pages/about-us" label="About Us" active={currentPath === '/pages/about-us'} />
-
-            {/* Pages Dropdown (Simple Menu) */}
-            <div className="group relative h-full flex items-center">
-              <button className="flex items-center gap-1.5 text-[16px] font-heading font-normal py-[5px] px-[16px] text-black group-hover:text-[#729855] transition-colors h-full bg-transparent border-none cursor-pointer" style={{ textDecoration: 'none' }}>
-                Pages
-                <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-300 group-hover:-scale-y-100 mt-0.5"><path d="M1 1L5 5L9 1" /></svg>
-              </button>
-
-              <div className="absolute top-[66px] left-1/2 -translate-x-1/2 w-[80px] bg-[#F9F9EB] shadow-[0_10px_20px_-5px_rgba(0,0,0,0.1)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 py-4 border-t border-[#eae8d8]">
-                <Link to="/blogs/news" className="block py-2.5 px-4 text-[15px] text-[#222] hover:text-[#729855] text-center font-body transition-colors">Blog</Link>
-                <Link to="/pages/faq" className="block py-2.5 px-4 text-[15px] text-[#222] hover:text-[#729855] text-center font-body transition-colors">Faq</Link>
-                <Link to="/pages/contact" className="block py-2.5 px-4 text-[15px] text-[#222] hover:text-[#729855] text-center font-body transition-colors">Contact</Link>
-              </div>
-            </div>
-          </nav>
+          <Navigation
+            bestSellers={bestSellers}
+            toggleWishlist={toggleWishlist}
+            addToCart={addToCart}
+            isInWishlist={isInWishlist}
+            showToast={showToast}
+            navigate={navigate}
+          />
 
           {/* Right: Icons (Hidden on mobile, only visible on Desktop) */}
           <div className="flex items-center h-full gap-2 min-[375px]:gap-3.5 sm:gap-[20px]" style={{ color: '#000000' }}>
@@ -796,12 +624,67 @@ const Header = () => {
 
             <div className="flex flex-col gap-5 font-heading text-base font-semibold uppercase tracking-wider text-brand-charcoal">
               <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-green py-1">Home</Link>
-              <Link to="/collections" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-green py-1">Catalog</Link>
-              <div className="pl-4 flex flex-col gap-3 normal-case text-brand-muted text-sm -mt-2">
-                <Link to="/collections/moisturizer" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-charcoal">Moisturizers</Link>
-                <Link to="/collections/creams" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-charcoal">Creams</Link>
-                <Link to="/collections/lotions" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-charcoal">Lotions</Link>
-                <Link to="/collections/lipstick" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-charcoal">Lipsticks</Link>
+              
+              {/* Expandable Catalog Accordion for Mobile */}
+              <div className="flex flex-col border-b border-gray-200/80 pb-2">
+                <div className="flex items-center justify-between py-1">
+                  <Link
+                    to="/collections"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="hover:text-[#729855] text-[#111]"
+                  >
+                    Catalog
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsCatalogAccordionOpen(!isCatalogAccordionOpen);
+                    }}
+                    className="p-1 hover:text-[#729855] text-gray-500 bg-transparent border-none cursor-pointer"
+                    aria-label="Toggle Catalog Categories"
+                  >
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isCatalogAccordionOpen ? 'rotate-180 text-[#729855]' : ''}`} />
+                  </button>
+                </div>
+
+                {isCatalogAccordionOpen && (
+                  <div className="pl-3 pr-1 py-2 flex flex-col gap-1.5 bg-[#F9F9EB]/80 rounded-lg my-1 normal-case text-sm">
+                    <Link
+                      to="/collections/all"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="text-xs font-bold uppercase text-[#729855] hover:underline py-1 flex items-center justify-between"
+                    >
+                      <span>All Collections</span>
+                      <span>&rsaquo;</span>
+                    </Link>
+
+                    {categoriesLoading ? (
+                      <div className="text-xs text-gray-500 py-2">Loading categories...</div>
+                    ) : categories && categories.length > 0 ? (
+                      categories.map((cat) => {
+                        const catSlug = cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                        return (
+                          <Link
+                            key={cat._id || catSlug}
+                            to={`/collections/${catSlug}`}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="text-[13px] font-medium text-gray-800 hover:text-[#729855] py-1.5 px-2 rounded hover:bg-[#729855]/10 flex items-center justify-between transition-colors"
+                          >
+                            <span>{cat.name}</span>
+                            {typeof cat.productCount === 'number' && (
+                              <span className="text-[10px] font-semibold bg-[#eae8d8] text-[#555] px-2 py-0.5 rounded-full">
+                                {cat.productCount}
+                              </span>
+                            )}
+                          </Link>
+                        );
+                      })
+                    ) : (
+                      <div className="text-xs text-gray-500 py-1">No categories available</div>
+                    )}
+                  </div>
+                )}
               </div>
               <Link to="/pages/about-us" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-green py-1">About Us</Link>
               <Link to="/pages/contact" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-green py-1">Contact</Link>
