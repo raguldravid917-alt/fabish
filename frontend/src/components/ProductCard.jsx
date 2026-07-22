@@ -1,6 +1,6 @@
-import { useContext, useState, useEffect, useMemo, useRef, useId } from 'react';
+import { useContext, useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Eye } from 'lucide-react';
+import { Heart, Eye, Star, ShoppingBag } from 'lucide-react';
 import { CartContext } from '../context/CartContext';
 import { WishlistContext } from '../context/WishlistContext';
 import { getLocalImageUrl } from '../utils/imageMapper';
@@ -35,121 +35,121 @@ const ProductCard = ({ product, onQuickView }) => {
       ref={cardRef}
       data-card-id={cardId}
       onClickCapture={handleCardInteraction}
-      className="group relative bg-[#fcfcfa] border border-[#eae8d8] rounded-none p-3 transition-all duration-300 flex flex-col h-full hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] select-none"
+      className="group relative bg-white/90 border border-[#e8e6d9]/80 rounded-2xl p-3 transition-all duration-500 flex flex-col h-full hover:shadow-xl hover:-translate-y-1 select-none overflow-hidden glass-card"
     >
       {/* Product Badges (Top Left) */}
       <div className="absolute top-4 left-4 z-10 flex flex-col gap-1.5 pointer-events-none">
         {isSoldOut && (
-          <span className="bg-black text-white text-[9px] font-heading font-bold uppercase tracking-widest px-2 py-0.5">
+          <span className="bg-black/80 backdrop-blur-md text-white text-[9px] font-heading font-bold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-sm">
             Sold Out
           </span>
         )}
         {!isSoldOut && discount > 0 && (
-          <span className="bg-[#729855] text-white text-[9px] font-heading font-bold uppercase tracking-widest px-2 py-0.5">
+          <span className="bg-[#3a4d23] backdrop-blur-md text-white text-[9px] font-heading font-bold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-sm">
             {discount}% OFF
           </span>
         )}
       </div>
 
-      {/* Wishlist Button (Top Right) */}
-      <button
-        onClick={() => toggleWishlist(product)}
-        className={`absolute top-4 right-4 z-10 w-9 h-9 rounded-full flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all duration-[250ms] ease-in-out active:scale-90 cursor-pointer border-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#729855] focus-visible:ring-offset-2 ${
-          isWishlisted 
-            ? 'bg-black text-white' 
-            : 'bg-white text-black hover:bg-[#729855] hover:text-white'
-        } ${
-          useMobileInteraction
-            ? (isActiveMobile
-                ? 'opacity-100 pointer-events-auto translate-y-0'
-                : 'opacity-0 pointer-events-none translate-y-[10px]')
-            : 'opacity-0 pointer-events-none translate-y-[10px] md:opacity-0 md:pointer-events-none md:translate-y-[6px] md:group-hover:opacity-100 md:group-hover:pointer-events-auto md:group-hover:translate-y-0 md:group-focus-within:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:translate-y-0'
-        }`}
-        title={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
-        aria-label={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
-      >
-        <Heart className="w-4 h-4" strokeWidth={1.5} fill={isWishlisted ? 'currentColor' : 'none'} />
-      </button>
+      {/* Action Drawer Overlay (Top Right) */}
+      <div className={useMobileInteraction
+        ? `absolute top-4 right-4 z-20 flex flex-col gap-2 transition-all duration-300 ${
+            isActiveMobile
+              ? 'opacity-100 pointer-events-auto translate-y-0'
+              : 'opacity-0 pointer-events-none translate-y-2'
+          }`
+        : "absolute top-4 right-4 z-20 flex flex-col gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:translate-x-2 lg:group-hover:translate-x-0 transition-all duration-300"
+      }>
+        {/* Wishlist Button */}
+        <button
+          onClick={() => toggleWishlist(product)}
+          className={`w-9 h-9 rounded-full flex items-center justify-center shadow-md backdrop-blur-md transition-all duration-300 border border-white/50 cursor-pointer hover:scale-110 ${
+            isWishlisted 
+              ? 'bg-rose-500 text-white' 
+              : 'bg-white/90 text-[#1c2415] hover:bg-[#3a4d23] hover:text-white'
+          }`}
+          title={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
+          aria-label={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
+        >
+          <Heart className="w-4 h-4" strokeWidth={1.8} fill={isWishlisted ? 'currentColor' : 'none'} />
+        </button>
 
-      {/* View Button — hidden by default, slides and fades in on hover of the entire card */}
-      <button
-        onClick={() => {
-          if (onQuickView) onQuickView(product);
-          else window.location.href = `/products/${product.slug}`;
-        }}
-        className={`absolute top-16 right-4 z-10 w-9 h-9 rounded-full bg-white text-black hover:bg-[#2f3e10] hover:text-white active:scale-90 flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all duration-[250ms] ease-in-out cursor-pointer border-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#729855] focus-visible:ring-offset-2 ${
-          useMobileInteraction
-            ? (isActiveMobile
-                ? 'opacity-100 pointer-events-auto translate-y-0'
-                : 'opacity-0 pointer-events-none translate-y-[10px]')
-            : 'opacity-0 pointer-events-none translate-y-[10px] md:opacity-0 md:pointer-events-none md:translate-y-[6px] md:group-hover:opacity-100 md:group-hover:pointer-events-auto md:group-hover:translate-y-0 md:group-focus-within:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:translate-y-0'
-        }`}
-        title="Quick View"
-        aria-label="Quick View"
-      >
-        <Eye className="w-4 h-4" strokeWidth={1.5} />
-      </button>
+        {/* Quick View Button */}
+        <button
+          onClick={() => {
+            if (onQuickView) onQuickView(product);
+            else window.location.href = `/products/${product.slug}`;
+          }}
+          className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-md text-[#1c2415] hover:bg-[#3a4d23] hover:text-white flex items-center justify-center shadow-md transition-all duration-300 border border-white/50 cursor-pointer hover:scale-110"
+          title="Quick View"
+          aria-label="Quick View"
+        >
+          <Eye className="w-4 h-4" strokeWidth={1.8} />
+        </button>
+      </div>
 
-      {/* Image Gallery Container with fixed aspect ratio */}
-      <div className="relative overflow-hidden aspect-[4/5] bg-[#f6f5ea] mb-4 flex items-center justify-center">
+      {/* Image Container */}
+      <div className="relative overflow-hidden aspect-[4/5] bg-[#f7f6f0] rounded-xl mb-3 flex items-center justify-center">
         <Link to={`/products/${product.slug}`} className="block w-full h-full">
           <img
             src={mainImage}
             alt={product.title}
-            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 group-hover:opacity-0"
+            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
           />
-          <img
-            src={hoverImage}
-            alt={product.title}
-            className="absolute top-0 left-0 w-full h-full object-cover transition-transform duration-700 ease-out scale-100 opacity-0 group-hover:scale-105 group-hover:opacity-100"
-          />
+          {hoverImage && hoverImage !== mainImage && (
+            <img
+              src={hoverImage}
+              alt={product.title}
+              className="absolute top-0 left-0 w-full h-full object-cover transition-all duration-700 ease-out opacity-0 group-hover:opacity-100 group-hover:scale-105"
+            />
+          )}
         </Link>
       </div>
 
       {/* Product Details Section */}
-      <div className="flex flex-col flex-grow text-center">
-        {/* Title */}
-        <h3 className="font-heading font-medium text-xs sm:text-sm leading-tight text-black hover:text-[#729855] mb-2 line-clamp-2 min-h-[32px] sm:min-h-[40px] overflow-hidden transition-colors">
-          <Link to={`/products/${product.slug}`} className="block">{product.title}</Link>
-        </h3>
-        
-        {/* Prices */}
-        <div className="flex flex-col min-[380px]:flex-row items-center justify-center gap-1 sm:gap-2 mb-3 mt-auto font-body text-center">
-          <span className="text-xs sm:text-sm font-bold text-black whitespace-nowrap">
-            Rs. {product.price.toLocaleString('en-IN')}.00
+      <div className="flex flex-col flex-grow text-center justify-between p-1">
+        <div>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[#729855] block mb-1 font-heading">
+            {typeof product.category === 'object' ? product.category?.name : (product.category || 'Organic Skincare')}
           </span>
-          {product.comparePrice > product.price && (
-            <span className="text-[10px] sm:text-xs line-through text-gray-400 whitespace-nowrap">
-              Rs. {product.comparePrice.toLocaleString('en-IN')}.00
-            </span>
-          )}
+          <h3 className="font-heading font-medium text-sm leading-snug text-[#1c2415] hover:text-[#729855] mb-2 line-clamp-2 min-h-[36px] transition-colors">
+            <Link to={`/products/${product.slug}`} className="block">{product.title}</Link>
+          </h3>
         </div>
 
-        {/* Add to Cart Button */}
-        <div className="mt-auto relative overflow-hidden">
+        {/* Rating & Prices */}
+        <div className="mt-auto">
+          <div className="flex items-center justify-center gap-1 mb-2">
+            {[...Array(5)].map((_, i) => (
+              <Star key={i} size={12} className="fill-amber-400 text-amber-400" />
+            ))}
+            <span className="text-[10px] text-gray-500 font-body ml-1">(4.9)</span>
+          </div>
+
+          <div className="flex items-center justify-center gap-2 mb-3 font-body">
+            <span className="text-sm font-bold text-[#1c2415]">
+              Rs. {product.price.toLocaleString('en-IN')}.00
+            </span>
+            {product.comparePrice > product.price && (
+              <span className="text-xs line-through text-gray-400">
+                Rs. {product.comparePrice.toLocaleString('en-IN')}.00
+              </span>
+            )}
+          </div>
+
+          {/* Add to Cart Button */}
           {!isSoldOut ? (
             <button
               onClick={() => addToCart(product, 1)}
-              className={`w-full py-2.5 sm:py-3 bg-[#2f3e10] hover:bg-[#729855] text-white text-center font-heading text-[10px] sm:text-xs font-bold tracking-widest uppercase cursor-pointer border-none rounded-none min-h-[40px] flex items-center justify-center transition-all duration-[250ms] ease-in-out ${
-                useMobileInteraction
-                  ? (isActiveMobile
-                      ? 'opacity-100 translate-y-0 pointer-events-auto'
-                      : 'opacity-0 pointer-events-none translate-y-[10px]')
-                  : 'opacity-0 md:opacity-100 translate-y-[10px] md:translate-y-0 pointer-events-none md:pointer-events-auto'
-              }`}
+              className="w-full py-2.5 bg-[#3a4d23] hover:bg-[#1c2415] text-white text-center font-heading text-[10px] font-bold tracking-[0.18em] uppercase rounded-xl cursor-pointer border-none flex items-center justify-center gap-2 shadow-md transition-all duration-300 hover:scale-[1.02]"
             >
-              ADD TO CART
+              <ShoppingBag size={13} />
+              <span>ADD TO CART</span>
             </button>
           ) : (
             <button
               disabled
-              className={`w-full py-2.5 sm:py-3 bg-gray-400 text-white text-center font-heading text-[10px] sm:text-xs font-bold tracking-widest uppercase cursor-not-allowed border-none rounded-none min-h-[40px] flex items-center justify-center transition-all duration-[250ms] ease-in-out ${
-                useMobileInteraction
-                  ? (isActiveMobile
-                      ? 'opacity-100 translate-y-0 pointer-events-auto'
-                      : 'opacity-0 pointer-events-none translate-y-[10px]')
-                  : 'opacity-0 md:opacity-100 translate-y-[10px] md:translate-y-0 pointer-events-none md:pointer-events-auto'
-              }`}
+              className="w-full py-2.5 bg-gray-400 text-white text-center font-heading text-[10px] font-bold tracking-[0.18em] uppercase rounded-xl cursor-not-allowed border-none flex items-center justify-center"
             >
               SOLD OUT
             </button>
@@ -161,3 +161,4 @@ const ProductCard = ({ product, onQuickView }) => {
 };
 
 export default ProductCard;
+

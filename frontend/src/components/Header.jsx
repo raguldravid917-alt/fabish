@@ -35,6 +35,21 @@ const Header = () => {
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const accountDropdownRef = useRef(null);
 
+  // Scroll tracking state for 2026 sticky glass header
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 20) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   // FETCH REAL PRODUCTS FROM DATABASE SO CART & WISHLIST WORKS PROPERLY
   useEffect(() => {
     const fetchBestSellers = async () => {
@@ -156,30 +171,34 @@ const Header = () => {
 
   return (
     <>
-      <header className="top-0 w-full z-50 bg-[#F9F9EB] border-b border-[#eae8d8]/60 shadow-[0_2px_12px_rgba(0,0,0,0.03)] backdrop-blur-md">
+      <header
+        className={`sticky top-0 w-full z-50 transition-all duration-300 ${
+          isScrolled
+            ? 'bg-[#faf9f5]/90 backdrop-blur-xl border-b border-[#e8e6d9] shadow-md py-1'
+            : 'bg-[#faf9f5]/80 backdrop-blur-md border-b border-[#e8e6d9]/60 shadow-xs py-2'
+        }`}
+      >
         <div
-          className="mx-auto flex items-center justify-between"
+          className="mx-auto flex items-center justify-between transition-all duration-300 px-4 sm:px-8"
           style={{
-            maxWidth: '1280px',
-            paddingLeft: '2%',
-            paddingRight: '2%',
-            height: '66px',
+            maxWidth: '1360px',
+            height: isScrolled ? '68px' : '78px',
           }}
         >
           {/* Left: Logo and Mobile Menu Button */}
-          <div className="flex items-center gap-1 sm:gap-2 h-full">
+          <div className="flex items-center gap-2 sm:gap-4 h-full">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden text-black hover:text-[#729855] w-11 h-11 flex items-center justify-center bg-transparent border-none cursor-pointer"
+              className="lg:hidden w-10 h-10 rounded-full flex items-center justify-center text-[#1c2415] hover:bg-[#eef3e8] hover:text-[#3a4d23] transition-all bg-transparent border-none cursor-pointer"
               aria-label="Open menu"
             >
               {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
-            <Link to="/" className="flex items-center select-none h-full">
+            <Link to="/" className="flex items-center select-none h-full group">
               <img
                 src="/assets/homepage/Fabish_Logo_Final_a68866dc-7573-4072-bd3f-3e356eca427e.svg"
                 alt="Fabish"
-                className="w-[100px] min-[360px]:w-[120px] sm:w-[140px] h-auto"
+                className="w-[110px] min-[360px]:w-[125px] sm:w-[145px] h-auto transition-transform duration-300 group-hover:scale-[1.02]"
               />
             </Link>
           </div>
@@ -194,19 +213,34 @@ const Header = () => {
             navigate={navigate}
           />
 
-          {/* Right: Icons (Hidden on mobile, only visible on Desktop) */}
-          <div className="flex items-center h-full gap-2 min-[375px]:gap-3.5 sm:gap-[20px]" style={{ color: '#000000' }}>
+          {/* Right: Inline Search + Actions */}
+          <div className="flex items-center h-full gap-2 sm:gap-3 text-[#1c2415]">
 
-            {/* Search Icon (Visible on both Mobile and Desktop) */}
+            {/* Desktop Inline Search Box */}
+            <form
+              onSubmit={handleSearchSubmit}
+              className="hidden xl:flex items-center gap-2 bg-white/80 border border-[#e8e6d9] focus-within:border-[#3a4d23] focus-within:ring-2 focus-within:ring-[#3a4d23]/20 rounded-full px-3.5 py-1.5 shadow-xs transition-all w-64 hover:border-[#3a4d23]/40"
+            >
+              <Search className="w-4 h-4 text-gray-400 flex-shrink-0" strokeWidth={1.8} />
+              <input
+                type="text"
+                placeholder="Search products, categories..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-transparent text-xs font-body text-[#1c2415] placeholder-gray-400 focus:outline-none"
+              />
+            </form>
+
+            {/* Search Icon Trigger (Mobile & Laptop) */}
             <button
               onClick={() => setIsSearchOpen(true)}
-              className="w-11 h-11 flex items-center justify-center hover:text-[#729855] transition-colors bg-transparent border-none cursor-pointer"
+              className="xl:hidden w-10 h-10 rounded-full flex items-center justify-center text-[#1c2415] hover:bg-[#eef3e8] hover:text-[#3a4d23] hover:scale-105 transition-all bg-transparent border-none cursor-pointer"
               aria-label="Search"
             >
-              <Search className="w-[20px] h-[20px]" strokeWidth={1.5} />
+              <Search className="w-5 h-5" strokeWidth={1.6} />
             </button>
 
-            {/* Wishlist Icon (Hidden on Mobile) */}
+            {/* Wishlist Icon */}
             <button
               onClick={() => {
                 if (!user) {
@@ -215,68 +249,62 @@ const Header = () => {
                   setIsWishlistOpen(true);
                 }
               }}
-              className="hidden lg:flex w-11 h-11 items-center justify-center hover:text-[#729855] transition-colors bg-transparent border-none cursor-pointer"
+              className="hidden lg:flex w-10 h-10 rounded-full items-center justify-center text-[#1c2415] hover:bg-[#eef3e8] hover:text-[#3a4d23] hover:scale-105 transition-all bg-transparent border-none cursor-pointer relative"
               aria-label="Wishlist"
             >
-              <div className="relative">
-                <Heart className="w-[20px] h-[20px]" strokeWidth={1.5} />
-                {wishlistItems.length > 0 && (
-                  <span
-                    className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#729855] text-white flex items-center justify-center"
-                    style={{ fontSize: '9px', fontWeight: 700 }}
-                  >
-                    {wishlistItems.length}
-                  </span>
-                )}
-              </div>
+              <Heart className="w-5 h-5" strokeWidth={1.6} />
+              {wishlistItems.length > 0 && (
+                <span
+                  className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white font-heading font-bold flex items-center justify-center text-[10px] shadow-sm animate-pulse-subtle"
+                >
+                  {wishlistItems.length}
+                </span>
+              )}
             </button>
 
-            {/* Cart Icon (Hidden on Mobile) */}
+            {/* Cart Icon */}
             <button
               onClick={() => setIsCartOpen(true)}
-              className="hidden lg:flex w-11 h-11 items-center justify-center hover:text-[#729855] transition-colors animate-none bg-transparent border-none cursor-pointer"
+              className="hidden lg:flex w-10 h-10 rounded-full items-center justify-center text-[#1c2415] hover:bg-[#eef3e8] hover:text-[#3a4d23] hover:scale-105 transition-all bg-transparent border-none cursor-pointer relative"
               aria-label="Cart"
             >
-              <div className="relative">
-                <ShoppingBag className="w-[20px] h-[20px]" strokeWidth={1.5} />
-                {itemsCount > 0 && (
-                  <span
-                    className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#729855] text-white flex items-center justify-center"
-                    style={{ fontSize: '9px', fontWeight: 700 }}
-                  >
-                    {itemsCount}
-                  </span>
-                )}
-              </div>
+              <ShoppingBag className="w-5 h-5" strokeWidth={1.6} />
+              {itemsCount > 0 && (
+                <span
+                  className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#3a4d23] text-white font-heading font-bold flex items-center justify-center text-[10px] shadow-sm"
+                >
+                  {itemsCount}
+                </span>
+              )}
             </button>
 
-            {/* Account Icon (Hidden on Mobile) */}
+            {/* Account Icon / Avatar */}
             <div className="relative h-full hidden lg:flex items-center" ref={accountDropdownRef}>
               <button
-                onClick={() => {
-                  setIsAccountOpen(!isAccountOpen);
-                }}
-                className="w-11 h-11 flex items-center justify-center hover:text-[#729855] transition-colors text-black bg-transparent border-none cursor-pointer"
+                onClick={() => setIsAccountOpen(!isAccountOpen)}
+                className="w-10 h-10 rounded-full flex items-center justify-center text-[#1c2415] hover:bg-[#eef3e8] hover:text-[#3a4d23] hover:scale-105 transition-all bg-transparent border-none cursor-pointer relative"
                 aria-label="Account"
               >
                 {user?.avatar ? (
-                  <img
-                    src={user.avatar.startsWith('http') ? user.avatar : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${user.avatar}`}
-                    alt={user.name}
-                    className="w-6 h-6 rounded-full object-cover border border-brand-border"
-                  />
+                  <div className="relative">
+                    <img
+                      src={user.avatar.startsWith('http') ? user.avatar : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${user.avatar}`}
+                      alt={user.name}
+                      className="w-7 h-7 rounded-full object-cover ring-2 ring-[#3a4d23]/40"
+                    />
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white absolute bottom-0 right-0" />
+                  </div>
                 ) : (
-                  <UserIcon className="w-[20px] h-[20px]" strokeWidth={1.5} />
+                  <UserIcon className="w-5 h-5" strokeWidth={1.6} />
                 )}
               </button>
 
               {/* Account Dropdown */}
               <div
-                className={`absolute right-0 top-[50px] w-48 bg-[#F9F9EB] border border-[#eae8d8] shadow-[0_10px_30px_rgba(0,0,0,0.06)] py-2 z-50 transition-all duration-300 transform origin-top-right ${isAccountOpen
+                className={`absolute right-0 top-[55px] w-52 bg-white/95 backdrop-blur-xl border border-[#e8e6d9] rounded-2xl shadow-xl py-2 z-50 transition-all duration-300 transform origin-top-right ${isAccountOpen
                   ? 'opacity-100 scale-100 translate-y-0'
                   : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'
                   }`}
-                style={{ fontFamily: '"Outfit", sans-serif' }}
               >
                 {!user ? (
                   <>
@@ -563,77 +591,118 @@ const Header = () => {
             <span className="text-[11px] font-heading">{user ? 'Account' : 'Login'}</span>
           </button>
 
-          {/* Mobile Account Dropdown Panel (Opens Upwards) */}
+          {/* Mobile Account Dropdown Panel (Opens Upwards with 2026 Glass Aesthetics) */}
           <div
-            className={`absolute right-2 bottom-[70px] w-48 bg-[#F9F9EB] border border-[#eae8d8] shadow-[0_-10px_30px_rgba(0,0,0,0.06)] py-2 z-50 transition-all duration-300 transform origin-bottom-right ${isAccountOpen && user
+            className={`absolute right-2 bottom-[70px] w-56 bg-white/95 backdrop-blur-2xl border border-[#e8e6d9] rounded-[20px] shadow-2xl p-2 z-50 transition-all duration-300 transform origin-bottom-right ${isAccountOpen && user
               ? 'opacity-100 scale-100 translate-y-0'
               : 'opacity-0 scale-95 translate-y-2 pointer-events-none'
               }`}
-            style={{ fontFamily: '"Outfit", sans-serif' }}
           >
             {user && (
               <>
-                <div className="px-4 py-1.5 border-b border-[#eae8d8] mb-1 select-none text-left flex items-center gap-2">
-                  {user.avatar && (
+                <div className="px-3 py-2.5 border-b border-[#e8e6d9] mb-1 select-none text-left flex items-center gap-2.5 bg-[#f7f6f0] rounded-xl">
+                  {user.avatar ? (
                     <img
                       src={user.avatar.startsWith('http') ? user.avatar : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${user.avatar}`}
                       alt={user.name}
-                      className="w-8 h-8 rounded-full object-cover border border-brand-border"
+                      className="w-8 h-8 rounded-full object-cover ring-2 ring-[#3a4d23]/40"
                     />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-[#eef3e8] border border-[#d2e2c5] flex items-center justify-center text-[#3a4d23]">
+                      <UserIcon size={16} />
+                    </div>
                   )}
-                  <div>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-0.5">Welcome,</p>
-                    <p className="text-[13px] text-black font-semibold truncate leading-tight">{user.name}</p>
+                  <div className="overflow-hidden">
+                    <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wider mb-0 font-heading">WELCOME</p>
+                    <p className="text-xs text-[#1c2415] font-bold truncate leading-tight font-heading">{user.name}</p>
                   </div>
                 </div>
 
-                <Link to="/account/profile" onClick={() => setIsAccountOpen(false)} className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium" style={{ textDecoration: 'none' }}>My Account</Link>
-                <Link to="/account/profile?tab=orders" onClick={() => setIsAccountOpen(false)} className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium" style={{ textDecoration: 'none' }}>Orders</Link>
-                <Link to="/account/profile?tab=addresses" onClick={() => setIsAccountOpen(false)} className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium" style={{ textDecoration: 'none' }}>Address</Link>
-                <Link to="/account/profile?tab=rewards" onClick={() => setIsAccountOpen(false)} className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium" style={{ textDecoration: 'none' }}>Reward Points</Link>
-                <button onClick={() => { setIsAccountOpen(false); setIsWishlistOpen(true); }} className="w-full text-left block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors bg-transparent border-none cursor-pointer font-medium font-body">Wishlist</button>
-                <Link to="/cart" onClick={() => setIsAccountOpen(false)} className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium" style={{ textDecoration: 'none' }}>Cart</Link>
-                <Link to="/account/profile?tab=settings" onClick={() => setIsAccountOpen(false)} className="block px-4 py-2 text-[14px] text-black hover:text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-medium" style={{ textDecoration: 'none' }}>Settings</Link>
+                <div className="flex flex-col gap-0.5 text-xs font-heading font-medium text-[#1c2415]">
+                  <Link to="/account/profile" onClick={() => setIsAccountOpen(false)} className="px-3 py-2 rounded-lg hover:bg-[#eef3e8] hover:text-[#3a4d23] transition-colors text-left" style={{ textDecoration: 'none' }}>My Account</Link>
+                  <Link to="/account/profile?tab=orders" onClick={() => setIsAccountOpen(false)} className="px-3 py-2 rounded-lg hover:bg-[#eef3e8] hover:text-[#3a4d23] transition-colors text-left" style={{ textDecoration: 'none' }}>Orders</Link>
+                  <Link to="/account/profile?tab=addresses" onClick={() => setIsAccountOpen(false)} className="px-3 py-2 rounded-lg hover:bg-[#eef3e8] hover:text-[#3a4d23] transition-colors text-left" style={{ textDecoration: 'none' }}>Address</Link>
+                  <Link to="/account/profile?tab=rewards" onClick={() => setIsAccountOpen(false)} className="px-3 py-2 rounded-lg hover:bg-[#eef3e8] hover:text-[#3a4d23] transition-colors text-left" style={{ textDecoration: 'none' }}>Reward Points</Link>
+                  <button onClick={() => { setIsAccountOpen(false); setIsWishlistOpen(true); }} className="w-full text-left px-3 py-2 rounded-lg hover:bg-[#eef3e8] hover:text-[#3a4d23] transition-colors bg-transparent border-none cursor-pointer font-heading text-xs">Wishlist</button>
+                  <Link to="/cart" onClick={() => setIsAccountOpen(false)} className="px-3 py-2 rounded-lg hover:bg-[#eef3e8] hover:text-[#3a4d23] transition-colors text-left" style={{ textDecoration: 'none' }}>Cart</Link>
+                  <Link to="/account/profile?tab=settings" onClick={() => setIsAccountOpen(false)} className="px-3 py-2 rounded-lg hover:bg-[#eef3e8] hover:text-[#3a4d23] transition-colors text-left" style={{ textDecoration: 'none' }}>Settings</Link>
 
-                {(user.isAdmin || user.role === 'Admin') && (
-                  <>
-                    <div className="border-t border-[#eae8d8] my-1" />
-                    <Link to="/admin/dashboard" onClick={() => setIsAccountOpen(false)} className="block px-4 py-2 text-[14px] text-[#729855] hover:bg-[#eae8d8]/30 transition-colors text-left font-bold" style={{ textDecoration: 'none' }}>Admin Dashboard</Link>
-                  </>
-                )}
+                  {(user.isAdmin || user.role === 'Admin') && (
+                    <>
+                      <div className="border-t border-[#e8e6d9] my-1" />
+                      <Link to="/admin/dashboard" onClick={() => setIsAccountOpen(false)} className="px-3 py-2 rounded-lg bg-[#eef3e8] text-[#3a4d23] font-bold text-left tracking-wide" style={{ textDecoration: 'none' }}>★ Admin Dashboard</Link>
+                    </>
+                  )}
 
-                <div className="border-t border-[#eae8d8] my-1" />
-                <button onClick={() => { setIsAccountOpen(false); handleLogout(); }} className="w-full text-left block px-4 py-2 text-[14px] text-red-600 hover:text-red-800 hover:bg-[#eae8d8]/30 transition-colors bg-transparent border-none cursor-pointer font-medium">Logout</button>
+                  <div className="border-t border-[#e8e6d9] my-1" />
+                  <button onClick={() => { setIsAccountOpen(false); handleLogout(); }} className="w-full text-left px-3 py-2 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors bg-transparent border-none cursor-pointer font-bold text-xs">Logout Account</button>
+                </div>
               </>
             )}
           </div>
         </div>
       </nav>
 
-      {/* Mobile Drawer Navigation Menu */}
+      {/* Mobile Drawer Navigation Menu (2026 Luxury Glass Edition) */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
-          <div onClick={() => setIsMobileMenuOpen(false)} className="fixed inset-0 bg-black/40 transition-opacity"></div>
-          <div className="relative flex flex-col w-full max-w-xs bg-white h-full shadow-2xl p-6 overflow-y-auto animate-slide-in">
-            <div className="flex items-center justify-between mb-8 border-b border-brand-border pb-4">
-              <span className="font-heading text-xl font-bold text-brand-charcoal">Menu</span>
-              <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 hover:text-brand-green">
-                <X className="w-6 h-6" />
+          <div onClick={() => setIsMobileMenuOpen(false)} className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity" />
+          <div className="relative flex flex-col w-full max-w-[320px] bg-white/95 backdrop-blur-2xl h-full shadow-2xl p-6 overflow-y-auto border-r border-[#e8e6d9] rounded-r-3xl animate-slide-in">
+            
+            {/* Drawer Top Header / User Info */}
+            <div className="flex items-center justify-between pb-5 border-b border-[#e8e6d9] mb-6">
+              {user ? (
+                <div className="flex items-center gap-3">
+                  {user.avatar ? (
+                    <img
+                      src={user.avatar.startsWith('http') ? user.avatar : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${user.avatar}`}
+                      alt={user.name}
+                      className="w-10 h-10 rounded-full object-cover ring-2 ring-[#3a4d23]"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-[#eef3e8] border border-[#d2e2c5] flex items-center justify-center text-[#3a4d23]">
+                      <UserIcon size={20} />
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block font-heading">WELCOME BACK</span>
+                    <h4 className="text-sm font-bold text-[#1c2415] truncate font-heading">{user.name}</h4>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="font-heading text-lg font-bold text-[#1c2415]">FABISH BOTANICALS</span>
+                </div>
+              )}
+
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-9 h-9 rounded-full bg-[#f4f3ea] flex items-center justify-center text-[#1c2415] hover:bg-[#3a4d23] hover:text-white transition-all cursor-pointer border-none"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="flex flex-col gap-5 font-heading text-base font-semibold uppercase tracking-wider text-brand-charcoal">
-              <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-green py-1">Home</Link>
+            {/* Nav Menu Links */}
+            <div className="flex flex-col gap-2 font-heading text-sm font-semibold tracking-wide text-[#1c2415]">
+              <Link
+                to="/"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-3.5 py-3 rounded-xl hover:bg-[#eef3e8] hover:text-[#3a4d23] transition-all"
+              >
+                <HomeIcon size={18} className="text-[#3a4d23]" />
+                <span>Home</span>
+              </Link>
               
               {/* Expandable Catalog Accordion for Mobile */}
-              <div className="flex flex-col border-b border-gray-200/80 pb-2">
-                <div className="flex items-center justify-between py-1">
+              <div className="flex flex-col rounded-xl overflow-hidden bg-[#f7f6f0] border border-[#e8e6d9] my-1">
+                <div className="flex items-center justify-between px-3.5 py-3">
                   <Link
                     to="/collections"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="hover:text-[#729855] text-[#111]"
+                    className="hover:text-[#3a4d23] text-[#1c2415] font-bold"
                   >
-                    Catalog
+                    Catalog &amp; Collections
                   </Link>
                   <button
                     type="button"
@@ -641,21 +710,21 @@ const Header = () => {
                       e.stopPropagation();
                       setIsCatalogAccordionOpen(!isCatalogAccordionOpen);
                     }}
-                    className="p-1 hover:text-[#729855] text-gray-500 bg-transparent border-none cursor-pointer"
+                    className="p-1 hover:text-[#3a4d23] text-gray-500 bg-transparent border-none cursor-pointer"
                     aria-label="Toggle Catalog Categories"
                   >
-                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isCatalogAccordionOpen ? 'rotate-180 text-[#729855]' : ''}`} />
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isCatalogAccordionOpen ? 'rotate-180 text-[#3a4d23]' : ''}`} />
                   </button>
                 </div>
 
                 {isCatalogAccordionOpen && (
-                  <div className="pl-3 pr-1 py-2 flex flex-col gap-1.5 bg-[#F9F9EB]/80 rounded-lg my-1 normal-case text-sm">
+                  <div className="px-3.5 py-2 flex flex-col gap-1.5 bg-white/80 border-t border-[#e8e6d9] text-xs">
                     <Link
                       to="/collections/all"
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="text-xs font-bold uppercase text-[#729855] hover:underline py-1 flex items-center justify-between"
+                      className="text-xs font-bold uppercase text-[#3a4d23] hover:underline py-1.5 flex items-center justify-between"
                     >
-                      <span>All Collections</span>
+                      <span>Explore All Products</span>
                       <span>&rsaquo;</span>
                     </Link>
 
@@ -669,11 +738,11 @@ const Header = () => {
                             key={cat._id || catSlug}
                             to={`/collections/${catSlug}`}
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className="text-[13px] font-medium text-gray-800 hover:text-[#729855] py-1.5 px-2 rounded hover:bg-[#729855]/10 flex items-center justify-between transition-colors"
+                            className="text-[13px] font-medium text-[#1c2415] hover:text-[#3a4d23] py-1.5 px-2 rounded-lg hover:bg-[#eef3e8] flex items-center justify-between transition-colors"
                           >
                             <span>{cat.name}</span>
                             {typeof cat.productCount === 'number' && (
-                              <span className="text-[10px] font-semibold bg-[#eae8d8] text-[#555] px-2 py-0.5 rounded-full">
+                              <span className="text-[10px] font-semibold bg-[#e8e6d9] text-[#3a4d23] px-2 py-0.5 rounded-full">
                                 {cat.productCount}
                               </span>
                             )}
@@ -686,36 +755,39 @@ const Header = () => {
                   </div>
                 )}
               </div>
-              <Link to="/pages/about-us" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-green py-1">About Us</Link>
-              <Link to="/pages/contact" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-green py-1">Contact</Link>
-              <Link to="/pages/faq" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-green py-1">FAQ</Link>
-              <Link to="/blogs/news" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-green py-1">Blog</Link>
 
-              <div className="border-t border-brand-border pt-4 mt-2 flex flex-col gap-4 normal-case text-brand-charcoal text-sm">
+              <Link to="/pages/about-us" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3.5 py-3 rounded-xl hover:bg-[#eef3e8] hover:text-[#3a4d23] transition-all">About Us</Link>
+              <Link to="/pages/contact" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3.5 py-3 rounded-xl hover:bg-[#eef3e8] hover:text-[#3a4d23] transition-all">Contact Us</Link>
+              <Link to="/pages/faq" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3.5 py-3 rounded-xl hover:bg-[#eef3e8] hover:text-[#3a4d23] transition-all">FAQ</Link>
+              <Link to="/blogs/news" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3.5 py-3 rounded-xl hover:bg-[#eef3e8] hover:text-[#3a4d23] transition-all">Beauty Blog</Link>
+
+              <div className="border-t border-[#e8e6d9] pt-4 mt-3 flex flex-col gap-2 font-body">
                 {!user ? (
                   <>
-                    <Link to="/account/login" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-green py-1 font-semibold">Login</Link>
-                    <Link to="/account/register" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-green py-1 font-semibold">Register</Link>
+                    <Link to="/account/login" onClick={() => setIsMobileMenuOpen(false)} className="w-full text-center bg-[#3a4d23] text-white py-3 rounded-full text-xs font-bold uppercase tracking-widest shadow-md">Login</Link>
+                    <Link to="/account/register" onClick={() => setIsMobileMenuOpen(false)} className="w-full text-center bg-white border border-[#3a4d23] text-[#1c2415] py-3 rounded-full text-xs font-bold uppercase tracking-widest mt-1">Register</Link>
                   </>
                 ) : (
                   <>
-                    <div className="font-semibold text-xs text-brand-muted uppercase tracking-wider select-none">Welcome, {user.name}</div>
-                    {user.isAdmin && (
-                      <Link to="/admin/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="text-[#729855] font-bold py-1">Admin Dashboard</Link>
+                    {(user.isAdmin || user.role === 'Admin') && (
+                      <Link to="/admin/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="bg-[#eef3e8] border border-[#d2e2c5] text-[#3a4d23] font-bold px-3.5 py-2.5 rounded-xl text-center text-xs tracking-wider uppercase mb-1">
+                        ★ Admin Dashboard
+                      </Link>
                     )}
-                    <Link to="/account/profile" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-green py-1 font-semibold">My Profile</Link>
+                    <Link to="/account/profile" onClick={() => setIsMobileMenuOpen(false)} className="px-3.5 py-2.5 rounded-xl hover:bg-[#eef3e8] text-[#1c2415] font-semibold text-xs uppercase tracking-wider">My Profile &amp; Orders</Link>
                     <button
                       onClick={() => {
                         setIsMobileMenuOpen(false);
                         handleLogout();
                       }}
-                      className="text-left text-red-600 hover:text-red-800 py-1 bg-transparent border-none cursor-pointer font-semibold uppercase tracking-widest text-xs mt-2"
+                      className="w-full text-left text-rose-600 hover:bg-rose-50 px-3.5 py-2.5 rounded-xl font-semibold uppercase tracking-wider text-xs border-none cursor-pointer bg-transparent"
                     >
-                      Logout
+                      Logout Account
                     </button>
                   </>
                 )}
               </div>
+
             </div>
           </div>
         </div>

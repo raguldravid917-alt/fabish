@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Pagination, Autoplay } from 'swiper/modules';
-import { Heart, Eye, ShoppingBag, X, Star } from 'lucide-react';
+import { Pagination, Autoplay, EffectFade } from 'swiper/modules';
+import { Heart, Eye, ShoppingBag, X, Star, Sparkles, CheckCircle2, ShieldCheck, Truck, Award, Play, Pause, ChevronRight, Leaf, Lock } from 'lucide-react';
 import { getLocalImageUrl } from '../utils/imageMapper';
 import FaceCreamBanner from '../components/FaceCreamBanner';
 import BeautyProductGrid from '../components/BeautyProductGrid';
@@ -29,8 +29,8 @@ const HERO_SLIDES = [
   {
     tag: 'HEALTHY SKIN',
     heading: <>Organic Anti-Aging Cosmetic<br className="hidden md:inline" />Cream</>,
-    body: 'Praesent in nunc vel urna consequat mattis eget vel libero. Phasellus entesque',
-    cta: 'VIEW ALL',
+    body: 'Formulated with cold-pressed botanical extracts and natural antioxidants to restore skin elasticity.',
+    cta: 'DISCOVER COLLECTION',
     ctaTo: '/collections/all',
     image: '/assets/homepage/Slider_0b0fe4fc-3aef-4572-88a1-1de862680afa.jpg',
     imageAlt: 'Organic Anti-Aging Cosmetic Cream',
@@ -40,7 +40,7 @@ const HERO_SLIDES = [
   {
     tag: 'UP TO 50% OFF',
     heading: <>Luxurious Feeling<br className="hidden md:inline" />Face Creams</>,
-    body: 'Quisque non tellus orci ac auctor augue mauris augue. Placerat orci nulla.',
+    body: 'Deeply hydrating night & day creams enriched with pure lavender and jojoba oils.',
     cta: 'EXPLORE NOW',
     ctaTo: '/collections/moisturizer',
     image: '/assets/homepage/Slider-2.jpg',
@@ -51,7 +51,7 @@ const HERO_SLIDES = [
   {
     tag: 'MOISTURIZER',
     heading: <>Healthy Skin<br className="hidden md:inline" />Care Product</>,
-    body: 'Ut aliquam amet venenatis urna purus sit amet luctus venenatis lectus magna fringilla.',
+    body: 'Dermatologically tested formulas designed for sensitive and radiance-seeking skin.',
     cta: 'VIEW ALL',
     ctaTo: '/collections/all',
     image: '/assets/homepage/Slider-3.jpg',
@@ -73,78 +73,88 @@ const PopularProductCard = ({ product, addToCart, toggleWishlist, isInWishlist, 
       ref={cardRef}
       data-card-id={cardId}
       onClickCapture={handleCardInteraction}
-      className="group flex flex-col w-full relative"
+      className="group flex flex-col w-full relative glass-card rounded-2xl p-3 bg-white/90 border border-[#e8e6d9]/80 shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden"
     >
-      <div className="relative overflow-hidden w-full aspect-[4/5] bg-[#f6f5ea] flex items-center justify-center mb-4 cursor-pointer p-0 transition-colors group/imgbox">
-        {/* Full fit image using object-cover */}
-        <img src={imageSrc} alt={product.title} className="w-full h-full object-cover mix-blend-darken transition-transform duration-500 ease-out group-hover/imgbox:scale-105" />
+      <div className="relative overflow-hidden w-full aspect-[4/5] bg-[#f7f6f0] rounded-xl flex items-center justify-center mb-3 cursor-pointer">
+        <Link to={`/products/${product.slug || slugify(product.title)}`} className="block w-full h-full">
+          <img
+            src={imageSrc}
+            alt={product.title}
+            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+          />
+        </Link>
 
-        {discount > 0 && <span className="absolute top-3 left-3 bg-[#598e6a] text-white text-[10px] font-bold px-[8px] py-[4px] tracking-widest z-10">-{discount}%</span>}
+        {discount > 0 && (
+          <span className="absolute top-3 left-3 bg-[#3a4d23] text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider font-heading z-10 shadow-xs backdrop-blur-md">
+            -{discount}%
+          </span>
+        )}
 
-        {/* Actions Overlay */}
+        {/* Action Drawer Overlay */}
         <div className={useMobileInteraction
-          ? `absolute top-2 right-2 flex flex-col gap-2 z-20 transition-all duration-[250ms] ease-in-out ${
+          ? `absolute top-3 right-3 flex flex-col gap-2 z-20 transition-all duration-300 ${
               isActiveMobile
                 ? 'opacity-100 pointer-events-auto translate-y-0'
-                : 'opacity-0 pointer-events-none translate-y-[10px]'
+                : 'opacity-0 pointer-events-none translate-y-2'
             }`
-          : "absolute top-2 right-2 flex flex-col gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 ease-out z-20"
+          : "absolute top-3 right-3 flex flex-col gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:translate-x-2 lg:group-hover:translate-x-0 transition-all duration-300 z-20"
         }>
-          {/* Quick View */}
           <button
             onClick={() => setQuickViewProduct(product)}
-            className="w-11 h-11 lg:w-9 lg:h-9 rounded-full bg-white flex items-center justify-center shadow-md transition-all duration-300 hover:scale-105 border-none cursor-pointer"
+            className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-md text-[#1c2415] hover:bg-[#3a4d23] hover:text-white flex items-center justify-center shadow-md transition-all duration-300 border border-white/50 cursor-pointer hover:scale-110"
+            title="Quick View"
           >
-            <Eye
-              size={18}
-              strokeWidth={1.8}
-              className="text-black hover:text-[#729855] transition-colors duration-300"
-            />
+            <Eye size={15} strokeWidth={1.8} />
           </button>
 
-          {/* Wishlist */}
           <button
             onClick={() => toggleWishlist(product)}
-            className="w-11 h-11 lg:w-9 lg:h-9 rounded-full bg-white flex items-center justify-center shadow-md transition-all duration-300 hover:scale-105 border-none cursor-pointer"
+            className={`w-9 h-9 rounded-full flex items-center justify-center shadow-md backdrop-blur-md transition-all duration-300 border border-white/50 cursor-pointer hover:scale-110 ${
+              isInWishlist(product._id)
+                ? 'bg-rose-500 text-white'
+                : 'bg-white/90 text-[#1c2415] hover:bg-[#3a4d23] hover:text-white'
+            }`}
+            title="Wishlist"
           >
-            <Heart
-              size={18}
-              strokeWidth={1.8}
-              className={`transition-colors duration-300 ${isInWishlist(product._id)
-                ? "fill-red-500 text-red-500"
-                : "text-black hover:text-[#729855]"
-                }`}
-            />
+            <Heart size={15} strokeWidth={1.8} fill={isInWishlist(product._id) ? 'currentColor' : 'none'} />
           </button>
         </div>
 
-        {/* Add to Cart Button */}
-        <div className={useMobileInteraction
-          ? `absolute bottom-[20px] left-1/2 -translate-x-1/2 w-[85%] max-w-[160px] z-10 transition-all duration-[250ms] ease-in-out ${
-              isActiveMobile
-                ? 'opacity-100 pointer-events-auto translate-y-0'
-                : 'opacity-0 pointer-events-none translate-y-[10px]'
-            }`
-          : "absolute bottom-[20px] left-1/2 -translate-x-1/2 w-[85%] max-w-[160px] translate-y-0 lg:translate-y-4 lg:group-hover:translate-y-0 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 ease-out z-10"
-        }>
-          <button
-            onClick={() => addToCart(product)}
-            className="w-full bg-[#3a4d23] hover:bg-black text-white text-[10px] font-bold tracking-[0.2em] py-[12px] md:py-[14px] uppercase cursor-pointer border-none rounded-none transition-colors duration-300 h-11 flex items-center justify-center"
-          >
-            ADD CART
-          </button>
-        </div>
+        {/* Add to Cart CTA */}
+        <button
+          onClick={() => addToCart(product, 1)}
+          className={useMobileInteraction
+            ? `absolute bottom-3 left-1/2 -translate-x-1/2 w-[88%] h-10 bg-[#3a4d23] hover:bg-[#1c2415] text-white text-[10px] font-bold tracking-[0.18em] uppercase rounded-full z-20 cursor-pointer shadow-md flex items-center justify-center gap-1.5 transition-all duration-300 ${
+                isActiveMobile
+                  ? 'opacity-100 pointer-events-auto translate-y-0'
+                  : 'opacity-0 pointer-events-none translate-y-3'
+              }`
+            : "absolute bottom-3 left-1/2 -translate-x-1/2 w-[88%] h-10 bg-[#3a4d23] hover:bg-[#1c2415] text-white text-[10px] font-bold tracking-[0.18em] uppercase rounded-full opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:translate-y-2 lg:group-hover:translate-y-0 transition-all duration-300 z-20 cursor-pointer shadow-md flex items-center justify-center gap-1.5"
+          }
+        >
+          <ShoppingBag size={13} />
+          <span>ADD TO CART</span>
+        </button>
       </div>
 
-      <Link to={`/products/${product.slug || slugify(product.title)}`}>
-        <h3 className="text-center font-medium text-[16px] text-black leading-[1.4] mt-[4px] mb-[4px] px-1 hover:text-[#729855] transition-colors line-clamp-2 cursor-pointer">
-          {product.title}
-        </h3>
-      </Link>
+      <div className="flex flex-col flex-grow text-center justify-between p-1">
+        <div>
+          <span className="text-[10px] uppercase font-bold tracking-widest text-[#729855] block mb-1 font-heading">
+            {typeof product.category === 'object' ? product.category?.name : 'Organic Cosmetic'}
+          </span>
+          <Link to={`/products/${product.slug || slugify(product.title)}`}>
+            <h3 className="font-heading font-medium text-sm leading-snug text-[#1c2415] hover:text-[#729855] transition-colors line-clamp-2 min-h-[36px]">
+              {product.title}
+            </h3>
+          </Link>
+        </div>
 
-      <div className="flex flex-col items-center justify-center gap-1 font-sans text-center mt-1">
-        <span className="text-[14px] font-normal text-[#222]">Rs. {product.price.toLocaleString('en-IN')}.00 INR</span>
-        {discount > 0 && <span className="text-[13px] font-normal text-[#999] line-through">Rs. {product.comparePrice.toLocaleString('en-IN')}.00 INR</span>}
+        <div className="mt-3 pt-2 border-t border-[#f4f2e6]">
+          <div className="flex items-center justify-center gap-2 font-body">
+            <span className="text-sm font-bold text-[#1c2415]">Rs. {product.price.toLocaleString('en-IN')}.00</span>
+            {discount > 0 && <span className="text-xs line-through text-gray-400">Rs. {product.comparePrice.toLocaleString('en-IN')}.00</span>}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -175,7 +185,6 @@ const Home = () => {
     }
   };
 
-  // Strictly enforcing exact mock data matching the reference image layout
   const popularProductsStatic = [
     {
       _id: 'p1',
@@ -215,7 +224,6 @@ const Home = () => {
     }
   ];
 
-  // Static Blogs data to match exact Xerox design with local assets
   const staticBlogs = [
     {
       slug: 'best-cleansers-for-sensitive-skin',
@@ -241,6 +249,15 @@ const Home = () => {
       comments: '1 Comment',
       image: '/assets/Blog07.jpg'
     }
+  ];
+
+  const skinTypes = [
+    { name: 'Sensitive Skin', tag: 'SOOTHING', color: 'from-emerald-50 to-teal-100', icon: '🌿', count: '18 Items', link: '/collections/sensitive-skin' },
+    { name: 'Dry & Dehydrated', tag: 'HYDRATING', color: 'from-blue-50 to-[#eef4ff]', icon: '💧', count: '24 Items', link: '/collections/dry-skin' },
+    { name: 'Oily & Acne Prone', tag: 'BALANCING', color: 'from-amber-50 to-orange-100', icon: '✨', count: '15 Items', link: '/collections/oily-skin' },
+    { name: 'Combination', tag: 'HARMONIZING', color: 'from-rose-50 to-pink-100', icon: '🌸', count: '20 Items', link: '/collections/combination-skin' },
+    { name: 'Normal Skin', tag: 'RADIANCE', color: 'from-stone-50 to-amber-100', icon: '☀️', count: '30 Items', link: '/collections/normal-skin' },
+    { name: 'Anti-Aging', tag: 'RENEWAL', color: 'from-purple-50 to-indigo-100', icon: '👑', count: '16 Items', link: '/collections/anti-aging' },
   ];
 
   useEffect(() => {
@@ -274,536 +291,722 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="w-full bg-white">
-      {/* HERO SECTION - Responsive text bounds to let the model's face show clearly */}
-      <section className="w-full select-none relative overflow-hidden bg-[#faf9f5] lg:h-[580px] md:h-[500px] h-[400px]">
-        <Swiper
-          modules={[Pagination, Autoplay]}
-          pagination={{ el: '.hero-pagination', clickable: true, bulletClass: 'hero-bullet', bulletActiveClass: 'hero-bullet-active' }}
-          autoplay={{ delay: 5000, disableOnInteraction: false }}
-          slidesPerView={1}
-          loop={true}
-          className="w-full h-full lg:min-h-[580px] md:min-h-[500px] min-h-[400px]"
-        >
-          {HERO_SLIDES.map((slide, idx) => (
-            <SwiperSlide key={idx} className="relative w-full h-full lg:h-[580px] md:h-[500px] h-[400px] overflow-hidden bg-[#faf9f5]">
-              <img src={getLocalImageUrl(slide.image)} alt={slide.imageAlt} className={`absolute inset-0 w-full h-full object-cover z-0 ${slide.objectPosition || 'object-center'}`} />
-              <div className="absolute inset-0 z-10 w-full h-full flex items-end pb-12 lg:items-center lg:pb-0">
-                <div className="w-full max-w-[1280px] mx-auto px-[24px] md:px-[64px] lg:px-[100px] flex">
-                  {/* Narrow text containers to allow model's face to be clear on mobile viewports */}
-                  <div
-                    className={`w-[90%] sm:w-[80%] md:w-[70%] lg:w-[65%] xl:w-[60%] flex flex-col justify-end lg:justify-center text-left ${slide.position === 'right' ? 'ml-auto' : 'mr-auto'
-                      }`}
+    <div className="w-full bg-[#faf9f5] font-body text-[#1c2415]">
+
+      {/* =========================================================
+         1. 2026 LUXURY HERO BANNER SECTION (Apple / Dior / Aesop Inspired)
+         ========================================================= */}
+      <section className="w-full select-none relative overflow-hidden bg-gradient-to-b from-[#f8f7f2] via-[#f2efdf] to-[#faf9f5] py-8 sm:py-12 lg:py-16 min-h-[640px] lg:min-h-[780px] flex items-center">
+
+        {/* Ambient Layered Background Effects */}
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          {/* Radial Botanical Glow Blobs */}
+          <div className="absolute -top-32 -left-32 w-96 h-96 bg-gradient-to-br from-[#729855]/20 via-[#d2e2c5]/30 to-transparent rounded-full blur-3xl animate-pulse-glow" />
+          <div className="absolute top-1/3 -right-32 w-[500px] h-[500px] bg-gradient-to-bl from-[#a2c286]/20 via-[#e4edd9]/30 to-transparent rounded-full blur-3xl animate-pulse-glow" style={{ animationDelay: '2s' }} />
+          <div className="absolute bottom-0 left-1/4 w-80 h-80 bg-gradient-to-t from-[#3a4d23]/10 to-transparent rounded-full blur-2xl" />
+
+          {/* Floating Subtle Botanical Decorative Particles */}
+          <div className="absolute top-12 left-10 text-[#729855]/25 text-2xl animate-float-slow opacity-60">🍃</div>
+          <div className="absolute top-1/4 left-1/2 text-[#3a4d23]/20 text-xl animate-float-slow opacity-50" style={{ animationDelay: '3s' }}>💧</div>
+          <div className="absolute bottom-20 left-16 text-[#729855]/20 text-3xl animate-float-slow opacity-40" style={{ animationDelay: '1.5s' }}>🌸</div>
+          <div className="absolute top-16 right-1/3 text-[#3a4d23]/15 text-2xl animate-float-slow opacity-45" style={{ animationDelay: '4s' }}>✨</div>
+          <div className="absolute bottom-12 right-12 text-[#729855]/25 text-2xl animate-float-slow opacity-60" style={{ animationDelay: '2.5s' }}>🍃</div>
+        </div>
+
+        <div className="relative z-10 w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12">
+          <Swiper
+            modules={[Pagination, Autoplay, EffectFade]}
+            effect="fade"
+            fadeEffect={{ crossFade: true }}
+            pagination={{ el: '.hero-pagination', clickable: true }}
+            autoplay={{ delay: 6000, disableOnInteraction: false }}
+            slidesPerView={1}
+            loop={true}
+            className="w-full h-full"
+          >
+            {HERO_SLIDES.map((slide, idx) => (
+              <SwiperSlide key={idx} className="w-full bg-transparent">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center min-h-[560px] lg:min-h-[660px]">
+
+                  {/* LEFT SIDE CONTENT CONTAINER (Luxury Glassmorphic Card) */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.7, ease: 'easeOut' }}
+                    className="lg:col-span-7 flex flex-col justify-center order-2 lg:order-1"
                   >
-                    <span className="block font-body font-normal text-[12px] uppercase text-[#000] mb-[12px]" style={{ letterSpacing: '0.4em' }}>{slide.tag}</span>
-                    <h1
-                      className="font-serif text-[32px] md:text-[42px] lg:text-[48px] xl:text-[52px] font-semibold leading-tight text-[#000] mb-4 lg:whitespace-nowrap"
-                    >
-                      {slide.heading}
-                    </h1>
-                    <p className="font-body text-[16px] leading-[1.8] text-[#333333] mb-[24px] max-w-[440px]">{slide.body}</p>
-                    <div>
-                      <Link to={slide.ctaTo} className="inline-flex items-center justify-center bg-[#2f3e10] hover:bg-[#1f2a0a] text-white font-body font-bold text-[12px] tracking-[0.18em] uppercase transition-colors duration-200" style={{ width: '142px', height: '48px', textDecoration: 'none' }}>
-                        {slide.cta}
-                      </Link>
+                    <div className="backdrop-blur-2xl bg-white/75 rounded-[22px] sm:rounded-[28px] p-6 sm:p-10 lg:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.06)] border border-white/90 relative overflow-hidden">
+                      
+                      {/* Subtly Animated Card Highlight */}
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#3a4d23] via-[#729855] to-[#d2e2c5]" />
+
+                      {/* Luxury Badge */}
+                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#eef3e8]/90 border border-[#d2e2c5] mb-5 shadow-xs">
+                        <Sparkles size={14} className="text-[#3a4d23] animate-spin-slow" />
+                        <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.22em] text-[#3a4d23] uppercase font-heading">
+                          ✨ 100% ORGANIC BOTANICAL FORMULATION • {slide.tag}
+                        </span>
+                      </div>
+
+                      {/* Responsive Luxury Headline */}
+                      {/* Desktop 72px, Laptop 60px, Tablet 48px, Mobile 34px */}
+                      <h1 className="font-heading font-medium text-[34px] md:text-[48px] lg:text-[60px] xl:text-[72px] text-[#1c2415] leading-[1.05] tracking-tight mb-5">
+                        {slide.heading}
+                      </h1>
+
+                      {/* Small Supporting Description */}
+                      <p className="text-sm sm:text-base lg:text-lg text-[#4a5a3a]/90 leading-relaxed font-body font-normal mb-6 max-w-xl">
+                        {slide.body}
+                      </p>
+
+                      {/* Customer Rating & Organic Ingredients Badge Bar */}
+                      <div className="flex flex-wrap items-center gap-4 mb-8 pb-6 border-b border-[#e8e6d9]/80 text-xs text-[#2f3e10] font-heading font-medium">
+                        <div className="flex items-center gap-1.5 bg-[#f6f5ea] px-3.5 py-1.5 rounded-full border border-[#e2dec9]">
+                          <div className="flex gap-0.5">
+                            {[...Array(5)].map((_, i) => (
+                              <Star key={i} size={13} className="fill-amber-400 text-amber-400" />
+                            ))}
+                          </div>
+                          <span className="font-bold text-[#1c2415]">4.9</span>
+                          <span className="text-gray-500 font-body text-[11px]">(12k+ Verified Reviews)</span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 bg-[#eef3e8] px-3.5 py-1.5 rounded-full border border-[#cbe0ba]">
+                          <Leaf size={13} className="text-[#3a4d23]" />
+                          <span>100% Cold-Pressed Bio-Extracts</span>
+                        </div>
+                      </div>
+
+                      {/* Two CTA Buttons */}
+                      <div className="flex flex-wrap items-center gap-4 mb-8">
+                        {/* Primary Button */}
+                        <Link
+                          to={slide.ctaTo}
+                          className="group inline-flex items-center justify-center gap-3 bg-[#3a4d23] hover:bg-[#1c2415] text-white text-xs sm:text-sm font-bold uppercase tracking-[0.2em] px-8 py-4 sm:px-10 sm:py-4.5 rounded-full transition-all duration-300 shadow-xl hover:shadow-2xl hover:-translate-y-1 hover:scale-[1.02] font-heading"
+                        >
+                          <span>{slide.cta}</span>
+                          <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                        </Link>
+
+                        {/* Secondary Button */}
+                        <Link
+                          to="/collections/all"
+                          className="inline-flex items-center justify-center gap-2 bg-white/40 hover:bg-white backdrop-blur-md border border-[#3a4d23]/30 hover:border-[#3a4d23] text-[#1c2415] text-xs sm:text-sm font-bold uppercase tracking-[0.18em] px-7 py-4 rounded-full transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 font-heading"
+                        >
+                          <span>EXPLORE ALL</span>
+                        </Link>
+                      </div>
+
+                      {/* Trust Cards Bar (5 Cards: Organic, Dermat-Approved, Cruelty Free, Free Shipping, Secure Checkout) */}
+                      <div className="pt-2 grid grid-cols-2 sm:grid-cols-5 gap-2.5 sm:gap-3">
+                        {[
+                          { title: '100% Organic', icon: <Leaf size={15} className="text-[#3a4d23]" /> },
+                          { title: 'Dermat Approved', icon: <ShieldCheck size={15} className="text-[#3a4d23]" /> },
+                          { title: 'Cruelty Free', icon: <Heart size={15} className="text-rose-600" /> },
+                          { title: 'Free Shipping', icon: <Truck size={15} className="text-[#3a4d23]" /> },
+                          { title: 'Secure Checkout', icon: <Lock size={15} className="text-[#3a4d23]" /> }
+                        ].map((card, cIdx) => (
+                          <div
+                            key={cIdx}
+                            className="flex flex-col items-center justify-center text-center p-2.5 rounded-xl bg-white/80 border border-[#e8e6d9] hover:border-[#3a4d23]/40 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
+                          >
+                            <div className="mb-1">{card.icon}</div>
+                            <span className="text-[9px] font-bold text-[#1c2415] leading-tight font-heading">
+                              {card.title}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
                     </div>
-                  </div>
+                  </motion.div>
+
+
+                  {/* RIGHT SIDE BANNER IMAGE SHOWCASE */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.7, ease: 'easeOut', delay: 0.1 }}
+                    className="lg:col-span-5 flex items-center justify-center order-1 lg:order-2 relative"
+                  >
+                    <div className="relative w-full max-w-md lg:max-w-none aspect-[4/5] sm:aspect-square lg:aspect-[4/5] rounded-[28px] lg:rounded-[36px] overflow-hidden shadow-[0_25px_60px_-15px_rgba(47,62,16,0.25)] border border-white/70 bg-[#f6f5ea] group">
+                      
+                      {/* Organic Gradient Glow Behind Image */}
+                      <div className="absolute inset-0 bg-gradient-to-tr from-[#3a4d23]/20 via-transparent to-[#729855]/20 z-10 pointer-events-none" />
+
+                      <img
+                        src={getLocalImageUrl(slide.image)}
+                        alt={slide.imageAlt}
+                        className={`w-full h-full object-cover z-0 transition-transform duration-1000 ease-out group-hover:scale-105 ${slide.objectPosition || 'object-center'}`}
+                      />
+
+                      {/* Glass Highlight Floating Badge Overlay */}
+                      <div className="absolute bottom-6 left-6 right-6 z-20 backdrop-blur-xl bg-white/85 border border-white/80 p-4 rounded-2xl shadow-xl flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-[#eef3e8] border border-[#d2e2c5] flex items-center justify-center text-[#3a4d23]">
+                            <Award size={20} />
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-[#729855] block font-heading">
+                              AWARD-WINNING FORMULA
+                            </span>
+                            <h4 className="text-xs font-bold text-[#1c2415] font-heading">
+                              {slide.tag || 'Clinical Botanical Care'}
+                            </h4>
+                          </div>
+                        </div>
+                        <span className="text-[11px] font-bold text-[#3a4d23] bg-[#eef3e8] px-2.5 py-1 rounded-full border border-[#d2e2c5] font-heading">
+                          2026 EDITION
+                        </span>
+                      </div>
+
+                    </div>
+                  </motion.div>
+
                 </div>
-              </div>
-            </SwiperSlide>
-          ))}
-        </Swiper>
-        <div className="hero-pagination"></div>
-      </section>
-
-      {/* FEATURES SECTION - Animate with stagger entry from bottom to top */}
-      <section className="bg-[#f3f3f3] py-[60px] md:py-[80px] lg:py-[100px] select-none overflow-hidden">
-        <motion.div
-          className="max-w-[1280px] mx-auto px-[2%]"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.15 }} // Triggers animation once when 15% of section enters viewport
-          variants={{
-            hidden: { opacity: 0 },
-            visible: {
-              opacity: 1,
-              transition: {
-                staggerChildren: 0.15, // Time gap between each column slide-up
-              }
-            }
-          }}
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[40px] md:gap-[30px] text-center">
-
-            {/* 1. Natural Ingredients Card */}
-            <motion.div
-              variants={{
-                hidden: { opacity: 0, y: 40 },
-                visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 80, damping: 15 } }
-              }}
-              className="flex flex-col items-center max-w-[280px] mx-auto"
-            >
-              <div className="h-[60px] flex items-center justify-center mb-[20px]">
-                <img src="/assets/homepage/Group.svg" alt="Natural Ingredients" className="h-[60px] w-auto transition-transform duration-300 hover:scale-105" />
-              </div>
-              <h3 className="font-heading text-[24px] lg:text-[26px] font-normal text-black mb-[10px]">Natural Ingredients</h3>
-              <p className="font-body text-[16px] text-black/70 font-normal leading-[1.8]">Praesent in nunc vel urna consequat mattis eget vel libero. Phasellus entesque</p>
-            </motion.div>
-
-            {/* 2. Fragrance Free Card */}
-            <motion.div
-              variants={{
-                hidden: { opacity: 0, y: 40 },
-                visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 80, damping: 15 } }
-              }}
-              className="flex flex-col items-center max-w-[280px] mx-auto"
-            >
-              <div className="h-[60px] flex items-center justify-center mb-[20px]">
-                <img src="/assets/homepage/Group-1.svg" alt="Fragrance Free" className="h-[60px] w-auto transition-transform duration-300 hover:scale-105" />
-              </div>
-              <h3 className="font-heading text-[24px] lg:text-[26px] font-normal text-black mb-[10px]">Fragrance Free</h3>
-              <p className="font-body text-[16px] text-black/70 font-normal leading-[1.8]">Ahasellus entesque praesent in nunc vel urna consequat mattis eget vel libero.</p>
-            </motion.div>
-
-            {/* 3. Allergy Tested Card */}
-            <motion.div
-              variants={{
-                hidden: { opacity: 0, y: 40 },
-                visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 80, damping: 15 } }
-              }}
-              className="flex flex-col items-center max-w-[280px] mx-auto"
-            >
-              <div className="h-[60px] flex items-center justify-center mb-[20px]">
-                <img src="/assets/homepage/Group-2.svg" alt="Allergy Tested" className="h-[60px] w-auto transition-transform duration-300 hover:scale-105" />
-              </div>
-              <h3 className="font-heading text-[24px] lg:text-[26px] font-normal text-black mb-[10px]">Allergy Tested</h3>
-              <p className="font-body text-[16px] text-black/70 font-normal leading-[1.8]">Nunc vel urna consequat praesent in mattis eget vel libero zhasellus entesque.</p>
-            </motion.div>
-
-            {/* 4. Paraben Free Card */}
-            <motion.div
-              variants={{
-                hidden: { opacity: 0, y: 40 },
-                visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 80, damping: 15 } }
-              }}
-              className="flex flex-col items-center max-w-[280px] mx-auto"
-            >
-              <div className="h-[60px] flex items-center justify-center mb-[20px]">
-                <img src="/assets/homepage/Group-3.svg" alt="Paraben Free" className="h-[60px] w-auto transition-transform duration-300 hover:scale-105" />
-              </div>
-              <h3 className="font-heading text-[24px] lg:text-[26px] font-normal text-black mb-[10px]">Paraben Free</h3>
-              <p className="font-body text-[16px] text-black/70 font-normal leading-[1.8]">Mattis eget vel libero praesent in nunc vel urna consequat ehasellus entesque</p>
-            </motion.div>
-
-          </div>
-        </motion.div>
-      </section>
-
-      {/* PREMIUM CATEGORY GRID */}
-      <section className="w-full bg-white select-none">
-        <div className="max-w-[1280px] mx-auto px-4 md:px-[40px] pt-[60px] pb-[60px]">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-[24px] auto-rows-[300px] md:auto-rows-[320px]">
-
-            {/* 1. Serums Image Card */}
-            <div className="md:col-span-1 md:row-span-2 relative w-full h-full overflow-hidden group cursor-pointer bg-[#f6f5ea]">
-              <img src="/assets/homepage/Rectangle_1_f394c5a5-71c4-413b-8939-f8b03e00b527.jpg" alt="Organic Face Cream" className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
-              <div className="absolute bottom-[30px] left-1/2 -translate-x-1/2 z-10 w-[80%] max-w-[180px]">
-                <Link to="/collections/serums" className="flex items-center justify-center bg-white text-black hover:bg-black hover:text-white font-heading font-bold text-[12px] tracking-[0.2em] uppercase h-[46px] w-full transition-all duration-300 shadow-sm border-none" style={{ textDecoration: 'none' }}>SERUMS</Link>
-              </div>
-            </div>
-
-            {/* 2. Animated "Worldwide Fashion Collection" Text Card */}
-            <motion.div
-              className="md:col-span-1 md:row-span-1 bg-white flex flex-col justify-center items-center text-center p-6 w-full h-full"
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ type: 'spring', stiffness: 80, damping: 15 }}
-            >
-              <span className="text-black font-body font-normal text-[12px] tracking-[0.2em] uppercase mb-[15px] block">VITAL CATEGORIES</span>
-              <h2 className="font-serif text-[36px] lg:text-[42px] font-normal leading-[1.2] text-black">Worldwide<br />Fashion<br />Collection</h2>
-            </motion.div>
-
-            {/* 3. Lotion Image Card */}
-            <div className="md:col-span-1 md:row-span-1 relative w-full h-full overflow-hidden group cursor-pointer bg-[#f6f5ea]">
-              <img src="/assets/homepage/Rectangle_3_af090527-90c1-41b6-9c56-1e551d99d1bf.jpg" alt="Natural Organic Face Wash" className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
-              <div className="absolute bottom-[30px] left-1/2 -translate-x-1/2 z-10 w-[80%] max-w-[180px]">
-                <Link to="/collections/lotion" className="flex items-center justify-center bg-white text-black hover:bg-black hover:text-white font-heading font-bold text-[12px] tracking-[0.2em] uppercase h-[46px] w-full transition-all duration-300 shadow-sm border-none" style={{ textDecoration: 'none' }}>LOTION</Link>
-              </div>
-            </div>
-
-            {/* 4. Face Cream Image Card */}
-            <div className="md:col-span-1 md:row-span-1 relative w-full h-full overflow-hidden group cursor-pointer bg-[#f6f5ea]">
-              <img src="/assets/homepage/Rectangle_2_5d23986c-81f7-4e44-a103-f90ce659a719.jpg" alt="Open Face Cream Jar" className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
-              <div className="absolute bottom-[30px] left-1/2 -translate-x-1/2 z-10 w-[80%] max-w-[180px]">
-                <Link to="/collections/face-cream" className="flex items-center justify-center bg-white text-black hover:bg-black hover:text-white font-heading font-bold text-[12px] tracking-[0.2em] uppercase h-[46px] w-full transition-all duration-300 shadow-sm border-none" style={{ textDecoration: 'none' }}>FACE CREAM</Link>
-              </div>
-            </div>
-
-            {/* 5. Cleanse Image Card */}
-            <div className="md:col-span-1 md:row-span-1 relative w-full h-full overflow-hidden group cursor-pointer bg-[#f6f5ea]">
-              <img src="/assets/homepage/Rectangle_4_d29da3f1-b9e8-43ab-93cd-f60f9edceb81.jpg" alt="Cosmetic Cream Peaks" className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
-              <div className="absolute bottom-[30px] left-1/2 -translate-x-1/2 z-10 w-[80%] max-w-[180px]">
-                <Link to="/collections/cleanse" className="flex items-center justify-center bg-white text-black hover:bg-black hover:text-white font-heading font-bold text-[12px] tracking-[0.2em] uppercase h-[46px] w-full transition-all duration-300 shadow-sm border-none" style={{ textDecoration: 'none' }}>CLEANSE</Link>
-              </div>
-            </div>
-
-          </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+          <div className="hero-pagination mt-6 flex justify-center gap-2"></div>
         </div>
       </section>
 
-      {/* POPULAR PRODUCTS SECTION */}
-      <section className="w-full bg-white select-none">
-        {/* Margin issue fixed with px-[24px] md:px-[40px] and better gap */}
-        <div className="max-w-[1280px] mx-auto px-[24px] md:px-[40px] pt-[40px] pb-[84px] flex flex-col lg:flex-row items-start justify-start gap-8 md:gap-12">
 
-          {/* Text Section */}
-          <div className="w-full lg:w-[320px] shrink-0 text-left pt-4">
-            <span className="text-black font-sans font-normal text-[13px] uppercase tracking-[0.2em] block mb-[16px]" style={{ fontFamily: '"Work Sans", sans-serif' }}>
-              POPULAR PRODUCTS OF THE WEEK
+      {/* =========================================================
+         2. WHY CHOOSE FABISH (FEATURES SECTION)
+         ========================================================= */}
+      <section className="bg-gradient-to-b from-[#f4f3ea] to-white py-16 md:py-24 select-none">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-xl mx-auto mb-12">
+            <span className="text-[11px] font-bold tracking-[0.2em] text-[#729855] uppercase block mb-2 font-heading">
+              PURE BOTANICAL ETHICS
             </span>
-            <h2 className="text-[40px] font-semibold leading-[1.2] text-black mt-0 font-sans tracking-tight">
-              Latest<br />Worthwhile<br />Collections
+            <h2 className="font-heading font-medium text-3xl md:text-4xl text-[#1c2415]">
+              Why Choose Fabish Organic
             </h2>
           </div>
 
-          {/* Products Grid & Half Underline Container */}
-          <div className="flex-grow flex flex-col w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+            {[
+              { title: 'Natural Ingredients', desc: '100% cold-pressed plant extracts sourced ethically without chemical fillers.', img: '/assets/homepage/Group.svg' },
+              { title: 'Fragrance Free', desc: 'Hypoallergenic formulas free from artificial scent enhancers & dyes.', img: '/assets/homepage/Group-1.svg' },
+              { title: 'Allergy Tested', desc: 'Rigorously dermatologically certified safe for sensitive skin types.', img: '/assets/homepage/Group-2.svg' },
+              { title: 'Paraben Free', desc: 'Clean beauty formulation completely free from sulfates & toxic parabens.', img: '/assets/homepage/Group-3.svg' }
+            ].map((item, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: idx * 0.1 }}
+                className="glass-card rounded-3xl p-8 text-center bg-white/80 border border-[#e8e6d9] hover:border-[#3a4d23]/40 flex flex-col items-center justify-between shadow-xs hover:shadow-xl transition-all duration-500"
+              >
+                <div className="w-16 h-16 rounded-2xl bg-[#eef3e8] flex items-center justify-center mb-6 shadow-inner">
+                  <img src={item.img} alt={item.title} className="w-8 h-8 object-contain" />
+                </div>
+                <h3 className="font-heading font-semibold text-lg text-[#1c2415] mb-2">
+                  {item.title}
+                </h3>
+                <p className="text-xs text-[#5a5a5a] leading-relaxed font-body">
+                  {item.desc}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[20px] md:gap-[30px] w-full">
-              {popularProducts.map((product) => (
-                <PopularProductCard
-                  key={product._id}
-                  product={product}
-                  addToCart={addToCart}
-                  toggleWishlist={toggleWishlist}
-                  isInWishlist={isInWishlist}
-                  setQuickViewProduct={setQuickViewProduct}
-                />
-              ))}
+
+      {/* =========================================================
+         3. VITAL CATEGORIES (SHOP BY CATEGORY GRID)
+         ========================================================= */}
+      <section className="w-full bg-white py-16 md:py-24 select-none">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-xl mx-auto mb-12">
+            <span className="text-[11px] font-bold tracking-[0.2em] text-[#729855] uppercase block mb-2 font-heading">
+              CURATED COLLECTIONS
+            </span>
+            <h2 className="font-heading font-medium text-3xl md:text-4xl text-[#1c2415]">
+              Vital Categories
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[300px] md:auto-rows-[340px]">
+            {/* 1. Serums Image Card */}
+            <div className="md:col-span-1 md:row-span-2 relative rounded-3xl overflow-hidden group cursor-pointer bg-[#f6f5ea] shadow-md border border-[#e8e6d9]">
+              <img src="/assets/homepage/Rectangle_1_f394c5a5-71c4-413b-8939-f8b03e00b527.jpg" alt="Serums" className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              <div className="absolute bottom-6 left-6 right-6 z-10 flex flex-col items-start">
+                <span className="text-white/80 text-[10px] font-bold tracking-widest uppercase mb-1 font-heading">CONCENTRATE</span>
+                <h3 className="text-2xl font-bold text-white mb-3 font-heading">Botanical Serums</h3>
+                <Link to="/collections/serums" className="inline-flex items-center justify-center bg-white/90 hover:bg-[#3a4d23] text-[#1c2415] hover:text-white font-heading font-bold text-[11px] tracking-[0.2em] uppercase px-6 py-3 rounded-full transition-all duration-300 shadow-md">
+                  SERUMS
+                </Link>
+              </div>
             </div>
 
-            {/* FIX: Half Underline (Scroll/Progress bar) moved exactly below the products */}
-            <div className="w-full h-[2px] bg-gray-200 mt-14">
-              <div className="w-1/2 h-full bg-black"></div>
+            {/* 2. Text Highlight */}
+            <div className="md:col-span-1 md:row-span-1 rounded-3xl bg-gradient-to-br from-[#eef3e8] to-[#e4edd9] p-8 flex flex-col justify-center items-center text-center shadow-xs border border-[#d2e2c5]">
+              <span className="text-[#3a4d23] font-heading font-bold text-[11px] tracking-[0.2em] uppercase mb-2">WORLDWIDE ORGANIC</span>
+              <h2 className="font-heading text-2xl lg:text-3xl font-medium text-[#1c2415] leading-snug">
+                Worldwide Cosmetics Collection
+              </h2>
             </div>
 
+            {/* 3. Lotion */}
+            <div className="md:col-span-1 md:row-span-1 relative rounded-3xl overflow-hidden group cursor-pointer bg-[#f6f5ea] shadow-md border border-[#e8e6d9]">
+              <img src="/assets/homepage/Rectangle_3_af090527-90c1-41b6-9c56-1e551d99d1bf.jpg" alt="Lotion" className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              <div className="absolute bottom-6 left-6 z-10">
+                <Link to="/collections/lotion" className="inline-flex items-center justify-center bg-white/90 hover:bg-[#3a4d23] text-[#1c2415] hover:text-white font-heading font-bold text-[11px] tracking-[0.2em] uppercase px-6 py-3 rounded-full transition-all duration-300 shadow-md">
+                  LOTION
+                </Link>
+              </div>
+            </div>
+
+            {/* 4. Face Cream */}
+            <div className="md:col-span-1 md:row-span-1 relative rounded-3xl overflow-hidden group cursor-pointer bg-[#f6f5ea] shadow-md border border-[#e8e6d9]">
+              <img src="/assets/homepage/Rectangle_2_5d23986c-81f7-4e44-a103-f90ce659a719.jpg" alt="Face Cream" className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              <div className="absolute bottom-6 left-6 z-10">
+                <Link to="/collections/face-cream" className="inline-flex items-center justify-center bg-white/90 hover:bg-[#3a4d23] text-[#1c2415] hover:text-white font-heading font-bold text-[11px] tracking-[0.2em] uppercase px-6 py-3 rounded-full transition-all duration-300 shadow-md">
+                  FACE CREAM
+                </Link>
+              </div>
+            </div>
+
+            {/* 5. Cleanse */}
+            <div className="md:col-span-1 md:row-span-1 relative rounded-3xl overflow-hidden group cursor-pointer bg-[#f6f5ea] shadow-md border border-[#e8e6d9]">
+              <img src="/assets/homepage/Rectangle_4_d29da3f1-b9e8-43ab-93cd-f60f9edceb81.jpg" alt="Cleanse" className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              <div className="absolute bottom-6 left-6 z-10">
+                <Link to="/collections/cleanse" className="inline-flex items-center justify-center bg-white/90 hover:bg-[#3a4d23] text-[#1c2415] hover:text-white font-heading font-bold text-[11px] tracking-[0.2em] uppercase px-6 py-3 rounded-full transition-all duration-300 shadow-md">
+                  CLEANSE
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      {/* =========================================================
+         4. POPULAR PRODUCTS OF THE WEEK
+         ========================================================= */}
+      <section className="w-full bg-gradient-to-b from-white via-[#faf9f5] to-white py-16 md:py-24 select-none">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+
+          <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-10 pb-4 border-b border-[#e8e6d9]">
+            <div>
+              <span className="text-[11px] font-bold tracking-[0.2em] text-[#729855] uppercase block mb-2 font-heading">
+                WEEKLY ESSENTIALS
+              </span>
+              <h2 className="font-heading font-medium text-3xl md:text-4xl text-[#1c2415]">
+                Popular Products Of The Week
+              </h2>
+            </div>
+            <Link to="/collections/all" className="mt-4 md:mt-0 font-heading text-xs font-bold tracking-widest text-[#3a4d23] hover:text-[#1c2415] uppercase flex items-center gap-1">
+              <span>EXPLORE ALL PRODUCTS</span>
+              <ChevronRight size={16} />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+            {popularProducts.map((product) => (
+              <PopularProductCard
+                key={product._id}
+                product={product}
+                addToCart={addToCart}
+                toggleWishlist={toggleWishlist}
+                isInWishlist={isInWishlist}
+                setQuickViewProduct={setQuickViewProduct}
+              />
+            ))}
           </div>
 
         </div>
       </section>
 
-      {/* HAIR SERUM SECTION */}
-      <section className="w-full bg-white select-none">
-        <div className="max-w-[1280px] mx-auto px-4 md:px-[40px] pt-[60px] pb-[60px]">
-          <div className="flex flex-col lg:flex-row items-stretch gap-[60px]">
-            <div className="w-full lg:w-1/2 flex-shrink-0 flex items-center">
-              <img src="/assets/homepage/Image-Sectio-3_4bf9d804-e941-478d-98bf-9867ba97363b.png" alt="Deeply Nourishing Hair Serum" className="w-full h-full object-cover" style={{ maxHeight: '520px', objectFit: 'cover' }} />
+
+      {/* =========================================================
+         5. SHOP BY SKIN TYPE SECTION (New 2026 Interactive Addition)
+         ========================================================= */}
+      <section className="w-full bg-[#f4f3ea] py-16 md:py-24 select-none border-y border-[#e8e6d9]">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-xl mx-auto mb-12">
+            <span className="text-[11px] font-bold tracking-[0.2em] text-[#729855] uppercase block mb-2 font-heading">
+              PERSONALIZED CARE
+            </span>
+            <h2 className="font-heading font-medium text-3xl md:text-4xl text-[#1c2415]">
+              Shop By Skin Type
+            </h2>
+            <p className="text-xs sm:text-sm text-[#5a5a5a] mt-2 font-body">
+              Targeted botanical formulations engineered for your skin's precise needs.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
+            {skinTypes.map((st, i) => (
+              <Link
+                key={i}
+                to={st.link}
+                className="glass-card bg-white/90 rounded-3xl p-6 flex flex-col items-center text-center group border border-white/60 shadow-xs hover:shadow-xl transition-all duration-300"
+              >
+                <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${st.color} flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform duration-300 shadow-inner`}>
+                  {st.icon}
+                </div>
+                <span className="text-[9px] font-bold tracking-widest text-[#729855] uppercase mb-1 font-heading">{st.tag}</span>
+                <h3 className="font-heading font-medium text-sm text-[#1c2415] mb-1">{st.name}</h3>
+                <span className="text-[11px] text-gray-400 font-body">{st.count}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+
+      {/* =========================================================
+         6. HAIR SERUM FEATURE SECTION
+         ========================================================= */}
+      <section className="w-full bg-white py-16 md:py-24 select-none">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center glass-card rounded-3xl p-8 sm:p-12 bg-gradient-to-br from-[#faf9f5] to-[#f4f3ea] border border-[#e8e6d9]">
+            
+            <div className="relative rounded-2xl overflow-hidden aspect-[4/3] shadow-lg">
+              <img src="/assets/homepage/Image-Sectio-3_4bf9d804-e941-478d-98bf-9867ba97363b.png" alt="Nourishing Hair Serum" className="w-full h-full object-cover" />
+              <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3.5 py-1.5 rounded-full shadow-xs">
+                <span className="text-[10px] font-bold text-[#3a4d23] uppercase tracking-wider font-heading">★ BESTSELLER</span>
+              </div>
             </div>
-            <div className="w-full lg:w-1/2 flex flex-col justify-center">
-              <span className="block font-body font-normal text-[12px] uppercase tracking-[0.18em] text-[#729855] mb-[16px]">PURE AND SIMPLE</span>
-              <h2 className="font-heading font-bold text-[36px] leading-[1.2] text-black mb-[18px]">Deeply Nourishing Hair Serum<br />For Glowing &amp; Healthy Hair</h2>
-              <p className="font-body text-[15px] leading-[1.7] text-[#4a4a4a] mb-[32px]">Ut Tempor Sem Leo, A <a href="/collections/all" className="text-[#729855] hover:underline">Ultricies Quam Aliquam Eget.</a> Vivamus Commodo Scelerisq Ue Velit, Quis Viverra Velit Bibendum Vel. <a href="/collections/all" className="text-[#729855] hover:underline">Phasell Sus Id Leo Et Vestibulum.</a></p>
-              <div className="grid grid-cols-2 gap-x-[32px] gap-y-[20px] mb-[36px]">
+
+            <div className="flex flex-col justify-center">
+              <span className="text-[11px] font-bold tracking-[0.2em] uppercase text-[#729855] mb-2 font-heading">
+                PURE AND SIMPLE
+              </span>
+              <h2 className="font-heading font-medium text-3xl md:text-4xl text-[#1c2415] mb-4 leading-tight">
+                Deeply Nourishing Hair Serum For Glowing Hair
+              </h2>
+              <p className="text-sm text-[#4a4a4a] leading-relaxed mb-6 font-body">
+                Infused with organic argan and rosehip seed oils to strengthen hair follicles, eliminate frizz, and provide lasting natural shine.
+              </p>
+
+              <div className="grid grid-cols-2 gap-4 mb-8">
                 {[
-                  { label: 'Strong & Smooth', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" className="w-[20px] h-[20px]"><path d="M12 3C7 3 3 7 3 12s4 9 9 9 9-4 9-9-4-9-9-9zm-1 13l-4-4 1.4-1.4L11 13.2l5.6-5.6L18 9l-7 7z" /></svg> },
-                  { label: 'Paraben-Free', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" className="w-[20px] h-[20px]"><circle cx="12" cy="12" r="9" /><path d="M2.5 12h19M12 2.5a14.5 14.5 0 0 1 3.5 9.5 14.5 14.5 0 0 1-3.5 9.5A14.5 14.5 0 0 1 8.5 12 14.5 14.5 0 0 1 12 2.5z" /></svg> },
-                  { label: 'Sulfate-Free', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" className="w-[20px] h-[20px]"><circle cx="12" cy="12" r="9" /><path strokeLinecap="round" d="M4.93 4.93l14.14 14.14" /></svg> },
-                  { label: '100% Vegan', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" className="w-[20px] h-[20px]"><path d="M12 21.5C12 21.5 3 16 3 8.5a5.5 5.5 0 0 1 9-4.24A5.5 5.5 0 0 1 21 8.5c0 7.5-9 13-9 13z" /></svg> },
-                ].map(({ icon, label }) => (
-                  <div key={label} className="flex items-center gap-[14px]">
-                    <div className="w-[50px] h-[50px] rounded-full border border-black flex items-center justify-center flex-shrink-0 text-black bg-transparent">{icon}</div>
-                    <span className="font-body text-[15px] font-normal text-black">{label}</span>
+                  'Strong & Smooth',
+                  'Paraben-Free',
+                  'Sulfate-Free',
+                  '100% Vegan'
+                ].map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-2.5">
+                    <CheckCircle2 size={18} className="text-[#3a4d23] flex-shrink-0" />
+                    <span className="text-xs font-semibold text-[#1c2415] font-body">{item}</span>
                   </div>
                 ))}
               </div>
+
               <div>
-                <Link to="/collections/all" className="inline-flex items-center justify-center bg-[#2f3e10] hover:bg-[#4a5c20] text-white font-body font-bold text-[12px] tracking-[0.18em] uppercase transition-colors duration-200" style={{ width: '142px', height: '50px', textDecoration: 'none' }}>SHOP NOW</Link>
+                <Link
+                  to="/collections/all"
+                  className="inline-flex items-center justify-center gap-2 bg-[#3a4d23] hover:bg-[#1c2415] text-white text-xs font-bold tracking-[0.2em] uppercase px-8 py-4 rounded-full transition-all duration-300 shadow-md hover:scale-105 font-heading"
+                >
+                  <span>SHOP NOW</span>
+                  <ChevronRight size={16} />
+                </Link>
               </div>
             </div>
+
           </div>
         </div>
       </section>
 
+
+      {/* =========================================================
+         7. FEATURED BANNER & BEAUTY GRID
+         ========================================================= */}
       <FaceCreamBanner />
 
       <BeautyProductGrid setQuickViewProduct={setQuickViewProduct} />
 
-      {/* AuraBloom Video Section - Optimized for perfect mobile responsiveness without covering the model's face */}
-      <section className="relative w-full flex flex-col lg:block lg:h-[500px] overflow-hidden my-12 bg-white lg:bg-[#f6f5ea]">
 
-        {/* 1. Text Container (Mobile: Top / Desktop: Overlay) */}
-        <div className="relative lg:absolute inset-0 z-10 w-full max-w-[1280px] mx-auto px-4 md:px-[60px] lg:px-[100px] flex flex-col lg:flex-row items-center lg:justify-between py-10 lg:py-0 pointer-events-none order-1 lg:order-none bg-white lg:bg-transparent">
-          <div className="w-full sm:w-[80%] md:w-[60%] lg:w-[45%] text-center lg:text-left pointer-events-auto">
-            <h2 className="font-heading font-medium text-[22px] sm:text-[24px] md:text-[36px] lg:text-[40px] leading-[1.25] text-black mb-3 sm:mb-4 lg:mb-[20px]">
-              AuraBloom Beauty &amp; Personal Care
+      {/* =========================================================
+         8. AURABLOOM VIDEO SHOWCASE SECTION
+         ========================================================= */}
+      <section className="relative w-full py-16 lg:py-24 bg-[#f4f3ea] overflow-hidden my-8 select-none">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+
+            <div className="glass-panel p-8 sm:p-12 rounded-3xl border border-white/60 shadow-xl">
+              <span className="text-[10px] font-bold tracking-[0.25em] text-[#3a4d23] uppercase mb-2 block font-heading">
+                BOTANICAL INNOVATION
+              </span>
+              <h2 className="font-heading font-medium text-3xl md:text-4xl text-[#1c2415] mb-4">
+                AuraBloom Beauty &amp; Personal Care
+              </h2>
+              <p className="text-sm text-[#4a4a4a] leading-relaxed mb-6 font-body">
+                Experience the harmony of nature and dermatological science. Our zero-waste cold-pressed processing preserves 99.4% of essential plant nutrients for visible glow.
+              </p>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={toggleVideoPlay}
+                  className="inline-flex items-center justify-center gap-3 bg-[#3a4d23] hover:bg-[#1c2415] text-white text-xs font-bold tracking-[0.18em] uppercase px-6 py-3 rounded-full transition-all duration-300 shadow-md cursor-pointer font-heading"
+                >
+                  {isVideoPlaying ? <Pause size={16} /> : <Play size={16} />}
+                  <span>{isVideoPlaying ? 'PAUSE VIDEO' : 'PLAY VIDEO'}</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="relative rounded-3xl overflow-hidden aspect-video shadow-2xl bg-black group">
+              <video
+                ref={videoRef}
+                src="/assets/WhatsApp Video 2026-06-21 at 11.32.21 AM.mp4"
+                className="w-full h-full object-cover"
+                autoPlay
+                muted
+                loop
+                playsInline
+              />
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+
+      {/* =========================================================
+         9. CUSTOMER REVIEWS (TESTIMONIALS)
+         ========================================================= */}
+      <section className="w-full bg-white py-16 md:py-24 select-none">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+
+          <div className="text-center max-w-xl mx-auto mb-12">
+            <span className="text-[11px] font-bold tracking-[0.2em] text-[#729855] uppercase block mb-2 font-heading">
+              VERIFIED FEEDBACK
+            </span>
+            <h2 className="font-heading font-medium text-3xl md:text-4xl text-[#1c2415]">
+              Customer Reviews
             </h2>
-            {/* Removed mobile line-clamp to match the 1st image reference exactly */}
-            <p className="font-body text-[13px] sm:text-[14px] lg:text-[15px] leading-[1.6] text-[#111] mb-0 lg:mb-[20px] lg:line-clamp-none">
-              Mollis Aliquam Ut Porttitor Leo A. Diam Quis Enim Lobortis Scelerisque Fermentum Dui. Turpis Tincidunt Id Aliquet Risus Feugiat In Ante. Luctus Venenatis Lectus Magna Fringilla Urna Porttitor. Venenatis A Condimentum Vitae Sapien Pellentesque Habitant. Odio Aenean Sed Adipiscing Diam Donec Adipiscing. Gravida Arcu Ac Tortor Dignissim Convallis Aenean Et Tortor.
-            </p>
           </div>
 
-          {/* Desktop Play Button (Unchanged) */}
-          <div className="hidden lg:flex pointer-events-auto">
-            <button
-              onClick={toggleVideoPlay}
-              className="group w-[88px] h-[88px] rounded-full border-2 border-black hover:border-[#729855] flex items-center justify-center bg-transparent transition-all duration-300"
-            >
-              {isVideoPlaying ? (
-                <svg width="22" height="22" viewBox="0 0 24 24" className="text-black group-hover:text-[#729855] transition-colors duration-300">
-                  <rect x="6" y="4" width="4" height="16" fill="currentColor" />
-                  <rect x="14" y="4" width="4" height="16" fill="currentColor" />
-                </svg>
-              ) : (
-                <svg width="24" height="24" viewBox="0 0 24 24" className="ml-1 text-black group-hover:text-[#729855] transition-colors duration-300">
-                  <path d="M6 4L19 12L6 20V4Z" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-                </svg>
-              )}
-            </button>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+            {[
+              {
+                name: 'Jessica James',
+                location: 'Paris, France',
+                review: 'Fabish organic creams changed my skincare routine completely. My skin feels deeply moisturized without any greasy residue.',
+                img: '/assets/homepage/Test02.jpg'
+              },
+              {
+                name: 'Luce Aurora',
+                location: 'New York, US',
+                review: 'The hair serum works like magic! My split ends have visibly reduced and the natural botanical scent is so relaxing.',
+                img: '/assets/homepage/Test01.jpg'
+              },
+              {
+                name: 'Ottavia Leila',
+                location: 'Los Angeles, US',
+                review: '100% natural, dermatologist approved, and clean. Customer service is prompt and delivery was super fast. Highly recommended!',
+                img: '/assets/homepage/Test03.jpg'
+              }
+            ].map((item, idx) => (
+              <div key={idx} className="glass-card rounded-3xl p-8 bg-white/80 border border-[#e8e6d9] shadow-xs hover:shadow-xl transition-all duration-500 flex flex-col justify-between">
+                <div>
+                  <div className="flex gap-1 mb-4">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} size={16} className="fill-amber-400 text-amber-400" />
+                    ))}
+                  </div>
+                  <p className="text-sm text-[#4a4a4a] leading-relaxed mb-6 font-body">
+                    "{item.review}"
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-4 pt-4 border-t border-[#f4f2e6]">
+                  <img
+                    src={item.img}
+                    alt={item.name}
+                    className="w-12 h-12 rounded-full object-cover shadow-xs border border-white"
+                    onError={(e) => { e.target.src = "/assets/homepage/Rectangle_1_f394c5a5-71c4-413b-8939-f8b03e00b527.jpg"; }}
+                  />
+                  <div>
+                    <h4 className="font-heading font-semibold text-sm text-[#1c2415]">{item.name}</h4>
+                    <span className="text-xs text-gray-400 font-body">{item.location}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
+
         </div>
-
-        {/* 2. Video Container (Mobile: Bottom / Desktop: Background) */}
-        <div className="relative lg:absolute inset-0 w-full h-[280px] sm:h-[350px] lg:h-full z-0 order-2 lg:order-none flex items-center justify-center bg-black">
-          <video
-            ref={videoRef}
-            src="/assets/WhatsApp Video 2026-06-21 at 11.32.21 AM.mp4"
-            className="absolute inset-0 w-full h-full object-cover object-center z-0"
-            autoPlay
-            muted
-            loop
-            playsInline
-          />
-
-          {/* Mobile Play Button - Exact match to your 1st Image */}
-          <button
-            onClick={toggleVideoPlay}
-            className="lg:hidden relative z-10 w-[48px] h-[48px] rounded-full bg-[#dbe3d4] flex items-center justify-center text-black pointer-events-auto shadow-md"
-          >
-            {isVideoPlaying ? (
-              <svg width="18" height="18" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" fill="currentColor" /><rect x="14" y="4" width="4" height="16" fill="currentColor" /></svg>
-            ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" className="ml-1"><path d="M6 4L19 12L6 20V4Z" fill="currentColor" stroke="currentColor" strokeWidth="1" strokeLinejoin="round" /></svg>
-            )}
-          </button>
-        </div>
-
       </section>
 
-      {/* TESTIMONIALS SECTION */}
-      <section className="w-full bg-white py-[80px] flex flex-col justify-start select-none">
-        <div className="w-full max-w-[1280px] mx-auto px-4 md:px-[40px]">
-          <span className="block font-body font-normal text-[12px] uppercase tracking-[0.2em] text-[#000000] mb-[16px] text-left" style={{ fontFamily: '"Work Sans", sans-serif' }}>
-            CUSTOMER REVIEWS
+
+      {/* =========================================================
+         10. FROM OUR BLOG SECTION
+         ========================================================= */}
+      <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 bg-white border-t border-[#f4f2e6]">
+        <div className="text-center max-w-xl mx-auto mb-12">
+          <span className="text-[11px] font-bold tracking-[0.2em] text-[#729855] uppercase block mb-2 font-heading">
+            SKINCARE INSIGHTS
           </span>
-          <h2 className="font-heading font-semibold text-[36px] md:text-[44px] leading-[1.2] text-[#000000] mb-[60px] text-left">
-            Testimonials
+          <h2 className="font-heading font-medium text-3xl md:text-4xl text-[#1c2415]">
+            From Our Blog
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-[40px] lg:gap-[80px] w-full text-left">
-            <div className="flex flex-col">
-              <div className="flex gap-[3.5px] mb-[27px] items-center">
-                <Star className="w-[16px] h-[16px]" stroke="#fec42d" fill="#fec42d" strokeWidth={1.5} />
-                <Star className="w-[16px] h-[16px]" stroke="#fec42d" fill="#fec42d" strokeWidth={1.5} />
-                <Star className="w-[16px] h-[16px]" stroke="#fec42d" fill="#fec42d" strokeWidth={1.5} />
-                <Star className="w-[16px] h-[16px]" stroke="#fec42d" fill="#fec42d" strokeWidth={1.5} />
-                <Star className="w-[16px] h-[16px]" stroke="#fec42d" fill="none" strokeWidth={1.5} />
-              </div>
-              <p className="font-body text-[15px] leading-[1.8] text-[#333333] font-normal mb-[32px] max-w-full">
-                Ut sem nulla pharetra diam sit amet nisl. A iaculis at erat pellentesque adipiscing commodo elit.
-              </p>
-              <div className="flex items-center gap-[20px]">
-                <img src="/assets/homepage/Test02.jpg" alt="Jessica James" className="w-[60px] h-[60px] rounded-full object-cover flex-shrink-0" onError={(e) => { e.target.src = "/assets/homepage/Rectangle_1_f394c5a5-71c4-413b-8939-f8b03e00b527.jpg"; }} />
-                <div className="flex flex-col gap-[4px] justify-center">
-                  <p className="font-heading font-medium text-[15px] text-black m-0 tracking-wide">Jessica James</p>
-                  <p className="font-body text-[13px] text-[#777] m-0">Paris, France</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-col">
-              <div className="flex gap-[3.5px] mb-[27px] items-center">
-                <Star className="w-[16px] h-[16px]" stroke="#fec42d" fill="#fec42d" strokeWidth={1.5} />
-                <Star className="w-[16px] h-[16px]" stroke="#fec42d" fill="#fec42d" strokeWidth={1.5} />
-                <Star className="w-[16px] h-[16px]" stroke="#fec42d" fill="#fec42d" strokeWidth={1.5} />
-                <Star className="w-[16px] h-[16px]" stroke="#fec42d" fill="#fec42d" strokeWidth={1.5} />
-                <Star className="w-[16px] h-[16px]" stroke="#fec42d" fill="none" strokeWidth={1.5} />
-              </div>
-              <p className="font-body text-[15px] leading-[1.8] text-[#333333] font-normal mb-[32px] max-w-full">
-                Eu consequat ac felis donec. Justo donec enim diam vulputate ut pharetra sit amet aliquam.
-              </p>
-              <div className="flex items-center gap-[20px]">
-                <img src="/assets/homepage/Test01.jpg" alt="Luce Aurora" className="w-[60px] h-[60px] rounded-full object-cover flex-shrink-0" onError={(e) => { e.target.src = "/assets/homepage/Rectangle_3_af090527-90c1-41b6-9c56-1e551d99d1bf.jpg"; }} />
-                <div className="flex flex-col gap-[4px] justify-center">
-                  <p className="font-heading font-medium text-[15px] text-black m-0 tracking-wide">Luce Aurora</p>
-                  <p className="font-body text-[13px] text-[#777] m-0">Newyork,US</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-col">
-              <div className="flex gap-[3.5px] mb-[27px] items-center">
-                <Star className="w-[16px] h-[16px]" stroke="#fec42d" fill="#fec42d" strokeWidth={1.5} />
-                <Star className="w-[16px] h-[16px]" stroke="#fec42d" fill="#fec42d" strokeWidth={1.5} />
-                <Star className="w-[16px] h-[16px]" stroke="#fec42d" fill="#fec42d" strokeWidth={1.5} />
-                <Star className="w-[16px] h-[16px]" stroke="#fec42d" fill="#fec42d" strokeWidth={1.5} />
-                <Star className="w-[16px] h-[16px]" stroke="#fec42d" fill="none" strokeWidth={1.5} />
-              </div>
-              <p className="font-body text-[15px] leading-[1.8] text-[#333333] font-normal mb-[32px] max-w-full">
-                Aliquam purus sit amet luctus venenatis lectus. Arcu non odio euismod lacinia at quis risus sed.
-              </p>
-              <div className="flex items-center gap-[20px]">
-                <img src="/assets/homepage/Test03.jpg" alt="Ottavia Leila" className="w-[60px] h-[60px] rounded-full object-cover flex-shrink-0" onError={(e) => { e.target.src = "/assets/homepage/Rectangle_2_5d23986c-81f7-4e44-a103-f90ce659a719.jpg"; }} />
-                <div className="flex flex-col gap-[4px] justify-center">
-                  <p className="font-heading font-medium text-[15px] text-black m-0 tracking-wide">Ottavia Leila</p>
-                  <p className="font-body text-[13px] text-[#777] m-0">Losangles, US</p>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
-      </section>
 
-      {/* FROM OUR BLOG SECTION - XEROX COPY FIX */}
-      <section className="max-w-[1280px] mx-auto px-4 md:px-[40px] py-[80px] bg-white">
-        <h2 className="font-heading font-medium text-[36px] md:text-[42px] lg:text-[48px] text-center mb-[40px]">From Our Blog</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[32px] mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           {(blogs.length > 0 ? blogs.slice(0, 3) : staticBlogs).map((post, index) => (
-            <div key={post._id || index} className="bg-white overflow-hidden flex flex-col text-left">
-              <div className="w-full aspect-[16/10] overflow-hidden mb-6 bg-[#f6f5ea]">
+            <div key={post._id || index} className="glass-card rounded-3xl overflow-hidden bg-white border border-[#e8e6d9] flex flex-col group hover:shadow-xl transition-all duration-500">
+              <div className="w-full aspect-[16/10] overflow-hidden bg-[#f6f5ea] relative">
                 <Link to={`/blogs/news/${post.slug || ''}`}>
                   <img
-                    src={post.image ? `${getLocalImageUrl(post.image)}?t=${new Date(post.updatedAt || post.createdAt || Date.now()).getTime()}` : getLocalImageUrl(post.image)}
+                    src={post.image ? `${getLocalImageUrl(post.image)}` : getLocalImageUrl(post.image)}
                     alt={post.title}
-                    className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     onError={(e) => { e.target.src = '/assets/Blog07.jpg'; }}
                   />
                 </Link>
               </div>
-              <div className="flex flex-col pr-4">
-                <p className="font-body text-[13px] text-black mb-[10px]">
-                  {typeof post.author === 'object' ? post.author?.name : (post.author || 'Admin')} &nbsp;|&nbsp; {post.createdAt ? new Date(post.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : (post.date || '25 Mar 2024')} &nbsp;|&nbsp; {post.comments || 'General'}
-                </p>
-                <h3 className="font-heading font-semibold text-[22px] leading-[1.3] text-black mb-[20px] line-clamp-2 hover:text-[#729855] transition-colors">
-                  <Link to={`/blogs/news/${post.slug || ''}`}>{post.title}</Link>
-                </h3>
+              <div className="p-6 flex flex-col flex-grow justify-between">
                 <div>
-                  <Link to={`/blogs/news/${post.slug || ''}`} className="font-body text-[12px] font-bold uppercase tracking-[0.15em] text-black border-b border-black pb-1 hover:text-[#729855] hover:border-[#729855] transition-colors">
-                    READ MORE
-                  </Link>
+                  <span className="text-[11px] text-gray-400 font-body block mb-2">
+                    {post.date || '25 Mar 2024'} • {post.comments || '3 Comments'}
+                  </span>
+                  <h3 className="font-heading font-medium text-lg text-[#1c2415] leading-snug hover:text-[#729855] transition-colors mb-4 line-clamp-2">
+                    <Link to={`/blogs/news/${post.slug || ''}`}>{post.title}</Link>
+                  </h3>
                 </div>
+                <Link
+                  to={`/blogs/news/${post.slug || ''}`}
+                  className="font-heading text-xs font-bold tracking-[0.18em] uppercase text-[#3a4d23] hover:text-[#1c2415] inline-flex items-center gap-1 transition-colors"
+                >
+                  <span>READ STORY</span>
+                  <ChevronRight size={14} />
+                </Link>
               </div>
             </div>
           ))}
         </div>
+
         <div className="flex justify-center">
-          <Link to="/blogs/news" className="inline-flex items-center justify-center border-[2px] border-black hover:bg-black hover:text-white text-black font-heading font-bold text-[12px] tracking-[0.18em] uppercase transition-all duration-300" style={{ width: '190px', height: '50px', textDecoration: 'none' }}>VIEW ALL POSTS</Link>
+          <Link
+            to="/blogs/news"
+            className="inline-flex items-center justify-center gap-2 border-2 border-[#1c2415] hover:bg-[#1c2415] hover:text-white text-[#1c2415] font-heading font-bold text-xs tracking-[0.18em] uppercase px-8 py-4 rounded-full transition-all duration-300"
+          >
+            <span>VIEW ALL POSTS</span>
+          </Link>
         </div>
       </section>
 
-      {/* INSTAGRAM GALLERY / GAP FIXED WITH CORRECT ASPECT HEIGHT */}
-      <section className="w-full bg-white pt-[40px] pb-[80px] select-none">
-        <div className="w-full max-w-[1280px] mx-auto px-4 md:px-[40px]">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-[15px] lg:gap-[30px]">
-            {/* Image 1 */}
-            <div className="relative aspect-[4/5] overflow-hidden group cursor-pointer bg-[#f6f5ea]">
-              <img src="/assets/Rectangle_342.jpg" alt="Gallery 1" className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" />
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 bg-black/10">
-                <div className="w-[48px] h-[48px] rounded-full border border-white flex items-center justify-center bg-black/20 backdrop-blur-sm">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
-                </div>
-              </div>
-            </div>
-            {/* Image 2 */}
-            <div className="relative aspect-[4/5] overflow-hidden group cursor-pointer bg-[#f6f5ea]">
-              <img src="/assets/Rectangle_341.jpg" alt="Gallery 2" className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" />
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 bg-black/10">
-                <div className="w-[48px] h-[48px] rounded-full border border-white flex items-center justify-center bg-black/20 backdrop-blur-sm">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
-                </div>
-              </div>
-            </div>
-            {/* Video (Middle) */}
-            <div className="relative aspect-[4/5] overflow-hidden group cursor-pointer bg-black">
-              <video src="/assets/73b7434b832e4989a63b1d48f8e21ccf.mp4" autoPlay muted loop playsInline className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105" />
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 bg-black/20">
-                <div className="w-[48px] h-[48px] rounded-full border border-white flex items-center justify-center bg-black/30 backdrop-blur-sm">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
-                </div>
-              </div>
-            </div>
-            {/* Image 4 */}
-            <div className="relative aspect-[4/5] overflow-hidden group cursor-pointer bg-[#f6f5ea]">
-              <img src="/assets/Rectangle_339.jpg" alt="Gallery 3" className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" />
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 bg-black/10">
-                <div className="w-[48px] h-[48px] rounded-full border border-white flex items-center justify-center bg-black/20 backdrop-blur-sm">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
-                </div>
-              </div>
-            </div>
-            {/* Image 5 - Mobile Responsive full width stretch fix */}
-            <div className="relative col-span-2 md:col-span-1 aspect-[8/5] md:aspect-[4/5] overflow-hidden group cursor-pointer bg-[#f6f5ea]">
-              <img src="/assets/Rectangle_340.jpg" alt="Gallery 4" className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" />
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 bg-black/10">
-                <div className="w-[48px] h-[48px] rounded-full border border-white flex items-center justify-center bg-black/20 backdrop-blur-sm">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
-                </div>
-              </div>
-            </div>
+
+      {/* =========================================================
+         11. INSTAGRAM / SOCIAL GALLERY
+         ========================================================= */}
+      <section className="w-full bg-[#faf9f5] py-16 select-none border-t border-[#e8e6d9]">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <div className="text-center mb-8">
+            <span className="text-[11px] font-bold tracking-[0.2em] text-[#729855] uppercase font-heading">
+              JOIN OUR COMMUNITY @FABISH.ORGANIC
+            </span>
           </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {[
+              { type: 'img', src: '/assets/Rectangle_342.jpg' },
+              { type: 'img', src: '/assets/Rectangle_341.jpg' },
+              { type: 'vid', src: '/assets/73b7434b832e4989a63b1d48f8e21ccf.mp4' },
+              { type: 'img', src: '/assets/Rectangle_339.jpg' },
+              { type: 'img', src: '/assets/Rectangle_340.jpg' }
+            ].map((media, i) => (
+              <div key={i} className="relative aspect-square rounded-2xl overflow-hidden group cursor-pointer bg-[#f6f5ea] shadow-xs">
+                {media.type === 'vid' ? (
+                  <video src={media.src} autoPlay muted loop playsInline className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                ) : (
+                  <img src={media.src} alt={`Instagram ${i + 1}`} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                )}
+                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center text-[#1c2415]">
+                    <Sparkles size={18} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
         </div>
       </section>
 
-      {/* QUICK VIEW MODAL */}
+
+      {/* =========================================================
+         12. QUICK VIEW MODAL (Luxury Frosted Glass)
+         ========================================================= */}
       {quickViewProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity duration-300 animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md transition-opacity duration-300 animate-fadeIn">
           <div className="absolute inset-0 cursor-default" onClick={() => setQuickViewProduct(null)} />
-          <div className="bg-white max-w-[800px] w-full shadow-2xl relative flex flex-col md:flex-row max-h-[90vh] md:max-h-[600px] overflow-y-auto md:overflow-visible rounded-none z-10 animate-scaleIn border border-[#f7e9e3]">
-            <button onClick={() => setQuickViewProduct(null)} className="absolute top-3 right-3 w-11 h-11 flex items-center justify-center text-brand-charcoal hover:text-brand-green bg-white/90 rounded-full shadow-md z-20 cursor-pointer border-none" title="Close Quick View"><X className="w-6 h-6" /></button>
-            <div className="w-full md:w-1/2 bg-[#f6f5ea] flex items-center justify-center p-8 aspect-square md:aspect-auto">
+          
+          <div className="bg-white max-w-[800px] w-full shadow-2xl relative flex flex-col md:flex-row max-h-[90vh] md:max-h-[600px] overflow-y-auto md:overflow-visible rounded-3xl z-10 animate-scaleIn border border-white/60">
+            <button
+              onClick={() => setQuickViewProduct(null)}
+              className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center text-[#1c2415] hover:bg-[#3a4d23] hover:text-white bg-white/90 rounded-full shadow-md z-20 cursor-pointer border-none transition-all duration-300"
+              title="Close Quick View"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="w-full md:w-1/2 bg-[#f7f6f0] flex items-center justify-center p-8 aspect-square md:aspect-auto">
               <img src={getLocalImageUrl(quickViewProduct.images?.[0])} alt={quickViewProduct.title} className="max-h-[280px] md:max-h-[350px] w-auto object-contain" />
             </div>
+
             <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col justify-center">
               <span className="text-[#729855] font-heading text-[10px] font-bold uppercase tracking-widest mb-1.5 block">
                 {typeof quickViewProduct.category === 'object' ? quickViewProduct.category?.name : quickViewProduct.category}
               </span>
-              <h2 className="font-heading text-xl md:text-2xl font-medium text-brand-charcoal mb-3">{quickViewProduct.title}</h2>
+              <h2 className="font-heading text-xl md:text-2xl font-medium text-[#1c2415] mb-3">{quickViewProduct.title}</h2>
+              
               <div className="flex items-center gap-1.5 mb-4">
                 <div className="flex gap-0.5">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className={`w-3.5 h-3.5 ${i < Math.floor(quickViewProduct.ratings || 0) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
+                    <Star key={i} className={`w-3.5 h-3.5 ${i < Math.floor(quickViewProduct.ratings || 4.9) ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}`} />
                   ))}
                 </div>
-                <span className="text-xs text-brand-muted">({quickViewProduct.reviewsCount || 0} reviews)</span>
+                <span className="text-xs text-gray-500 font-body">(4.9 rating)</span>
               </div>
-              <div className="flex items-baseline gap-3 mb-4 border-b border-[#f7e9e3] pb-4">
-                <span className="text-xl font-semibold text-brand-charcoal">Rs. {quickViewProduct.price.toLocaleString('en-IN')}.00 INR</span>
-                {quickViewProduct.comparePrice > quickViewProduct.price && <span className="text-sm line-through text-brand-muted">Rs. {quickViewProduct.comparePrice.toLocaleString('en-IN')}.00 INR</span>}
+
+              <div className="flex items-baseline gap-3 mb-4 border-b border-[#f4f2e6] pb-4 font-body">
+                <span className="text-xl font-bold text-[#1c2415]">Rs. {quickViewProduct.price.toLocaleString('en-IN')}.00</span>
+                {quickViewProduct.comparePrice > quickViewProduct.price && <span className="text-sm line-through text-gray-400">Rs. {quickViewProduct.comparePrice.toLocaleString('en-IN')}.00</span>}
               </div>
-              <p className="text-sm text-brand-muted leading-relaxed mb-6 line-clamp-3 md:line-clamp-4">{stripHtml(quickViewProduct.description)}</p>
+
+              <p className="text-xs text-[#5a5a5a] leading-relaxed mb-6 line-clamp-3 font-body">{stripHtml(quickViewProduct.description)}</p>
+
               {quickViewProduct.stock > 0 ? (
                 <div className="space-y-4">
-                  <div className="flex flex-wrap items-center gap-4">
-                    <span className="text-xs font-heading font-bold uppercase tracking-wider text-brand-charcoal">Quantity:</span>
-                    <div className="flex items-center border border-[#d0d0d0] h-11 bg-white">
-                      <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="h-full px-4 text-sm bg-transparent border-none hover:bg-gray-100 cursor-pointer font-bold flex items-center justify-center">-</button>
-                      <span className="px-4 text-sm font-semibold select-none">{quantity}</span>
-                      <button onClick={() => setQuantity(q => Math.min(quickViewProduct.stock, q + 1))} className="h-full px-4 text-sm bg-transparent border-none hover:bg-gray-100 cursor-pointer font-bold flex items-center justify-center">+</button>
+                  <div className="flex items-center gap-4">
+                    <span className="text-xs font-heading font-bold uppercase tracking-wider text-[#1c2415]">Qty:</span>
+                    <div className="flex items-center border border-[#e8e6d9] h-10 rounded-full bg-white px-2">
+                      <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="w-8 h-full text-sm bg-transparent border-none cursor-pointer font-bold flex items-center justify-center">-</button>
+                      <span className="px-3 text-sm font-semibold select-none font-body">{quantity}</span>
+                      <button onClick={() => setQuantity(q => Math.min(quickViewProduct.stock, q + 1))} className="w-8 h-full text-sm bg-transparent border-none cursor-pointer font-bold flex items-center justify-center">+</button>
                     </div>
-                    <span className="text-xs text-brand-green font-semibold">In Stock ({quickViewProduct.stock} left)</span>
                   </div>
-                  <button onClick={() => { addToCart(quickViewProduct, quantity); setQuickViewProduct(null); }} className="w-full bg-[#2f3e10] hover:bg-[#729855] text-white py-4 px-6 font-heading text-xs font-bold tracking-[0.2em] uppercase transition-colors cursor-pointer border-none h-12 flex items-center justify-center">Add to Cart</button>
+                  <button onClick={() => { addToCart(quickViewProduct, quantity); setQuickViewProduct(null); }} className="w-full bg-[#3a4d23] hover:bg-[#1c2415] text-white py-3.5 px-6 font-heading text-xs font-bold tracking-[0.2em] uppercase rounded-full transition-all duration-300 cursor-pointer border-none shadow-md flex items-center justify-center gap-2">
+                    <ShoppingBag size={14} />
+                    <span>ADD TO CART</span>
+                  </button>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <span className="text-sm font-heading font-bold text-red-500 uppercase tracking-wider block">Sold Out</span>
-                  <button disabled className="w-full bg-brand-muted text-white py-4 px-6 font-heading text-xs font-bold tracking-[0.2em] uppercase cursor-not-allowed border-none h-12 flex items-center justify-center">Out of Stock</button>
-                </div>
+                <button disabled className="w-full bg-gray-400 text-white py-3.5 px-6 font-heading text-xs font-bold tracking-[0.2em] uppercase rounded-full cursor-not-allowed border-none flex items-center justify-center">
+                  OUT OF STOCK
+                </button>
               )}
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 };
 
-export default Home;
+export default Home;

@@ -98,62 +98,57 @@ const Footer = () => {
   };
 
   return (
-    <footer className="w-full bg-[#f6f5ea] text-black overflow-hidden" style={{ fontFamily: '"Work Sans", sans-serif' }}>
-      {/* Reduced pb-[40px] to pb-[20px] and lg:pb-[60px] to lg:pb-[24px] to remove bottom empty space */}
+    <footer className="w-full bg-[#f4f3ea] text-[#1c2415] overflow-hidden border-t border-[#e8e6d9]" style={{ fontFamily: '"Work Sans", sans-serif' }}>
       <div
         ref={footerRef}
-        className={`max-w-[1280px] mx-auto px-[24px] md:px-[40px] pt-[60px] pb-[20px] lg:pt-[80px] lg:pb-[24px] box-border transition-all duration-1000 ease-out transform ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-16'}`}
+        className={`max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8 transition-all duration-1000 ease-out transform ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}
       >
         {/* Main 3-Column Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[40px] lg:gap-[60px] items-start w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 lg:gap-16 items-start w-full mb-12">
 
           {/* Column 1 */}
           <div className="flex flex-col w-full">
-            <div className="mb-[20px]">
+            <div className="mb-6">
               <img
                 src="/assets/homepage/Fabish_Logo_Final_a68866dc-7573-4072-bd3f-3e356eca427e.svg"
-                alt="Fabish"
-                className="w-[140px] h-auto block"
+                alt="Fabish Organic Cosmetics"
+                className="w-36 h-auto block"
               />
             </div>
-            <p className="text-[15px] leading-[1.8] text-black font-medium max-w-[280px] mt-0 mb-[24px]">
-              At surprisingly low prices, we at our Koka<br />
-              fashion shop provide stunning and<br />
-              fashionable apparel.
+            <p className="text-sm leading-relaxed text-[#4a4a4a] font-normal max-w-xs mb-6">
+              Empowering natural skin confidence with certified organic formulas, sustainably sourced ingredients, and cruelty-free ethics.
             </p>
-            <div className="flex items-center gap-[20px] mb-[60px]">
-              <a href="#" aria-label="Twitter" className="text-black hover:opacity-60 transition-opacity flex">
-                <TwitterIcon size={20} />
+            <div className="flex items-center gap-4 mb-8">
+              <a href="#" aria-label="Twitter" className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-[#1c2415] hover:bg-[#3a4d23] hover:text-white transition-all duration-300 shadow-xs">
+                <TwitterIcon size={16} />
               </a>
-              <a href="#" aria-label="Facebook" className="text-black hover:opacity-60 transition-opacity flex">
-                <FacebookIcon size={20} />
+              <a href="#" aria-label="Facebook" className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-[#1c2415] hover:bg-[#3a4d23] hover:text-white transition-all duration-300 shadow-xs">
+                <FacebookIcon size={16} />
               </a>
-              <a href="#" aria-label="Pinterest" className="text-black hover:opacity-60 transition-opacity flex">
-                <PinterestIcon size={20} />
+              <a href="#" aria-label="Pinterest" className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-[#1c2415] hover:bg-[#3a4d23] hover:text-white transition-all duration-300 shadow-xs">
+                <PinterestIcon size={16} />
               </a>
-              <a href="#" aria-label="Instagram" className="text-black hover:opacity-60 transition-opacity flex">
-                <InstagramIcon size={20} />
+              <a href="#" aria-label="Instagram" className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-[#1c2415] hover:bg-[#3a4d23] hover:text-white transition-all duration-300 shadow-xs">
+                <InstagramIcon size={16} />
               </a>
             </div>
 
-            {/* FABISH Section — dynamic CMS footer links */}
+            {/* CMS Pages Section */}
             <div>
-              <h3 className="text-[13px] font-extrabold tracking-[0.2em] uppercase text-black mt-0 mb-[24px]" style={{ fontFamily: '"Outfit", sans-serif' }}>
+              <h3 className="text-xs font-bold tracking-[0.2em] uppercase text-[#1c2415] mb-4 font-heading">
                 FABISH
               </h3>
-              <nav className="flex flex-col gap-[14px]">
+              <nav className="flex flex-col gap-2.5">
                 {footerLoading ? (
-                  /* Loading skeleton shimmer */
-                  [...Array(5)].map((_, i) => (
-                    <div key={i} className="h-4 bg-gray-200 animate-pulse rounded w-3/4" />
+                  [...Array(4)].map((_, i) => (
+                    <div key={i} className="h-4 bg-black/5 animate-pulse rounded w-32" />
                   ))
                 ) : footerPages.length > 0 ? (
                   footerPages.map((page) => (
                     <Link
                       key={page._id}
                       to={`/pages/${page.slug}`}
-                      className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]"
-                      style={{ textDecoration: 'none' }}
+                      className="text-sm text-[#4a4a4a] font-medium hover:text-[#3a4d23] transition-colors leading-snug"
                     >
                       {page.title}
                     </Link>
@@ -165,55 +160,49 @@ const Footer = () => {
 
           {/* Column 2 */}
           <div className="flex flex-col w-full">
-            {/* PRESETS Section */}
-            <div className="mb-[60px]">
-              <h3 className="text-[13px] font-extrabold tracking-[0.2em] uppercase text-black mt-0 mb-[24px]" style={{ fontFamily: '"Outfit", sans-serif' }}>
+            <div className="mb-8">
+              <h3 className="text-xs font-bold tracking-[0.2em] uppercase text-[#1c2415] mb-4 font-heading">
                 PRESETS
               </h3>
-              <nav className="flex flex-col gap-[14px]">
-                <Link to="/pages/about-us" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>About</Link>
-                <Link to="/pages/faq" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Faq</Link>
-                <Link to="/blogs/news" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Blog</Link>
-                <Link to="/pages/contact" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Contact</Link>
-                <Link to="/pages/press-release" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Press Release</Link>
+              <nav className="flex flex-col gap-2.5">
+                <Link to="/pages/about-us" className="text-sm text-[#4a4a4a] font-medium hover:text-[#3a4d23] transition-colors">About Us</Link>
+                <Link to="/pages/faq" className="text-sm text-[#4a4a4a] font-medium hover:text-[#3a4d23] transition-colors">FAQ &amp; Help</Link>
+                <Link to="/blogs/news" className="text-sm text-[#4a4a4a] font-medium hover:text-[#3a4d23] transition-colors">Blog &amp; Stories</Link>
+                <Link to="/pages/contact" className="text-sm text-[#4a4a4a] font-medium hover:text-[#3a4d23] transition-colors">Contact Support</Link>
+                <Link to="/pages/press-release" className="text-sm text-[#4a4a4a] font-medium hover:text-[#3a4d23] transition-colors">Press Release</Link>
               </nav>
             </div>
 
-            {/* Get Active Section */}
+            {/* Newsletter Section */}
             <div className="flex flex-col items-start w-full">
-              <h3 className="text-[28px] font-extrabold text-black mt-0 mb-[16px]" style={{ fontFamily: '"Outfit", sans-serif', letterSpacing: 'normal' }}>
+              <h3 className="text-2xl font-bold text-[#1c2415] mb-2 font-heading">
                 Get Active
               </h3>
-              <p className="text-[15px] leading-[1.8] text-black font-medium max-w-[340px] mt-0 mb-[24px] text-left">
-                The ideal way to stay in contact and learn<br />
-                about our exclusive offers.
+              <p className="text-sm text-[#4a4a4a] font-normal leading-relaxed mb-4">
+                Subscribe to receive organic skin tips and exclusive offers.
               </p>
 
-              {/* Form & Button Fixed */}
-              <form onSubmit={handleSubscribe} className="flex flex-col gap-[16px] w-full max-w-[340px]">
+              <form onSubmit={handleSubscribe} className="flex flex-col gap-3 w-full max-w-sm">
                 <input
                   type="email"
-                  placeholder="Your Email Id"
+                  placeholder="Enter your email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={submitting}
                   required
-                  className="w-full h-[50px] px-[20px] bg-white border-none outline-none text-[15px] text-black font-medium box-border rounded-none text-left font-body"
+                  className="w-full h-12 px-4 bg-white border border-[#e8e6d9] rounded-full text-sm text-[#1c2415] outline-none focus:border-[#3a4d23] transition-all font-body shadow-xs"
                 />
-                <div>
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="h-[46px] px-[36px] bg-[#000000] hover:bg-[#8B5A2B] text-white text-[12px] font-extrabold tracking-[0.15em] uppercase border-none cursor-pointer rounded-none transition-colors duration-300 font-heading inline-flex items-center justify-center disabled:opacity-50"
-                    style={{ fontFamily: '"Outfit", sans-serif' }}
-                  >
-                    {submitting ? 'SUBMITTING...' : 'SUBMIT NOW'}
-                  </button>
-                </div>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="h-11 px-8 bg-[#3a4d23] hover:bg-[#1c2415] text-white text-xs font-bold tracking-[0.18em] uppercase rounded-full transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer flex items-center justify-center disabled:opacity-50 font-heading"
+                >
+                  {submitting ? 'SUBMITTING...' : 'SUBSCRIBE NOW'}
+                </button>
               </form>
 
-              <p className="text-[13px] text-black font-medium mt-[24px] mb-0 text-left">
-                By subscribing to Get Special Discount!
+              <p className="text-xs text-[#729855] font-semibold mt-3">
+                ★ Receive 15% OFF your first order upon subscribing!
               </p>
             </div>
           </div>
@@ -221,68 +210,42 @@ const Footer = () => {
           {/* Column 3 */}
           <div className="flex flex-col w-full">
             <div>
-              <h3 className="text-[13px] font-extrabold tracking-[0.2em] uppercase text-black mt-0 mb-[24px]" style={{ fontFamily: '"Outfit", sans-serif' }}>
-                SHOP
+              <h3 className="text-xs font-bold tracking-[0.2em] uppercase text-[#1c2415] mb-4 font-heading">
+                SHOP &amp; POLICIES
               </h3>
-              <nav className="flex flex-col gap-[14px]">
-                <Link to="/pages/shipping-returns" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Shipping & Return</Link>
-                <Link to="/orders/track" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Track Order</Link>
-                <Link to="/account/profile?tab=orders" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>History</Link>
-                <Link to="/pages/promotions" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Promotion</Link>
-                <Link to="/pages/privacy-policy" className="text-[15px] text-black font-medium hover:text-[#8B5A2B] transition-colors leading-[1.4]" style={{ textDecoration: 'none' }}>Privacy Policy</Link>
+              <nav className="flex flex-col gap-2.5">
+                <Link to="/pages/shipping-returns" className="text-sm text-[#4a4a4a] font-medium hover:text-[#3a4d23] transition-colors">Shipping &amp; Return Policy</Link>
+                <Link to="/orders/track" className="text-sm text-[#4a4a4a] font-medium hover:text-[#3a4d23] transition-colors">Track Your Order</Link>
+                <Link to="/account/profile?tab=orders" className="text-sm text-[#4a4a4a] font-medium hover:text-[#3a4d23] transition-colors">Order History</Link>
+                <Link to="/pages/promotions" className="text-sm text-[#4a4a4a] font-medium hover:text-[#3a4d23] transition-colors">Special Promotions</Link>
+                <Link to="/pages/privacy-policy" className="text-sm text-[#4a4a4a] font-medium hover:text-[#3a4d23] transition-colors">Privacy Policy</Link>
               </nav>
             </div>
           </div>
 
         </div>
 
-        {/* Divider line above copyright row */}
-        <div className="w-full h-[1px] bg-black/10 mt-[60px] mb-[20px]" />
+        {/* Divider */}
+        <div className="w-full h-px bg-[#e8e6d9] my-6" />
 
-        {/* Copyright Row - Updated to match image 2 */}
-        <div className="flex flex-col md:flex-row justify-between items-center w-full gap-[20px] md:gap-0">
-
-          {/* Left: Copyright */}
-          <div className="flex-1 text-center md:text-left">
-            <span className="text-[13px] text-black font-medium font-body">
-              © Copyright, Fabish, 2024
-            </span>
+        {/* Copyright Row */}
+        <div className="flex flex-col md:flex-row justify-between items-center w-full gap-4 text-xs text-[#777] font-body">
+          <div className="text-center md:text-left">
+            <span>© 2026 Fabish Organic Cosmetics. All rights reserved.</span>
           </div>
 
-          {/* Center: Hello @2024 */}
-          <div className="flex-1 text-center">
-            <span className="text-[13px] text-black font-medium font-body">
-              Hello @2024
-            </span>
-          </div>
-
-          {/* Right: Social Icons + Scroll to Top Button */}
-          <div className="flex-1 flex justify-center md:justify-end items-center gap-[16px]">
-            <a href="#" aria-label="Twitter" className="text-black hover:opacity-60 transition-opacity flex">
-              <TwitterIcon size={16} />
-            </a>
-            <a href="#" aria-label="Facebook" className="text-black hover:opacity-60 transition-opacity flex">
-              <FacebookIcon size={16} />
-            </a>
-            <a href="#" aria-label="Pinterest" className="text-black hover:opacity-60 transition-opacity flex">
-              <PinterestIcon size={16} />
-            </a>
-            <a href="#" aria-label="Instagram" className="text-black hover:opacity-60 transition-opacity flex">
-              <InstagramIcon size={16} />
-            </a>
-
-            {/* Scroll To Top Button */}
+          <div className="flex items-center gap-4">
+            <span>Crafted with Organic Care</span>
             <button
               onClick={scrollToTop}
-              className="ml-4 w-11 h-11 bg-black text-white rounded-full flex items-center justify-center hover:bg-[#8B5A2B] transition-colors cursor-pointer border-none"
+              className="w-10 h-10 bg-[#3a4d23] text-white rounded-full flex items-center justify-center hover:bg-[#1c2415] transition-all duration-300 shadow-md cursor-pointer border-none"
               aria-label="Scroll to top"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 19V5M5 12l7-7 7 7" />
               </svg>
             </button>
           </div>
-
         </div>
 
       </div>
