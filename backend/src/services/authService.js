@@ -37,12 +37,13 @@ class AuthService {
           reason: 'Welcome bonus on new Google registration',
         }]
       });
-    } else if (!user.googleId) {
-      // Link Google ID to existing normal account securely
-      user = await userRepository.update(user._id, {
-        googleId,
-        avatar: user.avatar || picture
-      });
+    } else {
+      const updates = {};
+      if (!user.googleId) updates.googleId = googleId;
+      if (!user.avatar && picture) updates.avatar = picture;
+      if (Object.keys(updates).length > 0) {
+        user = await userRepository.update(user._id, updates);
+      }
     }
 
     // 3. Generate tokens matching your standard pattern
@@ -57,6 +58,7 @@ class AuthService {
         _id: user._id,
         name: user.name,
         email: user.email,
+        avatar: user.avatar || picture || '',
         role: user.role,
         isAdmin: user.isAdmin,
       },
@@ -96,6 +98,7 @@ class AuthService {
         _id: user._id,
         name: user.name,
         email: user.email,
+        avatar: user.avatar || '',
         role: user.role,
         isAdmin: user.isAdmin,
       },
@@ -126,6 +129,7 @@ class AuthService {
         _id: user._id,
         name: user.name,
         email: user.email,
+        avatar: user.avatar || '',
         role: user.role,
         isAdmin: user.isAdmin,
       },

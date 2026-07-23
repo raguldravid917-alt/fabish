@@ -35,7 +35,15 @@ const Header = () => {
 
   // Account Dropdown states & refs
   const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
   const accountDropdownRef = useRef(null);
+
+  const rawAvatar = user?.avatar || user?.picture || user?.profileImage || null;
+  const userAvatarUrl = !avatarError && rawAvatar
+    ? (rawAvatar.startsWith('http://') || rawAvatar.startsWith('https://') || rawAvatar.startsWith('data:'))
+      ? rawAvatar
+      : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${rawAvatar.startsWith('/') ? '' : '/'}${rawAvatar}`
+    : null;
 
   // Scroll tracking state for 2026 sticky glass header
   const [isScrolled, setIsScrolled] = useState(false);
@@ -286,11 +294,13 @@ const Header = () => {
                 className="w-10 h-10 rounded-full flex items-center justify-center text-[#1c2415] hover:bg-[#eef3e8] hover:text-[#3a4d23] hover:scale-105 transition-all bg-transparent border-none cursor-pointer relative"
                 aria-label="Account"
               >
-                {user?.avatar ? (
+                {userAvatarUrl ? (
                   <div className="relative">
                     <img
-                      src={user.avatar.startsWith('http') ? user.avatar : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${user.avatar}`}
-                      alt={user.name}
+                      src={userAvatarUrl}
+                      alt={user?.name || 'Account'}
+                      referrerPolicy="no-referrer"
+                      onError={() => setAvatarError(true)}
                       className="w-7 h-7 rounded-full object-cover ring-2 ring-[#3a4d23]/40"
                     />
                     <span className="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white absolute bottom-0 right-0" />
@@ -580,10 +590,12 @@ const Header = () => {
             }}
             className="flex flex-col items-center justify-center gap-1 w-full h-full text-black bg-transparent border-none cursor-pointer"
           >
-            {user?.avatar ? (
+            {userAvatarUrl ? (
               <img
-                src={user.avatar.startsWith('http') ? user.avatar : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${user.avatar}`}
-                alt={user.name}
+                src={userAvatarUrl}
+                alt={user?.name || 'Account'}
+                referrerPolicy="no-referrer"
+                onError={() => setAvatarError(true)}
                 className="w-5 h-5 rounded-full object-cover border border-brand-border"
               />
             ) : (
@@ -594,7 +606,7 @@ const Header = () => {
 
           {/* Mobile Account Dropdown Panel (Opens Upwards with 2026 Glass Aesthetics) */}
           <div
-            className={`absolute right-2 bottom-[70px] w-56 bg-white/95 backdrop-blur-2xl border border-[#e8e6d9] rounded-[20px] shadow-2xl p-2 z-50 transition-all duration-300 transform origin-bottom-right ${isAccountOpen && user
+            className={`absolute right-2 bottom-[70px] w-56 bg-[#ffffff]/95 backdrop-blur-2xl border border-[#e8e6d9] rounded-[20px] shadow-2xl p-2 z-50 transition-all duration-300 transform origin-bottom-right ${isAccountOpen && user
               ? 'opacity-100 scale-100 translate-y-0'
               : 'opacity-0 scale-95 translate-y-2 pointer-events-none'
               }`}
@@ -602,10 +614,12 @@ const Header = () => {
             {user && (
               <>
                 <div className="px-3 py-2.5 border-b border-[#e8e6d9] mb-1 select-none text-left flex items-center gap-2.5 bg-[#f7f6f0] rounded-xl">
-                  {user.avatar ? (
+                  {userAvatarUrl ? (
                     <img
-                      src={user.avatar.startsWith('http') ? user.avatar : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${user.avatar}`}
-                      alt={user.name}
+                      src={userAvatarUrl}
+                      alt={user?.name || 'Account'}
+                      referrerPolicy="no-referrer"
+                      onError={() => setAvatarError(true)}
                       className="w-8 h-8 rounded-full object-cover ring-2 ring-[#3a4d23]/40"
                     />
                   ) : (

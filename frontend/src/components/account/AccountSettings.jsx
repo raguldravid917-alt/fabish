@@ -49,10 +49,12 @@ const AccountSettings = ({ user, onUpdateProfile, onUploadAvatar, onRemoveAvatar
     }
   };
 
-  const avatarUrl = user?.avatar
-    ? user.avatar.startsWith('http')
-      ? user.avatar
-      : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${user.avatar}`
+  const [avatarError, setAvatarError] = useState(false);
+  const rawAvatar = user?.avatar || user?.picture || user?.profileImage || null;
+  const avatarUrl = !avatarError && rawAvatar
+    ? (rawAvatar.startsWith('http://') || rawAvatar.startsWith('https://') || rawAvatar.startsWith('data:'))
+      ? rawAvatar
+      : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${rawAvatar.startsWith('/') ? '' : '/'}${rawAvatar}`
     : null;
 
   return (
@@ -76,6 +78,8 @@ const AccountSettings = ({ user, onUpdateProfile, onUploadAvatar, onRemoveAvatar
               <img
                 src={avatarUrl}
                 alt={user?.name || 'User'}
+                referrerPolicy="no-referrer"
+                onError={() => setAvatarError(true)}
                 className="w-24 h-24 rounded-full object-cover ring-4 ring-[#EEF3E8] shadow-md"
               />
             ) : (

@@ -203,6 +203,7 @@ const AdminLayout = () => {
                 <img
                   src={user.avatar.startsWith('http') ? user.avatar : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${user.avatar}`}
                   alt={user.name}
+                  referrerPolicy="no-referrer"
                   className="w-10 h-10 rounded-full object-cover border border-[#eae8d8]"
                 />
               )}

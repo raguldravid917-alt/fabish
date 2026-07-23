@@ -1,15 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { User as UserIcon, Camera, Sparkles, Award, Shield, Settings, Heart, Clock } from 'lucide-react';
 
 const AccountHeader = ({ user, onTabChange, onAvatarUploadClick }) => {
+  const [avatarError, setAvatarError] = useState(false);
+
   const memberSinceYear = user?.createdAt
     ? new Date(user.createdAt).getFullYear()
     : '2026';
 
-  const avatarUrl = user?.avatar
-    ? user.avatar.startsWith('http')
-      ? user.avatar
-      : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${user.avatar}`
+  const rawAvatar = user?.avatar || user?.picture || user?.profileImage || null;
+
+  const avatarUrl = !avatarError && rawAvatar
+    ? (rawAvatar.startsWith('http://') || rawAvatar.startsWith('https://') || rawAvatar.startsWith('data:'))
+      ? rawAvatar
+      : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${rawAvatar.startsWith('/') ? '' : '/'}${rawAvatar}`
     : null;
 
   const rewardPoints = user?.rewardPoints || user?.points || 450;
@@ -32,6 +36,8 @@ const AccountHeader = ({ user, onTabChange, onAvatarUploadClick }) => {
               <img
                 src={avatarUrl}
                 alt={user?.name || 'Customer'}
+                referrerPolicy="no-referrer"
+                onError={() => setAvatarError(true)}
                 className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover ring-4 ring-white shadow-md transition-transform duration-300 group-hover:scale-105"
               />
             ) : (
