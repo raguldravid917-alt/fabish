@@ -76,6 +76,7 @@ const Cart = () => {
   const [country, setCountry] = useState('India');
   const [addressType, setAddressType] = useState('Home');
   const [paymentMethod, setPaymentMethod] = useState('Card');
+  const [showCodConfirm, setShowCodConfirm] = useState(false);
 
   // Address Book Integration States
   const [saveAddress, setSaveAddress] = useState(true);
@@ -617,8 +618,12 @@ const Cart = () => {
                           </button>
                           <button
                             type="button"
-                            onClick={() => setPaymentMethod('COD')}
-                            className={`flex items-center justify-center gap-2 py-4 border font-heading font-bold text-xs uppercase tracking-wider select-none transition-all ${paymentMethod === 'COD'
+                            onClick={() => {
+                              if (paymentMethod !== 'COD') {
+                                setShowCodConfirm(true);
+                              }
+                            }}
+                            className={`flex items-center justify-center gap-2 py-4 border font-heading font-bold text-xs uppercase tracking-wider select-none transition-all cursor-pointer ${paymentMethod === 'COD'
                               ? 'border-brand-charcoal bg-brand-charcoal text-white'
                               : 'border-brand-border text-brand-muted hover:border-brand-charcoal'
                               }`}
@@ -970,6 +975,46 @@ const Cart = () => {
                   Out of Stock
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* COD Confirmation Modal */}
+      {showCodConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn select-none">
+          <div className="bg-white border border-[#E8E6D9] rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative text-center flex flex-col items-center">
+            <div className="w-12 h-12 rounded-full bg-[#EEF3E8] border border-[#D2E2C5] flex items-center justify-center text-[#3A4D23] mb-4">
+              <Landmark className="w-6 h-6" />
+            </div>
+
+            <h3 className="font-heading text-base sm:text-lg font-extrabold uppercase tracking-wider text-[#1C2415] mb-2">
+              Confirm Cash on Delivery
+            </h3>
+
+            <p className="text-xs sm:text-sm text-gray-600 font-body leading-relaxed mb-6">
+              Are you sure you want to choose Cash on Delivery?
+            </p>
+
+            <div className="flex items-center justify-center gap-3 w-full">
+              <button
+                type="button"
+                onClick={() => setShowCodConfirm(false)}
+                className="flex-1 py-3 px-4 border border-[#1C2415] text-[#1C2415] hover:bg-gray-100 font-heading font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer bg-white"
+              >
+                CANCEL
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setPaymentMethod('COD');
+                  setShowCodConfirm(false);
+                }}
+                className="flex-1 py-3 px-4 bg-[#3A4D23] hover:bg-[#1C2415] text-white font-heading font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md cursor-pointer border-none"
+              >
+                OK
+              </button>
             </div>
           </div>
         </div>
