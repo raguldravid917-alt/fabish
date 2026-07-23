@@ -219,22 +219,27 @@ const Login = () => {
       </form>
 
       {/* Google OAuth Section */}
-      <div className="pt-6 flex flex-col items-center border-t border-[#eae8d8] mt-6">
+      <div className="pt-6 flex flex-col items-center border-t border-[#eae8d8] mt-6 w-full">
         <span className="block text-[10px] font-bold text-gray-400 tracking-[0.2em] uppercase mb-4 text-center">
           Or Continue With
         </span>
-        <div className="w-full flex justify-center max-w-[320px] mx-auto overflow-hidden">
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={() => {
-              setError('Google Sign-In failed.');
-              showToast('Google Sign-In failed.', 'error');
-            }}
-            theme="outline"
-            size="large"
-            shape="rectangular"
-            width="320"
-          />
+        <div className="w-full flex justify-center items-center overflow-hidden min-h-[44px]">
+          <div className="w-full max-w-[280px] xs:max-w-[320px] flex justify-center items-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => {
+                setError('Google Sign-In failed.');
+                showToast('Google Sign-In failed.', 'error');
+              }}
+              theme="outline"
+              size="large"
+              shape="rectangular"
+              type="standard"
+              text="continue_with"
+              logo_alignment="left"
+              useOneTap={false}
+            />
+          </div>
         </div>
       </div>
 

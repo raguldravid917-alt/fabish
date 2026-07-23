@@ -18,44 +18,63 @@ const queryClient = new QueryClient({
   },
 });
 
-// Single-initialization guard for Google Identity Services
+// Single-initialization guard for Google Identity Services to prevent duplicate initialize warnings
 if (typeof window !== 'undefined') {
-  let isInitialized = false;
-  let activeClientId = null;
+  let initializedClientId = null;
 
-  const setupGuard = () => {
-    if (window.google?.accounts?.id && !window.google.accounts.id._guarded) {
-      const origInit = window.google.accounts.id.initialize;
-      window.google.accounts.id.initialize = function (config) {
-        if (isInitialized && activeClientId === config?.client_id) {
-          // Already initialized for this client_id — skip duplicate GSI logger warnings
-          return;
+  const patchAccountsId = (accountsObj) => {
+    if (accountsObj?.id && !accountsObj.id._guarded) {
+      const origInit = accountsObj.id.initialize;
+      accountsObj.id.initialize = function (config) {
+        if (initializedClientId && initializedClientId === config?.client_id) {
+          return; // Suppress duplicate initialize call
         }
-        isInitialized = true;
-        activeClientId = config?.client_id;
+        initializedClientId = config?.client_id;
         return origInit.call(this, config);
       };
-      window.google.accounts.id._guarded = true;
+      accountsObj.id._guarded = true;
     }
   };
 
-  if (window.google?.accounts?.id) {
-    setupGuard();
+  const patchGoogle = (gObj) => {
+    if (!gObj) return;
+    if (gObj.accounts) {
+      patchAccountsId(gObj.accounts);
+    } else {
+      let _acc = gObj.accounts;
+      try {
+        Object.defineProperty(gObj, 'accounts', {
+          configurable: true,
+          enumerable: true,
+          get() { return _acc; },
+          set(accVal) {
+            _acc = accVal;
+            if (accVal) patchAccountsId(accVal);
+          }
+        });
+      } catch (e) {
+        // Fallback
+      }
+    }
+  };
+
+  if (window.google) {
+    patchGoogle(window.google);
   } else {
     let _g = window.google;
-    Object.defineProperty(window, 'google', {
-      configurable: true,
-      enumerable: true,
-      get() {
-        return _g;
-      },
-      set(val) {
-        _g = val;
-        if (val?.accounts?.id) {
-          setTimeout(setupGuard, 0);
+    try {
+      Object.defineProperty(window, 'google', {
+        configurable: true,
+        enumerable: true,
+        get() { return _g; },
+        set(gVal) {
+          _g = gVal;
+          if (gVal) patchGoogle(gVal);
         }
-      }
-    });
+      });
+    } catch (e) {
+      // Fallback
+    }
   }
 }
 
