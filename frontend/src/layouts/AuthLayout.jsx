@@ -30,7 +30,7 @@ const AuthLayout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f6f0] flex items-center justify-center overflow-y-auto py-12 px-4 font-body select-none">
+    <div className="min-h-screen bg-[#f7f6f0] flex items-center justify-center py-12 px-4 font-body select-none">
       <Outlet />
     </div>
   );

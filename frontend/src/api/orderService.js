@@ -74,6 +74,13 @@ export const orderService = {
     api.put(ENDPOINTS.ORDER_DELIVER(id), null, { auth: true }),
 
   /**
+   * Get admin dashboard analytics and stats.
+   * @returns {Promise<{ success, data, message }>}
+   */
+  getStats: () =>
+    api.get(`${ENDPOINTS.ORDERS}/stats`, { auth: true }),
+
+  /**
    * Get tracking information by tracking number or order number.
    * @param {string} trackingNumberOrOrderNumber
    * @returns {Promise<{ success, data, message }>}

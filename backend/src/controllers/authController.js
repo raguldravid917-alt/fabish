@@ -252,11 +252,16 @@ class AuthController {
    */
   async getProfile(req, res, next) {
     try {
-      const { _id, name, email, role, isAdmin } = req.user;
-      return ok(res, HTTP_STATUS.OK, 'Profile fetched', {
-        _id, name, email, role, isAdmin,
-      });
+      if (!req.user?._id) {
+        return fail(res, HTTP_STATUS.UNAUTHORIZED, 'Not authorized', 'getProfile');
+      }
+      const user = await authService.getProfile(req.user._id);
+      if (!user) {
+        return fail(res, HTTP_STATUS.NOT_FOUND, 'User not found', 'getProfile');
+      }
+      return ok(res, HTTP_STATUS.OK, 'Profile fetched', user);
     } catch (error) {
+      console.error('[AuthController] getProfile error:', error);
       return fail(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, 'Failed to fetch profile', 'getProfile');
     }
   }

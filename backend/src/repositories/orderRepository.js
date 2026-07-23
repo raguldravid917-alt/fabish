@@ -6,7 +6,13 @@ class OrderRepository {
   }
 
   async findByUser(userId) {
-    return await Order.find({ user: userId }).sort({ createdAt: -1 }).lean();
+    const User = require('../models/User');
+    const userDoc = await User.findById(userId).select('email').lean();
+    const conditions = [{ user: userId }];
+    if (userDoc && userDoc.email) {
+      conditions.push({ 'customerDetails.email': new RegExp(`^${userDoc.email}$`, 'i') });
+    }
+    return await Order.find({ $or: conditions }).sort({ createdAt: -1 }).lean();
   }
 
   async create(orderData) {

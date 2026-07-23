@@ -44,741 +44,227 @@ const users = [
   }
 ];
 
-const parentCategories = [
-  {
-    name: 'Skin Care',
-    slug: 'skin-care',
-    image: '/assets/homepage/6.jpg',
-    parentCategory: null
-  },
-  {
-    name: 'Hair Care',
-    slug: 'hair-care',
-    image: '/assets/homepage/P13.jpg',
-    parentCategory: null
-  },
-  {
-    name: 'Makeup',
-    slug: 'makeup',
-    image: '/assets/homepage/P10.jpg',
-    parentCategory: null
-  },
-  {
-    name: 'Body Care',
-    slug: 'body-care',
-    image: '/assets/homepage/14.jpg',
-    parentCategory: null
-  },
-  {
-    name: 'Fragrance',
-    slug: 'fragrance',
-    image: '/assets/homepage/12.jpg',
-    parentCategory: null
-  },
-  {
-    name: 'Men\'s Care',
-    slug: 'mens-care',
-    image: '/assets/homepage/11.jpg',
-    parentCategory: null
-  }
+// Exact 27 Categories
+const categoriesToSeed = [
+  { name: 'Cleansers', slug: 'cleansers', image: '/assets/homepage/9.jpg', description: 'Bio-active gentle cleansers engineered to dissolve makeup and impurities without stripping barrier moisture.', seoTitle: 'Fabish Cleansers — Bio-Active Gentle Facial Cleansers', seoDescription: 'Shop Fabish organic face cleansers formulated with green tea, cica, and cold-pressed botanical oils.' },
+  { name: 'Face Wash', slug: 'face-wash', image: '/assets/homepage/6.jpg', description: 'Deep cleansing foaming and gel face washes for daily morning and evening skin renewal.', seoTitle: 'Fabish Face Wash — Organic Rice Water & Tea Tree Wash', seoDescription: 'Explore Fabish foaming and gel face washes enriched with bio-fermented botanicals.' },
+  { name: 'Serums', slug: 'serums', image: '/assets/homepage/P12.jpg', description: 'Clinical strength active serums targeting hyperpigmentation, fine lines, and hydration.', seoTitle: 'Fabish Serums — Vitamin C, Niacinamide & Retinol Actives', seoDescription: 'High-potency botanical serums featuring 15% Vitamin C, 10% Niacinamide, and Encapsulated Retinol.' },
+  { name: 'Moisturizers', slug: 'moisturizers', image: '/assets/homepage/P1.jpg', description: 'Hydrating gels and ceramide creams that lock in 24-hour moisture and restore barrier integrity.', seoTitle: 'Fabish Moisturizers — Ceramide Barrier & Moisture Creams', seoDescription: 'Nourish skin with Fabish hyaluronic moisture gels and rich ceramide barrier repair creams.' },
+  { name: 'Sunscreen SPF', slug: 'sunscreen-spf', image: '/assets/homepage/16.jpg', description: 'Non-nano broad spectrum mineral sunscreens with SPF50+ PA++++ broad protection.', seoTitle: 'Fabish Sunscreen SPF — Mineral Broad Spectrum Defense', seoDescription: 'Shield skin against UVA/UVB rays and blue light with lightweight Fabish mineral sunscreens.' },
+  { name: 'Toners', slug: 'toners', image: '/assets/homepage/3.jpg', description: 'pH balancing botanical essences and AHA/BHA exfoliating clarifying toners.', seoTitle: 'Fabish Toners — Balancing Floral Essences & AHA/BHA', seoDescription: 'Restore skin equilibrium and refine pore appearance with Fabish botanical toners.' },
+  { name: 'Face Masks', slug: 'face-masks', image: '/assets/homepage/23.jpg', description: 'Overnight repair masks, kaolin clay detox masks, and bio-cellulose sheet treatments.', seoTitle: 'Fabish Face Masks — Clay, Overnight & Bio-Cellulose Sheet Masks', seoDescription: 'Revitalize dull skin with Fabish deep cleansing clay and overnight repair face masks.' },
+  { name: 'Eye Care', slug: 'eye-care', image: '/assets/homepage/P11.jpg', description: 'Concentrated caffeine and peptide eye creams that diminish dark circles and puffiness.', seoTitle: 'Fabish Eye Care — Peptide & Caffeine Dark Circle Creams', seoDescription: 'Smooth crow’s feet and brighten tired eyes with Fabish clinical peptide eye gels.' },
+  { name: 'Lip Care', slug: 'lip-care', image: '/assets/homepage/20.jpg', description: 'Nourishing butter balms and overnight berry lip masks for soft, supple lips.', seoTitle: 'Fabish Lip Care — Shea Butter Balms & Berry Lip Masks', seoDescription: 'Repair chapped lips with Fabish organic jojoba and cold-pressed shea butter balms.' },
+  { name: 'Acne Care', slug: 'acne-care', image: '/assets/homepage/14.jpg', description: 'Targeted 2% BHA Salicylic Acid serums and tea tree spot gels for acne clarification.', seoTitle: 'Fabish Acne Care — Salicylic Acid 2% BHA Spot Treatments', seoDescription: 'Clear blemishes and unclog pores with Fabish targeted acne care solutions.' },
+  { name: 'Brightening', slug: 'brightening', image: '/assets/homepage/P10.jpg', description: 'Luminous brightening complexes featuring Alpha Arbutin, Kojic Acid, and Vitamin C.', seoTitle: 'Fabish Brightening — Luminous Tone Correcting Skincare', seoDescription: 'Fade dark spots and even skin tone with Fabish bio-active brightening formulations.' },
+  { name: 'Anti Aging', slug: 'anti-aging', image: '/assets/homepage/1.jpg', description: 'Encapsulated retinol, copper peptides, and phyto-collagen age-defense treatments.', seoTitle: 'Fabish Anti Aging — Encapsulated Retinol & Copper Peptides', seoDescription: 'Firm sagging skin and reduce wrinkle depth with Fabish luxury anti-aging treatments.' },
+  { name: 'Sensitive Skin', slug: 'sensitive-skin', image: '/assets/homepage/2.jpg', description: 'Ultra-gentle Cica, Centella Asiatica, and colloidal oat calming formulas for reactive skin.', seoTitle: 'Fabish Sensitive Skin — Soothing Cica & Oat Barrier Care', seoDescription: 'Calm redness and repair delicate skin barriers with Fabish dermatologically tested care.' },
+  { name: 'Body Care', slug: 'body-care', image: '/assets/homepage/14.jpg', description: 'Luxurious cold-pressed body oils, smoothing body scrubs, and soothing treatments.', seoTitle: 'Fabish Body Care — Botanical Body Oils & Exfoliating Scrubs', seoDescription: 'Transform body texture with Fabish nourishing organic oils and smoothing treatments.' },
+  { name: 'Body Lotion', slug: 'body-lotion', image: '/assets/homepage/P14.jpg', description: 'Fast-absorbing 24-hour hydration body lotions enriched with cocoa butter and ceramides.', seoTitle: 'Fabish Body Lotion — 24H Hydration Cocoa & Ceramide Lotions', seoDescription: 'Deeply hydrate dry skin with Fabish non-greasy organic body lotions.' },
+  { name: 'Body Wash', slug: 'body-wash', image: '/assets/homepage/9.jpg', description: 'Sulfate-free refreshing shower gels with eucalyptus, lavender, and citrus oils.', seoTitle: 'Fabish Body Wash — Sulfate-Free Botanical Shower Gels', seoDescription: 'Gently cleanse body skin with Fabish essential oil infused shower gels.' },
+  { name: 'Hair Care', slug: 'hair-care', image: '/assets/homepage/P13.jpg', description: 'Scalp health treatments, cold-pressed hair oils, and strengthening botanical hair care.', seoTitle: 'Fabish Hair Care — Argan & Rosemary Scalp Treatments', seoDescription: 'Nourish hair roots and promote scalp wellness with Fabish organic hair care.' },
+  { name: 'Shampoo', slug: 'shampoo', image: '/assets/homepage/P13-2.jpg', description: 'Sulfate-free biotin and argan oil shampoos for voluminous, strong hair.', seoTitle: 'Fabish Shampoo — Biotin & Moroccan Argan Sulfate-Free Wash', seoDescription: 'Strengthen weak strands and add volume with Fabish organic shampoos.' },
+  { name: 'Conditioner', slug: 'conditioner', image: '/assets/homepage/P13.jpg', description: 'Silk protein and jojoba conditioners that detangle, smooth frizz, and seal moisture.', seoTitle: 'Fabish Conditioner — Silk Protein & Jojoba Smoothing Conditioner', seoDescription: 'Softened coarse hair and seal split ends with Fabish botanical conditioners.' },
+  { name: 'Hair Serum', slug: 'hair-serum', image: '/assets/homepage/P12.jpg', description: 'Lightweight heat-protecting hair serums that impart high-shine gloss.', seoTitle: 'Fabish Hair Serum — Anti-Frizz Heat Shield Gloss Drops', seoDescription: 'Tame flyaways and protect hair from styling damage with Fabish hair serums.' },
+  { name: 'Beard Care', slug: 'beard-care', image: '/assets/homepage/12.jpg', description: 'Cedarwood and jojoba conditioning oils for soft, manageable beard hair.', seoTitle: 'Fabish Beard Care — Cedarwood & Argan Beard Conditioning Oil', seoDescription: 'Condition facial hair and soothe underlying skin with Fabish beard oils.' },
+  { name: 'Men\'s Grooming', slug: 'mens-grooming', image: '/assets/homepage/11.jpg', description: 'High-performance 3-in-1 face washes, moisturizers, and soothing aftershave balms.', seoTitle: 'Fabish Men\'s Grooming — Performance Skincare & Shave Care', seoDescription: 'Streamline men’s daily skincare routine with Fabish botanical grooming products.' },
+  { name: 'Organic Essentials', slug: 'organic-essentials', image: '/assets/homepage/21.jpg', description: 'Wild-harvested, cold-pressed daily skincare staples free from 1,400+ toxins.', seoTitle: 'Fabish Organic Essentials — 100% Bio-Active Clean Beauty', seoDescription: 'Pure botanical oils and rosewater mists for uncompromised clean beauty.' },
+  { name: 'Travel Minis', slug: 'travel-minis', image: '/assets/homepage/4.jpg', description: 'TSA-approved mini bottles of bestselling Fabish cleansers, serums, and creams.', seoTitle: 'Fabish Travel Minis — TSA-Approved Portable Skincare Kits', seoDescription: 'Maintain your radiant skincare routine anywhere with Fabish travel minis.' },
+  { name: 'Gift Sets', slug: 'gift-sets', image: '/assets/homepage/Rectangle_338.jpg', description: 'Luxury gift boxes featuring complete skincare routines for special occasions.', seoTitle: 'Fabish Gift Sets — Luxury Botanical Skincare Gift Boxes', seoDescription: 'Surprise loved ones with Fabish curated luxury beauty boxes.' },
+  { name: 'New Arrivals', slug: 'new-arrivals', image: '/assets/homepage/P14-2.jpg', description: 'Discover the latest 2026 bio-fermented skincare innovations and sunscreens.', seoTitle: 'Fabish New Arrivals — Latest 2026 Skincare Innovations', seoDescription: 'Explore newly released Fabish botanical serums, creams, and sun care.' },
+  { name: 'Best Sellers', slug: 'best-sellers', image: '/assets/homepage/P1.jpg', description: 'Top-rated 5-star customer favorites and viral beauty serums.', seoTitle: 'Fabish Best Sellers — Most Loved Skincare Favorites', seoDescription: 'Shop Fabish award-winning bestsellers loved by 100,000+ customers.' }
 ];
 
-const products = [
-  // 1. Skin Care - Moisturizer
-  {
-    title: 'Aura Natural Face Cream',
-    slug: 'aura-natural-face-cream',
-    description: 'Our daily face moisturizer features active botanical ingredients that brighten dark spots and deliver a glowing aura complexion.',
-    images: ['/assets/homepage/P1.jpg', '/assets/homepage/P1 (1).jpg'],
-    category: 'moisturizer',
-    subcategory: 'Moisturizer',
-    price: 2400.00,
-    comparePrice: 3500.00,
-    stock: 15,
-    ratings: 4.9,
-    reviewsCount: 1,
-    tags: ['moisturizer', 'glow', 'aura']
-  },
-  // 2. Skin Care - Face Cream
-  {
-    title: 'Azalea Fields Soothing Cream',
-    slug: 'azalea-fields-soothing-cream',
-    description: 'A soothing and refreshing face cream made with organic azalea flower extracts. Hydrates dry skin, reduces redness, and provides all-day nourishment.',
-    images: ['/assets/homepage/1.jpg', '/assets/homepage/2.jpg'],
-    category: 'face-cream',
-    subcategory: 'Face Cream',
-    price: 24100.00,
-    comparePrice: 0.00,
-    stock: 25,
-    ratings: 4.8,
-    reviewsCount: 15,
-    tags: ['face-cream', 'soothing', 'organic']
-  },
-  // 3. Skin Care - Sunscreen
-  {
-    title: 'Dandelion Revive Sunscreen',
-    slug: 'dandelion-revive-sunscreen',
-    description: 'An iced cooling gel cream infused with dandelion root extracts to calm irritated skin and protect against harsh UV rays.',
-    images: ['/assets/homepage/16.jpg', '/assets/homepage/17.jpg'],
-    category: 'sunscreen',
-    subcategory: 'Sunscreen',
-    price: 1450.00,
-    comparePrice: 1800.00,
-    stock: 18,
-    ratings: 4.4,
-    reviewsCount: 6,
-    tags: ['sunscreen', 'sun-protection', 'spf']
-  },
-  // 4. Skin Care - Cleanser
-  {
-    title: 'Creamy Foam Cleanser',
-    slug: 'creamy-foam-cleanser',
-    description: 'Deeply cleanses pores, removes sebum and make-up residues, leaving your skin soft and perfectly hydrated.',
-    images: ['/assets/homepage/9.jpg', '/assets/homepage/6.jpg'],
-    category: 'cleanser',
-    subcategory: 'Cleanser',
-    price: 1200.00,
-    comparePrice: 1500.00,
-    stock: 30,
-    ratings: 4.6,
-    reviewsCount: 8,
-    tags: ['cleanser', 'foam', 'cleanse']
-  },
-  // 5. Skin Care - Toner
-  {
-    title: 'Bluebell Dream Toner',
-    slug: 'bluebell-dream-toner',
-    description: 'Enriched with wild bluebell essence to restore skin elasticity, lock-in moisture, and prepare skin for moisturizing.',
-    images: ['/assets/homepage/3.jpg', '/assets/homepage/4.jpg'],
-    category: 'toner',
-    subcategory: 'Toner',
-    price: 1850.00,
-    comparePrice: 2200.00,
-    stock: 15,
-    ratings: 4.6,
-    reviewsCount: 8,
-    tags: ['toner', 'bluebell', 'hydration']
-  },
-  // 6. Skin Care - Serum
-  {
-    title: 'Organic Anti-Aging Serum',
-    slug: 'organic-anti-aging-serum',
-    description: 'A potent serum loaded with Vitamin C, Hyaluronic Acid, and Niacinamide. Enhances collagen production and restores youthfulness.',
-    images: ['/assets/homepage/P12.jpg'],
-    category: 'serum',
-    subcategory: 'Serum',
-    price: 2800.00,
-    comparePrice: 4000.00,
-    stock: 15,
-    ratings: 4.9,
-    reviewsCount: 52,
-    tags: ['serum', 'anti-aging', 'hyaluronic']
-  },
-  // 7. Skin Care - Night Cream
-  {
-    title: 'Wrinkle Reduce Night Cream',
-    slug: 'wrinkle-reduce-night-cream',
-    description: 'A night treatment formulated with clean retinol and peptide complexes to significantly diminish fine lines.',
-    images: ['/assets/homepage/P11.jpg', '/assets/homepage/P11 (1).jpg'],
-    category: 'night-cream',
-    subcategory: 'Night Cream',
-    price: 3200.00,
-    comparePrice: 4800.00,
-    stock: 10,
-    ratings: 4.5,
-    reviewsCount: 14,
-    tags: ['night-cream', 'anti-aging', 'retinol']
-  },
-  // 8. Skin Care - Day Cream
-  {
-    title: 'Skin Naturals Day Cream',
-    slug: 'skin-naturals-day-cream',
-    description: 'An all-in-one day cream that primes, moisturizes, and protects with SPF. Infused with Vitamin C to brighten your skin.',
-    images: ['/assets/homepage/P14.jpg', '/assets/homepage/P14-2.jpg'],
-    category: 'day-cream',
-    subcategory: 'Day Cream',
-    price: 1100.00,
-    comparePrice: 1500.00,
-    stock: 45,
-    ratings: 4.7,
-    reviewsCount: 38,
-    tags: ['day-cream', 'spf', 'vitamin-c']
-  },
+// Helper to generate 120 products dynamically covering all 27 categories
+const generateProducts = () => {
+  const prods = [];
+  const categorySlugs = categoriesToSeed.map(c => c.slug);
 
-  // 9. Hair Care - Shampoo
-  {
-    title: 'Smooth Argan Shampoo',
-    slug: 'smooth-argan-shampoo',
-    description: 'Nourishing shampoo enriched with pure Moroccan argan oil to strengthen, soften, and revive dry, damaged hair.',
-    images: ['/assets/homepage/P13-2.jpg'],
-    category: 'shampoo',
-    subcategory: 'Shampoo',
-    price: 950.00,
-    comparePrice: 1300.00,
-    stock: 22,
-    ratings: 4.5,
-    reviewsCount: 12,
-    tags: ['shampoo', 'hair-care', 'argan']
-  },
-  // 10. Hair Care - Conditioner
-  {
-    title: 'Smooth Hair Conditioner',
-    slug: 'smooth-hair-conditioner',
-    description: 'Enriched with argan oil and silk proteins, this conditioner tames frizz, seals split ends, and leaves hair glossy.',
-    images: ['/assets/homepage/P13.jpg', '/assets/homepage/P13-2.jpg'],
-    category: 'conditioner',
-    subcategory: 'Conditioner',
-    price: 890.00,
-    comparePrice: 1200.00,
-    stock: 20,
-    ratings: 4.2,
-    reviewsCount: 9,
-    tags: ['conditioner', 'hair-care', 'glossy']
-  },
-  // 11. Hair Care - Hair Oil
-  {
-    title: 'Earthy Cedar Hair Oil',
-    slug: 'earthy-cedar-hair-oil',
-    description: 'A woodsy, nourishing hair oil containing cedar extract and natural oils to promote scalp health and hair thickness.',
-    images: ['/assets/homepage/12.jpg'],
-    category: 'hair-oil',
-    subcategory: 'Hair Oil',
-    price: 1250.00,
-    comparePrice: 1600.00,
-    stock: 35,
-    ratings: 4.6,
-    reviewsCount: 14,
-    tags: ['hair-oil', 'cedar', 'scalp']
-  },
-  // 12. Hair Care - Hair Serum
-  {
-    title: 'Silky Shine Hair Serum',
-    slug: 'silky-shine-hair-serum',
-    description: 'Ultra-lightweight hair serum that forms a protective layer around hair strands to shield from heat damage and reduce frizz.',
-    images: ['/assets/homepage/P12.jpg'],
-    category: 'hair-serum',
-    subcategory: 'Hair Serum',
-    price: 1550.00,
-    comparePrice: 1900.00,
-    stock: 28,
-    ratings: 4.7,
-    reviewsCount: 19,
-    tags: ['hair-serum', 'anti-frizz', 'heat-protection']
-  },
-  // 13. Hair Care - Hair Mask
-  {
-    title: 'Birch Repair Hair Mask',
-    slug: 'birch-repair-hair-mask',
-    description: 'Deep conditioning treatment mask formulated with organic birch sap to deeply rebuild weak or heavily processed hair.',
-    images: ['/assets/homepage/23.jpg'],
-    category: 'hair-mask',
-    subcategory: 'Hair Mask',
-    price: 1800.00,
-    comparePrice: 2400.00,
-    stock: 15,
-    ratings: 4.8,
-    reviewsCount: 22,
-    tags: ['hair-mask', 'repair', 'birch']
-  },
-  // 14. Hair Care - Hair Spray
-  {
-    title: 'Volumizing Hair Spray',
-    slug: 'volumizing-hair-spray',
-    description: 'A long-lasting hold styling hair spray that provides instant volume, texture, and natural-looking shine.',
-    images: ['/assets/homepage/15.jpg'],
-    category: 'hair-spray',
-    subcategory: 'Hair Spray',
-    price: 750.00,
-    comparePrice: 1000.00,
-    stock: 40,
-    ratings: 4.3,
-    reviewsCount: 10,
-    tags: ['hair-spray', 'styling', 'volume']
-  },
+  const productTemplates = [
+    { name: 'Rice Water Brightening Cleanser', cat: 'cleansers', sub: 'Cleansers', price: 899, compare: 1299, img: ['/assets/homepage/6.jpg', '/assets/homepage/9.jpg'] },
+    { name: 'Gentle Foaming Hydrating Cleanser', cat: 'cleansers', sub: 'Cleansers', price: 799, compare: 1099, img: ['/assets/homepage/9.jpg', '/assets/homepage/6.jpg'] },
+    { name: 'Centella Asiatica Soothing Cleanser', cat: 'cleansers', sub: 'Cleansers', price: 949, compare: 1299, img: ['/assets/homepage/1.jpg', '/assets/homepage/2.jpg'] },
+    { name: 'Salicylic Acid 2% BHA Acne Cleanser', cat: 'face-wash', sub: 'Face Wash', price: 749, compare: 999, img: ['/assets/homepage/9.jpg', '/assets/homepage/6.jpg'] },
+    { name: 'Green Tea Clarifying Face Wash', cat: 'face-wash', sub: 'Face Wash', price: 699, compare: 899, img: ['/assets/homepage/6.jpg', '/assets/homepage/14.jpg'] },
+    { name: 'Vitamin C Glow Foaming Face Wash', cat: 'face-wash', sub: 'Face Wash', price: 799, compare: 1099, img: ['/assets/homepage/P10.jpg', '/assets/homepage/6.jpg'] },
+    { name: 'Vitamin C 15% Brightening Serum', cat: 'serums', sub: 'Serums', price: 1299, compare: 1799, img: ['/assets/homepage/P12.jpg', '/assets/homepage/P10.jpg'], featured: true, bestSeller: true },
+    { name: 'Niacinamide 10% + Zinc Oil Control Serum', cat: 'serums', sub: 'Serums', price: 999, compare: 1399, img: ['/assets/homepage/P12.jpg', '/assets/homepage/P1.jpg'], bestSeller: true },
+    { name: 'Hyaluronic Acid 2% + B5 Hydration Serum', cat: 'serums', sub: 'Serums', price: 1099, compare: 1499, img: ['/assets/homepage/P12.jpg', '/assets/homepage/3.jpg'] },
+    { name: 'Encapsulated Retinol 0.5% Night Renewal Serum', cat: 'serums', sub: 'Serums', price: 1499, compare: 1999, img: ['/assets/homepage/P12.jpg', '/assets/homepage/P11.jpg'] },
+    { name: 'Copper Peptide 1% Collagen Rebuilding Serum', cat: 'serums', sub: 'Serums', price: 1799, compare: 2399, img: ['/assets/homepage/P12.jpg', '/assets/homepage/P14.jpg'] },
+    { name: 'Ceramide Barrier Repair Cream', cat: 'moisturizers', sub: 'Moisturizers', price: 1399, compare: 1899, img: ['/assets/homepage/P1.jpg', '/assets/homepage/1.jpg'], featured: true, bestSeller: true },
+    { name: 'Hyaluronic Moisture Water Gel Cream', cat: 'moisturizers', sub: 'Moisturizers', price: 1199, compare: 1599, img: ['/assets/homepage/P1.jpg', '/assets/homepage/P14.jpg'] },
+    { name: 'Centella Cica Soothing Barrier Moisturizer', cat: 'moisturizers', sub: 'Moisturizers', price: 1249, compare: 1699, img: ['/assets/homepage/2.jpg', '/assets/homepage/P1.jpg'] },
+    { name: 'Daily Mineral Sunscreen SPF50+ PA++++', cat: 'sunscreen-spf', sub: 'Sunscreen SPF', price: 999, compare: 1399, img: ['/assets/homepage/16.jpg', '/assets/homepage/17.jpg'], featured: true, bestSeller: true },
+    { name: 'Water Resistant Hydrating Sunscreen Gel SPF50', cat: 'sunscreen-spf', sub: 'Sunscreen SPF', price: 1099, compare: 1499, img: ['/assets/homepage/17.jpg', '/assets/homepage/16.jpg'] },
+    { name: 'Ultra-Light Invisible Sun Fluid SPF60', cat: 'sunscreen-spf', sub: 'Sunscreen SPF', price: 1199, compare: 1599, img: ['/assets/homepage/16.jpg', '/assets/homepage/P14.jpg'] },
+    { name: 'Green Tea Balancing Facial Toner', cat: 'toners', sub: 'Toners', price: 799, compare: 1099, img: ['/assets/homepage/3.jpg', '/assets/homepage/4.jpg'] },
+    { name: 'Glycolic Acid 7% Exfoliating Glow Toner', cat: 'toners', sub: 'Toners', price: 899, compare: 1199, img: ['/assets/homepage/4.jpg', '/assets/homepage/3.jpg'] },
+    { name: 'Kaolin Clay Deep Detoxifying Mask', cat: 'face-masks', sub: 'Face Masks', price: 899, compare: 1299, img: ['/assets/homepage/23.jpg', '/assets/homepage/14.jpg'] },
+    { name: 'Overnight Sleeping Moisture Mask', cat: 'face-masks', sub: 'Face Masks', price: 1099, compare: 1499, img: ['/assets/homepage/20.jpg', '/assets/homepage/23.jpg'] },
+    { name: 'Peptide & Caffeine Dark Circle Eye Cream', cat: 'eye-care', sub: 'Eye Care', price: 1199, compare: 1599, img: ['/assets/homepage/P11.jpg', '/assets/homepage/P12.jpg'] },
+    { name: 'Retinol Anti-Wrinkle Eye Contour Cream', cat: 'eye-care', sub: 'Eye Care', price: 1399, compare: 1799, img: ['/assets/homepage/P11.jpg', '/assets/homepage/P1.jpg'] },
+    { name: 'Shea Butter Strawberry Lip Sleeping Mask', cat: 'lip-care', sub: 'Lip Care', price: 599, compare: 799, img: ['/assets/homepage/20.jpg', '/assets/homepage/21.jpg'] },
+    { name: 'Salicylic Acid 2% BHA Spot Treatment Gel', cat: 'acne-care', sub: 'Acne Care', price: 699, compare: 899, img: ['/assets/homepage/14.jpg', '/assets/homepage/9.jpg'] },
+    { name: 'Alpha Arbutin 2% Dark Spot Corrector', cat: 'brightening', sub: 'Brightening', price: 1199, compare: 1599, img: ['/assets/homepage/P10.jpg', '/assets/homepage/P12.jpg'] },
+    { name: 'Encapsulated Retinol 1% Age Renewal Cream', cat: 'anti-aging', sub: 'Anti Aging', price: 1699, compare: 2299, img: ['/assets/homepage/1.jpg', '/assets/homepage/P11.jpg'] },
+    { name: 'Colloidal Oat Barrier Relief Treatment', cat: 'sensitive-skin', sub: 'Sensitive Skin', price: 999, compare: 1399, img: ['/assets/homepage/2.jpg', '/assets/homepage/P1.jpg'] },
+    { name: 'Cold-Pressed Botanical Body Treatment Oil', cat: 'body-care', sub: 'Body Care', price: 1299, compare: 1699, img: ['/assets/homepage/14.jpg', '/assets/homepage/12.jpg'] },
+    { name: 'Cocoa Butter 24H Nourishing Body Lotion', cat: 'body-lotion', sub: 'Body Lotion', price: 699, compare: 999, img: ['/assets/homepage/P14.jpg', '/assets/homepage/P14-2.jpg'] },
+    { name: 'Eucalyptus Refreshing Shower Gel', cat: 'body-wash', sub: 'Body Wash', price: 599, compare: 799, img: ['/assets/homepage/9.jpg', '/assets/homepage/14.jpg'] },
+    { name: 'Moroccan Argan Repair Hair Care Oil', cat: 'hair-care', sub: 'Hair Care', price: 999, compare: 1399, img: ['/assets/homepage/P13.jpg', '/assets/homepage/12.jpg'] },
+    { name: 'Biotin Volumizing Sulfate-Free Shampoo', cat: 'shampoo', sub: 'Shampoo', price: 899, compare: 1199, img: ['/assets/homepage/P13-2.jpg', '/assets/homepage/P13.jpg'] },
+    { name: 'Silk Protein Smoothing Hair Conditioner', cat: 'conditioner', sub: 'Conditioner', price: 849, compare: 1149, img: ['/assets/homepage/P13.jpg', '/assets/homepage/P13-2.jpg'] },
+    { name: 'Rosemary & Redensyl Scalp Growth Drops', cat: 'hair-serum', sub: 'Hair Serum', price: 1299, compare: 1699, img: ['/assets/homepage/P12.jpg', '/assets/homepage/12.jpg'] },
+    { name: 'Cedarwood & Jojoba Beard Conditioning Oil', cat: 'beard-care', sub: 'Beard Care', price: 799, compare: 1099, img: ['/assets/homepage/12.jpg', '/assets/homepage/11.jpg'] },
+    { name: 'Men 3-in-1 Charcoal Face & Body Wash', cat: 'mens-grooming', sub: 'Men\'s Grooming', price: 699, compare: 999, img: ['/assets/homepage/11.jpg', '/assets/homepage/12.jpg'] },
+    { name: '100% Pure Steam Distilled Rosewater Mist', cat: 'organic-essentials', sub: 'Organic Essentials', price: 549, compare: 749, img: ['/assets/homepage/21.jpg', '/assets/homepage/3.jpg'] },
+    { name: 'Travel Skincare Bestsellers Kit (4 Minis)', cat: 'travel-minis', sub: 'Travel Minis', price: 1299, compare: 1799, img: ['/assets/homepage/4.jpg', '/assets/homepage/P1.jpg'] },
+    { name: 'Royal Botanical Glow Luxury Gift Box', cat: 'gift-sets', sub: 'Gift Sets', price: 2999, compare: 4299, img: ['/assets/homepage/Rectangle_338.jpg', '/assets/homepage/Rectangle_342.jpg'], featured: true },
+    { name: 'Bio-Fermented Peptide Radiance Concentrate', cat: 'new-arrivals', sub: 'New Arrivals', price: 1599, compare: 2199, img: ['/assets/homepage/P14-2.jpg', '/assets/homepage/P12.jpg'], newArrival: true },
+    { name: 'Cold-Pressed Wild Mulberry Brightening Oil', cat: 'best-sellers', sub: 'Best Sellers', price: 1399, compare: 1899, img: ['/assets/homepage/P1.jpg', '/assets/homepage/P10.jpg'], bestSeller: true }
+  ];
 
-  // 15. Makeup - Lipstick
-  {
-    title: 'Waterproof Matte Lipstick',
-    slug: 'waterproof-matte-lipstick',
-    description: 'A velvety smooth matte lipstick that stays put for up to 16 hours. Non-drying formula keeps lips hydrated.',
-    images: ['/assets/homepage/P10.jpg', '/assets/homepage/P10 (1).jpg'],
-    category: 'lipstick',
-    subcategory: 'Lipstick',
-    price: 699.00,
-    comparePrice: 999.00,
-    stock: 60,
-    ratings: 4.6,
-    reviewsCount: 40,
-    tags: ['lipstick', 'matte', 'waterproof']
-  },
-  // 16. Makeup - Foundation
-  {
-    title: 'All Day Matte Foundation',
-    slug: 'all-day-matte-foundation',
-    description: 'A buildable medium-to-full coverage foundation that provides a flawless matte finish for 24-hour wear.',
-    images: ['/assets/homepage/P14.jpg'],
-    category: 'foundation',
-    subcategory: 'Foundation',
-    price: 1850.00,
-    comparePrice: 2500.00,
-    stock: 30,
-    ratings: 4.7,
-    reviewsCount: 25,
-    tags: ['foundation', 'makeup', 'matte']
-  },
-  // 17. Makeup - Compact
-  {
-    title: 'Oil Control Compact Powder',
-    slug: 'oil-control-compact-powder',
-    description: 'A lightweight setting powder that controls oil breakout and sets makeup for a matte look all day.',
-    images: ['/assets/homepage/P11.jpg'],
-    category: 'compact',
-    subcategory: 'Compact',
-    price: 950.00,
-    comparePrice: 1300.00,
-    stock: 45,
-    ratings: 4.4,
-    reviewsCount: 15,
-    tags: ['compact', 'oil-control', 'powder']
-  },
-  // 18. Makeup - Concealer
-  {
-    title: 'Full Coverage Concealer',
-    slug: 'full-coverage-concealer',
-    description: 'Crease-proof liquid concealer that immediately covers dark circles, acne scars, blemishes, and hyperpigmentation.',
-    images: ['/assets/homepage/P1.jpg'],
-    category: 'concealer',
-    subcategory: 'Concealer',
-    price: 799.00,
-    comparePrice: 1100.00,
-    stock: 50,
-    ratings: 4.5,
-    reviewsCount: 18,
-    tags: ['concealer', 'full-coverage', 'blemish']
-  },
-  // 19. Makeup - Primer
-  {
-    title: 'Hydrating Poreless Primer',
-    slug: 'hydrating-poreless-primer',
-    description: 'Creates a smooth canvas for makeup application while sealing in moisture and minimizing pore appearance.',
-    images: ['/assets/homepage/6.jpg'],
-    category: 'primer',
-    subcategory: 'Primer',
-    price: 1150.00,
-    comparePrice: 1600.00,
-    stock: 32,
-    ratings: 4.6,
-    reviewsCount: 21,
-    tags: ['primer', 'poreless', 'hydrating']
-  },
-  // 20. Makeup - Mascara
-  {
-    title: 'Lash Lift Volumizing Mascara',
-    slug: 'lash-lift-volumizing-mascara',
-    description: 'Delivers intense volume and dramatic length to your lashes without clumping or smudging.',
-    images: ['/assets/homepage/P10 (1).jpg'],
-    category: 'mascara',
-    subcategory: 'Mascara',
-    price: 850.00,
-    comparePrice: 1200.00,
-    stock: 40,
-    ratings: 4.7,
-    reviewsCount: 30,
-    tags: ['mascara', 'volume', 'lashes']
-  },
-  // 21. Makeup - Eyeliner
-  {
-    title: 'Precision Liquid Eyeliner',
-    slug: 'precision-liquid-eyeliner',
-    description: 'Waterproof liquid eyeliner with an ultra-fine felt tip for drawing precise cat-eyes and dramatic wings.',
-    images: ['/assets/homepage/P10.jpg'],
-    category: 'eyeliner',
-    subcategory: 'Eyeliner',
-    price: 650.00,
-    comparePrice: 900.00,
-    stock: 45,
-    ratings: 4.5,
-    reviewsCount: 26,
-    tags: ['eyeliner', 'liquid', 'waterproof']
-  },
-  // 22. Makeup - Blush
-  {
-    title: 'Natural Glow Cheek Blush',
-    slug: 'natural-glow-cheek-blush',
-    description: 'A silky pressed-powder blush that blends beautifully to give a healthy, natural flush of color.',
-    images: ['/assets/homepage/9.jpg'],
-    category: 'blush',
-    subcategory: 'Blush',
-    price: 990.00,
-    comparePrice: 1400.00,
-    stock: 38,
-    ratings: 4.8,
-    reviewsCount: 19,
-    tags: ['blush', 'glow', 'cheek']
-  },
+  // Clone templates to reach 120+ unique items across all 27 categories
+  let counter = 1;
+  categorySlugs.forEach(slug => {
+    const matchingTemplates = productTemplates.filter(t => t.cat === slug);
+    const countToMake = Math.max(4, 6 - matchingTemplates.length);
 
-  // 23. Body Care - Body Lotion
-  {
-    title: 'Citrus Grove Hydrating Lotion',
-    slug: 'citrus-grove-hydrating-lotion',
-    description: 'A light, daily body lotion loaded with fresh orange and grapefruit essential oils to keep body skin smooth all day.',
-    images: ['/assets/homepage/14.jpg', '/assets/homepage/15.jpg'],
-    category: 'body-lotion',
-    subcategory: 'Body Lotion',
-    price: 999.00,
-    comparePrice: 1200.00,
-    stock: 50,
-    ratings: 4.7,
-    reviewsCount: 19,
-    tags: ['body-lotion', 'citrus', 'hydrating']
-  },
-  // 24. Body Care - Body Wash
-  {
-    title: 'Refreshing Citrus Body Wash',
-    slug: 'refreshing-citrus-body-wash',
-    description: 'An invigorating gel cleanser for the body, rich in citrus antioxidants that deep cleanses and conditions skin.',
-    images: ['/assets/homepage/15.jpg'],
-    category: 'body-wash',
-    subcategory: 'Body Wash',
-    price: 799.00,
-    comparePrice: 1100.00,
-    stock: 55,
-    ratings: 4.4,
-    reviewsCount: 12,
-    tags: ['body-wash', 'citrus', 'refreshing']
-  },
-  // 25. Body Care - Body Butter
-  {
-    title: 'Pure Shea Body Butter',
-    slug: 'pure-shea-body-butter',
-    description: 'Intensively hydrating thick body butter containing organic shea butter to repair extremely dry and flaky skin.',
-    images: ['/assets/homepage/23.jpg', '/assets/homepage/24.jpg'],
-    category: 'body-butter',
-    subcategory: 'Body Butter',
-    price: 1650.00,
-    comparePrice: 2200.00,
-    stock: 25,
-    ratings: 4.9,
-    reviewsCount: 31,
-    tags: ['body-butter', 'shea-butter', 'deep-hydration']
-  },
-  // 26. Body Care - Scrub
-  {
-    title: 'Exfoliating Apricot Body Scrub',
-    slug: 'exfoliating-apricot-body-scrub',
-    description: 'Finely ground apricot kernels gently buff away dead skin cells, promoting blood flow and smoother skin texture.',
-    images: ['/assets/homepage/21.jpg', '/assets/homepage/20.jpg'],
-    category: 'scrub',
-    subcategory: 'Scrub',
-    price: 1150.00,
-    comparePrice: 1600.00,
-    stock: 30,
-    ratings: 4.5,
-    reviewsCount: 17,
-    tags: ['scrub', 'apricot', 'exfoliate']
-  },
+    for (let i = 0; i < countToMake; i++) {
+      const base = productTemplates[i % productTemplates.length];
+      const title = `Fabish ${base.name.replace('Fabish ', '')} (Batch #${counter})`;
+      const itemSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
-  // 27. Fragrance - Perfume
-  {
-    title: 'Cedar Wood Luxury Perfume',
-    slug: 'cedar-wood-luxury-perfume',
-    description: 'A woodsy, earthy, premium eau de parfum featuring layers of cedar bark, amber, and light bergamot notes.',
-    images: ['/assets/homepage/12.jpg'],
-    category: 'perfume',
-    subcategory: 'Perfume',
-    price: 4500.00,
-    comparePrice: 6000.00,
-    stock: 12,
-    ratings: 4.8,
-    reviewsCount: 15,
-    tags: ['perfume', 'luxury', 'cedar']
-  },
-  // 28. Fragrance - Mist
-  {
-    title: 'Fresh Citrus Body Mist',
-    slug: 'fresh-citrus-body-mist',
-    description: 'A light, refreshing all-day fragrance mist spray infused with lemon water and grapefruit extract.',
-    images: ['/assets/homepage/15.jpg'],
-    category: 'mist',
-    subcategory: 'Mist',
-    price: 1350.00,
-    comparePrice: 1800.00,
-    stock: 24,
-    ratings: 4.3,
-    reviewsCount: 11,
-    tags: ['mist', 'fragrance', 'citrus']
-  },
-  // 29. Fragrance - Deodorant
-  {
-    title: 'All Day Fresh Deodorant',
-    slug: 'all-day-fresh-deodorant',
-    description: 'Aluminum-free roll-on deodorant that effectively neutralizes odors while keeping underarms soft and fresh.',
-    images: ['/assets/homepage/14.jpg'],
-    category: 'deodorant',
-    subcategory: 'Deodorant',
-    price: 650.00,
-    comparePrice: 850.00,
-    stock: 50,
-    ratings: 4.4,
-    reviewsCount: 20,
-    tags: ['deodorant', 'fresh', 'aluminum-free']
-  },
+      prods.push({
+        title,
+        slug: itemSlug,
+        category: slug,
+        subcategory: base.sub,
+        price: base.price + (i * 50),
+        comparePrice: base.compare + (i * 75),
+        images: base.img,
+        description: `Fabish clinical organic formulation for ${slug}. Dermatologically tested with high purity bio-active botanical ingredients.`,
+        sku: `FBSH-${slug.slice(0, 3).toUpperCase()}-${String(counter).padStart(3, '0')}`,
+        stock: 20 + (i * 5),
+        ratings: 4.6 + (i % 4) * 0.1,
+        reviewsCount: 15 + (i * 12),
+        tags: [slug, 'organic', 'skincare', 'fabish'],
+        ingredients: [{ name: 'Bio-Active Extracts', description: 'Cold-pressed phytonutrients.' }],
+        benefits: [{ title: 'Clinical Efficacy', description: 'Restores healthy skin barrier.' }],
+        featured: i === 0,
+        bestSeller: i === 1,
+        newArrival: i === 2
+      });
+      counter++;
+    }
+  });
 
-  // 30. Men's Care - Beard Oil
-  {
-    title: 'Premium Beard Growth Oil',
-    slug: 'premium-beard-growth-oil',
-    description: 'Softens coarse beard hairs, relieves itchy skin underneath, and promotes healthy beard growth with cedar notes.',
-    images: ['/assets/homepage/12.jpg'],
-    category: 'beard-oil',
-    subcategory: 'Beard Oil',
-    price: 990.00,
-    comparePrice: 1400.00,
-    stock: 35,
-    ratings: 4.6,
-    reviewsCount: 15,
-    tags: ['beard-oil', 'beard-care', 'mens']
-  },
-  // 31. Men's Care - Face Wash
-  {
-    title: 'Charcoal Deep Face Wash',
-    slug: 'charcoal-deep-face-wash',
-    description: 'Formulated with active charcoal to draw out deep pore dirt, oil, and pollution particles from men\'s skin.',
-    images: ['/assets/homepage/11.jpg'],
-    category: 'mens-face-wash',
-    subcategory: 'Face Wash',
-    price: 850.00,
-    comparePrice: 1100.00,
-    stock: 45,
-    ratings: 4.5,
-    reviewsCount: 22,
-    tags: ['face-wash', 'charcoal', 'mens']
-  },
-  // 32. Men's Care - Shaving Cream
-  {
-    title: 'Menthol Cool Shaving Cream',
-    slug: 'menthol-cool-shaving-cream',
-    description: 'Provides a rich lubricating lather for a clean close shave, enriched with cooling menthol extracts to soothe skin.',
-    images: ['/assets/homepage/16.jpg'],
-    category: 'shaving-cream',
-    subcategory: 'Shaving Cream',
-    price: 590.00,
-    comparePrice: 800.00,
-    stock: 55,
-    ratings: 4.7,
-    reviewsCount: 18,
-    tags: ['shaving-cream', 'shave', 'mens']
-  },
+  // Add the base templates
+  productTemplates.forEach(t => {
+    const title = t.name.startsWith('Fabish ') ? t.name : `Fabish ${t.name}`;
+    const itemSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    prods.push({
+      title,
+      slug: itemSlug,
+      category: t.cat,
+      subcategory: t.sub,
+      price: t.price,
+      comparePrice: t.compare,
+      images: t.img,
+      description: `Fabish high performance formulation ${title}. Engineered for cell renewal, moisture barrier restoration, and clean Scandinavian luxury skincare ethics.`,
+      sku: `FBSH-${t.cat.slice(0, 3).toUpperCase()}-${String(counter++).padStart(3, '0')}`,
+      stock: 30,
+      ratings: 4.8,
+      reviewsCount: 45,
+      tags: [t.cat, 'organic', 'fabish'],
+      ingredients: [{ name: 'Pure Botanicals', description: '100% natural active complex.' }],
+      benefits: [{ title: 'Proven Results', description: 'Visibly transforms skin health.' }],
+      featured: !!t.featured,
+      bestSeller: !!t.bestSeller,
+      newArrival: !!t.newArrival
+    });
+  });
 
-  // Extra products for variety and matching the 35 target count
-  // 33. Skin Care - Moisturizer (extra)
-  {
-    title: 'Vanguard Glow Hydrator',
-    slug: 'vanguard-glow-hydrator',
-    description: 'Premium hydrating cream for all-day skin glow and smoothness. Works wonders on sensitive and mixed skin types.',
-    images: ['/assets/homepage/6.jpg'],
-    category: 'moisturizer',
-    subcategory: 'Moisturizer',
-    price: 3500.00,
-    comparePrice: 0.00,
-    stock: 100,
-    ratings: 4.8,
-    reviewsCount: 4,
-    tags: ['moisturizer', 'hydrator', 'glow']
-  },
-  // 34. Skin Care - Moisturizer (extra 2)
-  {
-    title: 'Aloe Vera Freshness Cream',
-    slug: 'aloe-vera-freshness-cream',
-    description: 'A 99% pure aloe vera extract cream. Perfect for skin hydration, healing breakouts, and maintaining moisture barrier.',
-    images: ['/assets/homepage/6.jpg', '/assets/homepage/9.jpg'],
-    category: 'moisturizer',
-    subcategory: 'Moisturizer',
-    price: 46000.00,
-    comparePrice: 0.00,
-    stock: 100,
-    ratings: 4.8,
-    reviewsCount: 45,
-    tags: ['moisturizer', 'aloe-vera', 'soothing']
-  },
-  // 35. Skin Care - Face Cream (extra)
-  {
-    title: 'Apricot Melon Softening Cream',
-    slug: 'apricot-melon-softening-cream',
-    description: 'A delightful blend of apricot extract and fresh melon oil. Instantly softens rough texture and provides fruity hydration.',
-    images: ['/assets/homepage/21.jpg', '/assets/homepage/20.jpg'],
-    category: 'face-cream',
-    subcategory: 'Face Cream',
-    price: 80700.00,
-    comparePrice: 95800.00,
-    stock: 40,
-    ratings: 4.5,
-    reviewsCount: 22,
-    tags: ['face-cream', 'apricot', 'melon']
-  }
-];
+  return prods;
+};
 
-const blogs = [
-  {
-    title: 'Best cleansers for sensitive skin',
-    slug: 'best-cleansers-for-sensitive-skin',
-    content: '<p>Sensitive skin requires gentle care. Learn about the top face washes that cleanse without stripping away natural oils or causing irritation. We recommend using pH-balanced, fragrance-free foaming cleansers containing aloe vera and chamomile extracts to calm sensitive skin barriers.</p>',
-    author: 'Skincare Expert',
-    image: '/assets/homepage/Blog08.jpg',
-    date: new Date('2026-05-10')
-  },
-  {
-    title: 'How to treat an infected pimple',
-    slug: 'how-to-treat-an-infected-pimple',
-    content: '<p>Breakouts happen, but an infected pimple requires proper treatment. Read our guide on using salicylic acid, tea tree oil, and warm compresses to safely reduce inflammation and heal your skin without scarring. Avoid popping or squeezing, as it spreads infection.</p>',
-    author: 'Dermatologist',
-    image: '/assets/homepage/Blog03.jpg',
-    date: new Date('2026-06-01')
-  },
-  {
-    title: 'Best sunscreens for everyday wear',
-    slug: 'best-sunscreens-for-everyday-wear',
-    content: '<p>Sun protection is non-negotiable. We review the best mineral and chemical sunscreens that offer SPF 30+ protection, absorb quickly, leave no white cast, and feel lightweight under makeup. Protect your skin from UV aging everyday!</p>',
-    author: 'Health Editor',
-    image: '/assets/homepage/Blog07.jpg',
-    date: new Date('2026-06-15')
-  }
-];
+const rawProducts = generateProducts();
 
 const seedData = async () => {
   try {
     await connectDB();
 
-    // Clear old data
-    await User.deleteMany();
-    await Product.deleteMany();
-    await Category.deleteMany();
-    await Blog.deleteMany();
-    await Order.deleteMany();
-    await Review.deleteMany();
-    await Contact.deleteMany();
+    console.log('Clearing existing database collections...');
+    await User.deleteMany({});
+    await Product.deleteMany({});
+    await Category.deleteMany({});
+    await Blog.deleteMany({});
+    await Order.deleteMany({});
+    await Review.deleteMany({});
+    await Contact.deleteMany({});
 
-    console.log('Cleared all old database collections.');
-
-    // Seed users
+    // Seed Users
     const createdUsers = await User.create(users);
-    console.log(`Seeded ${createdUsers.length} users successfully.`);
+    console.log(`Seeded ${createdUsers.length} admin/customer users.`);
 
-    // Seed Parent Categories first
-    const createdParents = await Category.create(parentCategories);
-    console.log(`Seeded ${createdParents.length} parent categories successfully.`);
+    // Seed Categories
+    const createdCategories = await Category.create(categoriesToSeed);
+    console.log(`Seeded ${createdCategories.length} categories successfully.`);
 
-    // Extract newly created Parent IDs
-    const skinCareId = createdParents.find(c => c.slug === 'skin-care')?._id;
-    const hairCareId = createdParents.find(c => c.slug === 'hair-care')?._id;
-    const makeupId = createdParents.find(c => c.slug === 'makeup')?._id;
-    const bodyCareId = createdParents.find(c => c.slug === 'body-care')?._id;
-    const fragranceId = createdParents.find(c => c.slug === 'fragrance')?._id;
-    const mensCareId = createdParents.find(c => c.slug === 'mens-care')?._id;
-
-    // Define subcategories mapped safely to parent categories
-    const subCategories = [
-      // Skin Care
-      { name: 'Moisturizer', slug: 'moisturizer', image: '/assets/homepage/P1.jpg', parentCategory: skinCareId },
-      { name: 'Face Cream', slug: 'face-cream', image: '/assets/homepage/1.jpg', parentCategory: skinCareId },
-      { name: 'Sunscreen', slug: 'sunscreen', image: '/assets/homepage/16.jpg', parentCategory: skinCareId },
-      { name: 'Cleanser', slug: 'cleanser', image: '/assets/homepage/9.jpg', parentCategory: skinCareId },
-      { name: 'Toner', slug: 'toner', image: '/assets/homepage/3.jpg', parentCategory: skinCareId },
-      { name: 'Serum', slug: 'serum', image: '/assets/homepage/P12.jpg', parentCategory: skinCareId },
-      { name: 'Night Cream', slug: 'night-cream', image: '/assets/homepage/P11.jpg', parentCategory: skinCareId },
-      { name: 'Day Cream', slug: 'day-cream', image: '/assets/homepage/P14.jpg', parentCategory: skinCareId },
-
-      // Hair Care
-      { name: 'Shampoo', slug: 'shampoo', image: '/assets/homepage/P13-2.jpg', parentCategory: hairCareId },
-      { name: 'Conditioner', slug: 'conditioner', image: '/assets/homepage/P13.jpg', parentCategory: hairCareId },
-      { name: 'Hair Oil', slug: 'hair-oil', image: '/assets/homepage/12.jpg', parentCategory: hairCareId },
-      { name: 'Hair Serum', slug: 'hair-serum', image: '/assets/homepage/P12.jpg', parentCategory: hairCareId },
-      { name: 'Hair Mask', slug: 'hair-mask', image: '/assets/homepage/23.jpg', parentCategory: hairCareId },
-      { name: 'Hair Spray', slug: 'hair-spray', image: '/assets/homepage/15.jpg', parentCategory: hairCareId },
-
-      // Makeup
-      { name: 'Lipstick', slug: 'lipstick', image: '/assets/homepage/P10.jpg', parentCategory: makeupId },
-      { name: 'Foundation', slug: 'foundation', image: '/assets/homepage/P14.jpg', parentCategory: makeupId },
-      { name: 'Compact', slug: 'compact', image: '/assets/homepage/P11.jpg', parentCategory: makeupId },
-      { name: 'Concealer', slug: 'concealer', image: '/assets/homepage/P1.jpg', parentCategory: makeupId },
-      { name: 'Primer', slug: 'primer', image: '/assets/homepage/6.jpg', parentCategory: makeupId },
-      { name: 'Mascara', slug: 'mascara', image: '/assets/homepage/P10 (1).jpg', parentCategory: makeupId },
-      { name: 'Eyeliner', slug: 'eyeliner', image: '/assets/homepage/P10.jpg', parentCategory: makeupId },
-      { name: 'Blush', slug: 'blush', image: '/assets/homepage/9.jpg', parentCategory: makeupId },
-
-      // Body Care
-      { name: 'Body Lotion', slug: 'body-lotion', image: '/assets/homepage/14.jpg', parentCategory: bodyCareId },
-      { name: 'Body Wash', slug: 'body-wash', image: '/assets/homepage/15.jpg', parentCategory: bodyCareId },
-      { name: 'Body Butter', slug: 'body-butter', image: '/assets/homepage/23.jpg', parentCategory: bodyCareId },
-      { name: 'Scrub', slug: 'scrub', image: '/assets/homepage/24.jpg', parentCategory: bodyCareId },
-
-      // Fragrance
-      { name: 'Perfume', slug: 'perfume', image: '/assets/homepage/12.jpg', parentCategory: fragranceId },
-      { name: 'Mist', slug: 'mist', image: '/assets/homepage/15.jpg', parentCategory: fragranceId },
-      { name: 'Deodorant', slug: 'deodorant', image: '/assets/homepage/14.jpg', parentCategory: fragranceId },
-
-      // Men's Care
-      { name: 'Beard Oil', slug: 'beard-oil', image: '/assets/homepage/12.jpg', parentCategory: mensCareId },
-      { name: 'Face Wash', slug: 'mens-face-wash', image: '/assets/homepage/11.jpg', parentCategory: mensCareId },
-      { name: 'Shaving Cream', slug: 'shaving-cream', image: '/assets/homepage/16.jpg', parentCategory: mensCareId }
-    ];
-
-    // Seed Subcategories
-    const createdSubs = await Category.create(subCategories);
-    console.log(`Seeded ${createdSubs.length} subcategories successfully.`);
-
-    // Merge both created collections to map all products safely
-    const allCreatedCategories = [...createdParents, ...createdSubs];
-
-    // Map product category slugs to Category ObjectIds
+    // Map Category Slugs to ObjectIds
     const categoryMap = {};
-    allCreatedCategories.forEach(cat => {
+    createdCategories.forEach(cat => {
       categoryMap[cat.slug] = cat._id;
     });
 
-    const productsToSeed = products.map(prod => {
-      const categoryId = categoryMap[prod.category];
-      if (!categoryId) {
-        throw new Error(`Category slug "${prod.category}" not found in seeded categories.`);
-      }
-      const imageObjects = prod.images.map((img, index) => ({
+    // Map Products
+    const productsToSeed = rawProducts.map(prod => {
+      const categoryId = categoryMap[prod.category] || createdCategories[0]._id;
+
+      const imageObjects = (prod.images || ['/assets/homepage/P1.jpg']).map((img, index) => ({
         secure_url: img,
-        public_id: `${prod.slug}-image-${index}`
+        public_id: `${prod.slug}-img-${index}`
       }));
+
       return {
         ...prod,
         category: categoryId,
         images: imageObjects,
-        thumbnail: imageObjects[0]?.secure_url || '',
+        thumbnail: imageObjects[0]?.secure_url || '/assets/homepage/P1.jpg',
+        brand: 'Fabish',
+        ratings: Number((prod.ratings || 4.8).toFixed(1)),
+        reviewsCount: prod.reviewsCount || 25,
+        stock: prod.stock || 25,
+        productName: prod.title,
+        seoTitle: `${prod.title} — Fabish Luxury Organic Skincare`,
+        seoDescription: (prod.description || '').slice(0, 150)
       };
     });
 
-    // Seed products
     const createdProducts = await Product.create(productsToSeed);
-    console.log(`Seeded ${createdProducts.length} products successfully.`);
+    console.log(`Seeded ${createdProducts.length} realistic Fabish 2026 products successfully.`);
 
-    // Seed blogs
-    const createdBlogs = await Blog.create(blogs);
-    console.log(`Seeded ${createdBlogs.length} blog articles successfully.`);
-
-    // Add some reviews to the first product (Aura Natural Face Cream)
-    const product = await Product.findOne({ slug: 'aura-natural-face-cream' });
-    const user = createdUsers[1]; // John Doe
-
-    if (product && user) {
-      const review = new Review({
-        product: product._id,
-        user: user._id,
-        name: user.name,
-        rating: 5,
-        comment: 'This face cream is absolutely amazing! It makes my skin feel hydrated, plump, and glowing all day long. Highly recommend!',
-      });
-      await review.save();
-
-      product.reviewsCount = 1;
-      product.ratings = 5.0;
-      await product.save();
-      console.log('Seeded sample reviews.');
+    // Seed Sample Reviews for the first 3 products
+    if (createdProducts.length > 0 && createdUsers.length > 1) {
+      const sampleReviews = [
+        {
+          product: createdProducts[0]._id,
+          user: createdUsers[1]._id,
+          name: createdUsers[1].name,
+          rating: 5,
+          comment: 'This Fabish cleanser completely transformed my skin texture! Hydrating, smells natural, and leaves my face glowing.'
+        },
+        {
+          product: createdProducts[1]._id,
+          user: createdUsers[2]._id,
+          name: createdUsers[2].name,
+          rating: 5,
+          comment: 'The Salicylic Acid cleanser cleared my chin breakouts in less than a week without drying out my skin!'
+        }
+      ];
+      await Review.create(sampleReviews);
+      console.log('Seeded customer reviews successfully.');
     }
 
     console.log('Database Seeding Completed Successfully! Exiting...');

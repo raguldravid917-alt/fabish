@@ -32,6 +32,7 @@ const ensureAbsolutePath = (path) => {
 const BeautyProductCard = ({ product, addToCart, toggleWishlist, isInWishlist, setQuickViewProduct }) => {
   const cardRef = useRef(null);
   const { isActiveMobile, useMobileInteraction, handleCardInteraction, cardId } = useMobileCardActive(product._id, cardRef);
+  const [isAdding, setIsAdding] = useState(false);
 
   const mainImg = getLocalImageUrl(ensureAbsolutePath(product.images?.[0] || product.image || '/assets/14.jpg'));
   const hoverImg = product.images?.[1]
@@ -42,6 +43,17 @@ const BeautyProductCard = ({ product, addToCart, toggleWishlist, isInWishlist, s
     : 0;
   const isSoldOut = product.stock === 0;
   const isWishlisted = isInWishlist(product._id);
+
+  const handleAddToCart = async (e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (isAdding || isSoldOut) return;
+    setIsAdding(true);
+    try {
+      await addToCart(product, 1);
+    } finally {
+      setIsAdding(false);
+    }
+  };
 
   return (
     <div
@@ -125,18 +137,19 @@ const BeautyProductCard = ({ product, addToCart, toggleWishlist, isInWishlist, s
         {/* Add to Cart CTA */}
         {!isSoldOut ? (
           <button
-            onClick={() => addToCart(product, 1)}
+            disabled={isAdding}
+            onClick={handleAddToCart}
             className={useMobileInteraction
-              ? `absolute bottom-3 left-1/2 -translate-x-1/2 w-[88%] h-10 bg-[#3a4d23] hover:bg-[#1c2415] text-white text-[11px] font-bold tracking-[0.18em] uppercase rounded-full z-20 border-none cursor-pointer shadow-lg flex items-center justify-center gap-2 transition-all duration-300 ${
+              ? `absolute bottom-3 left-1/2 -translate-x-1/2 w-[88%] h-10 bg-[#3a4d23] hover:bg-[#1c2415] text-white text-[11px] font-bold tracking-[0.18em] uppercase rounded-full z-20 border-none cursor-pointer shadow-lg flex items-center justify-center gap-2 transition-all duration-300 disabled:opacity-60 ${
                   isActiveMobile
                     ? 'opacity-100 pointer-events-auto translate-y-0'
                     : 'opacity-0 pointer-events-none translate-y-3'
                 }`
-              : "absolute bottom-3 left-1/2 -translate-x-1/2 w-[88%] h-10 bg-[#3a4d23] hover:bg-[#1c2415] text-white text-[11px] font-bold tracking-[0.18em] uppercase rounded-full opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:translate-y-2 lg:group-hover:translate-y-0 transition-all duration-300 z-20 border-none cursor-pointer shadow-lg flex items-center justify-center gap-2"
+              : "absolute bottom-3 left-1/2 -translate-x-1/2 w-[88%] h-10 bg-[#3a4d23] hover:bg-[#1c2415] text-white text-[11px] font-bold tracking-[0.18em] uppercase rounded-full opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:translate-y-2 lg:group-hover:translate-y-0 transition-all duration-300 z-20 border-none cursor-pointer shadow-lg flex items-center justify-center gap-2 disabled:opacity-60"
             }
           >
             <ShoppingBag size={14} />
-            <span>ADD TO CART</span>
+            <span>{isAdding ? 'ADDING...' : 'ADD TO CART'}</span>
           </button>
         ) : (
           <button

@@ -4,14 +4,15 @@ import {
   ShoppingBag, Trash2, ArrowRight, ArrowLeft, CreditCard, Landmark,
   Truck, Heart, Eye, Star, X,
 } from 'lucide-react';
-import { CartContext } from '../context/CartContext';
-import { AuthContext } from '../context/AuthContext';
-import { WishlistContext } from '../context/WishlistContext';
+import { useCart } from '../hooks/useCart';
+import { useAuth } from '../hooks/useAuth';
+import { useWishlist } from '../hooks/useWishlist';
 import { getLocalImageUrl } from '../utils/imageMapper';
 import { orderService } from '../api/orderService';
 import { addressService } from '../api/addressService';
 import { useToast } from '../context/ToastContext';
 import { productService } from '../api/productService';
+import OrderSuccess from './OrderSuccess';
 
 const INDIAN_STATES = [
   'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa',
@@ -31,13 +32,13 @@ const Cart = () => {
   const isCheckoutMode = searchParams.get('checkout') === 'true';
 
   const { showToast } = useToast();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const {
     cartItems, updateQty, removeFromCart, clearCart, addToCart, itemsPrice,
     shippingPrice, totalPrice, appliedCoupon, discountAmount,
     couponError, couponLoading, applyCoupon, removeCoupon,
-  } = useContext(CartContext);
-  const { toggleWishlist, isInWishlist } = useContext(WishlistContext);
+  } = useCart();
+  const { toggleWishlist, isInWishlist } = useWishlist();
 
   const [suggestedProducts, setSuggestedProducts] = useState([]);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
@@ -367,46 +368,7 @@ const Cart = () => {
 
   // If order was successfully completed
   if (orderCreated) {
-    return (
-      <div className="bg-[#f7f6f0] py-20 min-h-screen font-body flex items-center justify-center">
-        <div className="bg-white border border-brand-border p-8 md:p-12 max-w-xl text-center shadow-lg">
-          <div className="inline-flex p-4 bg-green-100 text-brand-green rounded-full mb-6">
-            <Truck className="w-10 h-10" />
-          </div>
-          <h1 className="serif-title text-3xl text-brand-charcoal mb-4">Order Placed Successfully!</h1>
-          <p className="text-brand-muted text-base leading-relaxed mb-6">
-            Thank you for shopping with Fabish! Your order has been registered successfully.
-            We will process and ship your items shortly.
-          </p>
-
-          <div className="bg-brand-bg-cream p-4 mb-8 text-left border border-brand-border font-heading text-xs font-semibold uppercase tracking-wider space-y-2 select-text">
-            <div><span className="text-brand-muted">Order Number:</span> {orderCreated.orderNumber}</div>
-            <div><span className="text-brand-muted">Total Price:</span> {formatINR(orderCreated.totalPrice)}</div>
-            <div>
-              <span className="text-brand-muted">Payment status:</span> {orderCreated.paymentStatus}{' '}
-              {orderCreated.paidAt ? `(${new Date(orderCreated.paidAt).toLocaleDateString()})` : ''}
-            </div>
-            <div>
-              <span className="text-brand-muted">Ship to:</span> {orderCreated.shippingAddress?.address}, {orderCreated.shippingAddress?.city}
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-4 justify-center">
-            {orderCreated.trackingNumber && (
-              <Link to={`/orders/track?number=${orderCreated.trackingNumber}`} className="bg-[#2f3e10] hover:bg-black text-white px-6 py-4 font-heading font-bold text-xs uppercase tracking-widest transition-all inline-block">
-                Track Order
-              </Link>
-            )}
-            <Link to="/account/profile?tab=orders" className="bg-[#729855] hover:bg-[#5a7d41] text-white px-6 py-4 font-heading font-bold text-xs uppercase tracking-widest transition-all inline-block">
-              View My Orders
-            </Link>
-            <Link to="/collections/all" className="bg-brand-charcoal hover:bg-brand-button-hover text-white px-6 py-4 font-heading font-bold text-xs uppercase tracking-widest transition-all inline-block">
-              Continue Shopping
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
+    return <OrderSuccess initialOrder={orderCreated} />;
   }
 
   return (

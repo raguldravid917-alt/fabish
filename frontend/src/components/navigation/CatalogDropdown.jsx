@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronDown, LayoutGrid } from 'lucide-react';
-import { useCategories } from '../../context/CategoryContext';
+import { useCategories } from '../../hooks/useCategories';
+import { usePrefetch } from '../../hooks/usePrefetch';
 import CategoryList from './CategoryList';
 
 /* ─────────────────────────────────────────────────────────────────────────────

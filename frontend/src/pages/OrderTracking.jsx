@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Search, Truck, MapPin, Calendar, ClipboardList, CheckCircle2, Circle, AlertCircle, ArrowLeft, Info } from 'lucide-react';
+import { Search, Truck, MapPin, Calendar, ClipboardList, CheckCircle2, Circle, AlertCircle, ArrowLeft, Info, User } from 'lucide-react';
 import { orderService } from '../api/orderService';
 import { api } from '../api/client';
+import { useSettingsQuery } from '../hooks/queries/useSettingsQuery';
 import Loader from '../components/ui/Loader';
 import { useToast } from '../context/ToastContext';
 import { motion } from 'framer-motion';
@@ -30,26 +31,8 @@ const OrderTracking = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Settings State
-  const [settings, setSettings] = useState(null);
-  const [loadingSettings, setLoadingSettings] = useState(true);
-
-  const fetchSettings = async () => {
-    try {
-      const res = await api.get('/settings');
-      if (res.success && res.data) {
-        setSettings(res.data);
-      }
-    } catch (err) {
-      console.error('Failed to load tracking settings:', err);
-    } finally {
-      setLoadingSettings(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchSettings();
-  }, []);
+  // Settings State via React Query
+  const { data: settings = null, isLoading: loadingSettings } = useSettingsQuery();
   
   const fetchTracking = async (numberOrId, checkContact) => {
     if (!numberOrId?.trim()) return;

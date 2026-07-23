@@ -5,7 +5,7 @@ import { categoryService } from '../../api/categoryService';
 import { useToast } from '../../context/ToastContext';
 import ErrorAlert from '../../components/ui/ErrorAlert';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
-import { useCategories } from '../../context/CategoryContext';
+import { useCategories } from '../../hooks/useCategories';
 import { getLocalImageUrl } from '../../utils/imageMapper';
 
 // Helper to build hierarchy tree from flat categories list

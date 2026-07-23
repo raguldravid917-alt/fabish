@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Autoplay, EffectFade } from 'swiper/modules';
@@ -18,6 +18,9 @@ import { productService } from '../api/productService';
 import { api } from '../api/client';
 import { useCart } from '../hooks/useCart';
 import { useWishlist } from '../hooks/useWishlist';
+import { useBlogsQuery } from '../hooks/queries/useBlogsQuery';
+import { useProductsQuery } from '../hooks/queries/useProductsQuery';
+import { SKIN_TYPE_CARDS, filterProductsBySkinType } from '../config/skinTypes';
 import { slugify } from '../utils/slugify';
 
 const stripHtml = (html) => {
@@ -163,8 +166,8 @@ const PopularProductCard = ({ product, addToCart, toggleWishlist, isInWishlist, 
 const Home = () => {
   const [quickViewProduct, setQuickViewProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
-  const [blogs, setBlogs] = useState([]);
-  const [popularProducts, setPopularProducts] = useState([]);
+  const { data: blogData } = useBlogsQuery();
+  const { data: productData } = useProductsQuery({ limit: 4 });
 
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
@@ -251,44 +254,25 @@ const Home = () => {
     }
   ];
 
-  const skinTypes = [
-    { name: 'Sensitive Skin', tag: 'SOOTHING', color: 'from-emerald-50 to-teal-100', icon: '🌿', count: '18 Items', link: '/collections/sensitive-skin' },
-    { name: 'Dry & Dehydrated', tag: 'HYDRATING', color: 'from-blue-50 to-[#eef4ff]', icon: '💧', count: '24 Items', link: '/collections/dry-skin' },
-    { name: 'Oily & Acne Prone', tag: 'BALANCING', color: 'from-amber-50 to-orange-100', icon: '✨', count: '15 Items', link: '/collections/oily-skin' },
-    { name: 'Combination', tag: 'HARMONIZING', color: 'from-rose-50 to-pink-100', icon: '🌸', count: '20 Items', link: '/collections/combination-skin' },
-    { name: 'Normal Skin', tag: 'RADIANCE', color: 'from-stone-50 to-amber-100', icon: '☀️', count: '30 Items', link: '/collections/normal-skin' },
-    { name: 'Anti-Aging', tag: 'RENEWAL', color: 'from-purple-50 to-indigo-100', icon: '👑', count: '16 Items', link: '/collections/anti-aging' },
-  ];
+  const skinTypes = useMemo(() => {
+    const allProds = (productData && Array.isArray(productData) && productData.length > 0) ? productData : [];
+    return SKIN_TYPE_CARDS.map((card) => {
+      const matchingCount = allProds.length > 0
+        ? filterProductsBySkinType(allProds, card.slug).length
+        : null;
+      const countDisplay = matchingCount !== null
+        ? `${matchingCount} Item${matchingCount === 1 ? '' : 's'}`
+        : `${card.fallbackCount} Items`;
 
-  useEffect(() => {
-    const fetchBlogs = async () => {
-      try {
-        const res = await api.get('/blogs');
-        if (res.success) {
-          setBlogs(res.data || []);
-        }
-      } catch (err) {
-        console.error('Error fetching blogs:', err);
-      }
-    };
+      return {
+        ...card,
+        count: countDisplay,
+      };
+    });
+  }, [productData]);
 
-    const fetchPopularProducts = async () => {
-      try {
-        const res = await productService.getAll({ limit: 4 });
-        if (res.success && res.data?.length > 0) {
-          setPopularProducts(res.data);
-        } else {
-          setPopularProducts(popularProductsStatic);
-        }
-      } catch (err) {
-        console.error('Error fetching popular products:', err);
-        setPopularProducts(popularProductsStatic);
-      }
-    };
-
-    fetchBlogs();
-    fetchPopularProducts();
-  }, []);
+  const blogs = (blogData && Array.isArray(blogData) && blogData.length > 0) ? blogData : staticBlogs;
+  const popularProducts = (productData && Array.isArray(productData) && productData.length > 0) ? productData : popularProductsStatic;
 
   return (
     <div className="w-full bg-[#faf9f5] font-body text-[#1c2415]">

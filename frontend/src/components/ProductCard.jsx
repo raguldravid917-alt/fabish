@@ -1,14 +1,20 @@
-import { useContext, useState, useEffect, useMemo, useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Eye, Star, ShoppingBag } from 'lucide-react';
-import { CartContext } from '../context/CartContext';
-import { WishlistContext } from '../context/WishlistContext';
+import { Heart, Eye, Star, ShoppingBag, Loader2 } from 'lucide-react';
+import { useCart } from '../hooks/useCart';
+import { useWishlist } from '../hooks/useWishlist';
+import { usePrefetch } from '../hooks/usePrefetch';
 import { getLocalImageUrl } from '../utils/imageMapper';
 import { useMobileCardActive } from '../hooks/useMobileCardActive';
 
 const ProductCard = ({ product, onQuickView }) => {
-  const { addToCart } = useContext(CartContext);
-  const { toggleWishlist, isInWishlist } = useContext(WishlistContext);
+  if (!product || typeof product !== 'object' || !product._id) {
+    return null;
+  }
+
+  const { addToCart } = useCart();
+  const { toggleWishlist, isInWishlist } = useWishlist();
+  const { prefetchProduct } = usePrefetch();
 
   const mainImage = getLocalImageUrl(product.images?.[0]);
   let hoverImage = product.images?.[1] ? getLocalImageUrl(product.images[1]) : mainImage;
@@ -26,15 +32,29 @@ const ProductCard = ({ product, onQuickView }) => {
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100) 
     : 0;
 
-  // Mobile active states
+  const [isAdding, setIsAdding] = useState(false);
+
   const cardRef = useRef(null);
-  const { isActiveMobile, useMobileInteraction, handleCardInteraction, cardId } = useMobileCardActive(product._id, cardRef);
+  const { isActiveMobile, useMobileInteraction, handleCardInteraction, cardId } =
+    useMobileCardActive(product._id || product.id, cardRef);
+
+  const handleAddToCart = async (e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (isAdding || isSoldOut) return;
+    setIsAdding(true);
+    try {
+      await addToCart(product, 1);
+    } finally {
+      setIsAdding(false);
+    }
+  };
 
   return (
     <div
       ref={cardRef}
       data-card-id={cardId}
       onClickCapture={handleCardInteraction}
+      onMouseEnter={() => prefetchProduct(product?.slug)}
       className="group relative bg-white/90 border border-[#e8e6d9]/80 rounded-2xl p-3 transition-all duration-500 flex flex-col h-full hover:shadow-xl hover:-translate-y-1 select-none overflow-hidden glass-card"
     >
       {/* Product Badges (Top Left) */}
@@ -140,11 +160,12 @@ const ProductCard = ({ product, onQuickView }) => {
           {/* Add to Cart Button */}
           {!isSoldOut ? (
             <button
-              onClick={() => addToCart(product, 1)}
-              className="w-full py-2.5 bg-[#3a4d23] hover:bg-[#1c2415] text-white text-center font-heading text-[10px] font-bold tracking-[0.18em] uppercase rounded-xl cursor-pointer border-none flex items-center justify-center gap-2 shadow-md transition-all duration-300 hover:scale-[1.02]"
+              disabled={isAdding}
+              onClick={handleAddToCart}
+              className="w-full py-2.5 bg-[#3a4d23] hover:bg-[#1c2415] text-white text-center font-heading text-[10px] font-bold tracking-[0.18em] uppercase rounded-xl cursor-pointer border-none flex items-center justify-center gap-2 shadow-md transition-all duration-300 hover:scale-[1.02] disabled:opacity-60"
             >
               <ShoppingBag size={13} />
-              <span>ADD TO CART</span>
+              <span>{isAdding ? 'ADDING...' : 'ADD TO CART'}</span>
             </button>
           ) : (
             <button
@@ -161,4 +182,3 @@ const ProductCard = ({ product, onQuickView }) => {
 };
 
 export default ProductCard;
-

@@ -9,6 +9,8 @@ const User = require('../models/User');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
 const Coupon = require('../models/Coupon');
+const Category = require('../models/Category');
+const Review = require('../models/Review');
 const emailService = require('./emailService');
 
 // Seller configuration
@@ -762,24 +764,292 @@ class OrderService {
   }
 
   async getAdminStats() {
-    const orders = await orderRepository.findAll();
-    const products = await productRepository.findAndCount({ limit: 1000 });
-    const users = await userRepository.findAll();
-    const contacts = await contactRepository.findAll();
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    
+    // Dates for Monthly Growth & Today's sales
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfPreviousMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
 
-    const totalSales = orders.reduce(
-      (acc, order) => (order.isPaid || order.paymentStatus === 'Paid' ? acc + order.totalPrice : acc),
-      0
-    );
-    const pendingOrders = orders.filter((o) => o.orderStatus !== 'Delivered' && o.orderStatus !== 'Cancelled').length;
+    // Filter for paid orders
+    const paidFilter = { $or: [{ isPaid: true }, { paymentStatus: 'Paid' }] };
+
+    const [
+      overallSalesAgg,
+      currentMonthSalesAgg,
+      prevMonthSalesAgg,
+      todaySalesAgg,
+      orderStatusCountsAgg,
+      totalProducts,
+      inStockCount,
+      lowStockCount,
+      outOfStockCount,
+      totalCustomers,
+      staffCount,
+      recentCustomers,
+      monthlyRevenueAgg,
+      topCategoriesAgg,
+      bestSellersAgg,
+      lowStockProducts,
+      recentOrders,
+      pendingReviewsCount,
+      recentReviews,
+      contacts
+    ] = await Promise.all([
+      // 1. Overall sales & paid orders count
+      Order.aggregate([
+        { $match: paidFilter },
+        { $group: { _id: null, totalSales: { $sum: '$totalPrice' }, paidOrdersCount: { $sum: 1 } } }
+      ]),
+      // 2. Current month sales
+      Order.aggregate([
+        { $match: { ...paidFilter, createdAt: { $gte: startOfCurrentMonth } } },
+        { $group: { _id: null, totalSales: { $sum: '$totalPrice' } } }
+      ]),
+      // 3. Previous month sales
+      Order.aggregate([
+        { $match: { ...paidFilter, createdAt: { $gte: startOfPreviousMonth, $lte: endOfPreviousMonth } } },
+        { $group: { _id: null, totalSales: { $sum: '$totalPrice' } } }
+      ]),
+      // 4. Today's sales
+      Order.aggregate([
+        { $match: { ...paidFilter, createdAt: { $gte: startOfToday } } },
+        { $group: { _id: null, totalSales: { $sum: '$totalPrice' }, todayOrdersCount: { $sum: 1 } } }
+      ]),
+      // 5. Order status counts
+      Order.aggregate([
+        { $group: { _id: '$orderStatus', count: { $sum: 1 } } }
+      ]),
+      // 6-9. Product stock stats
+      Product.countDocuments(),
+      Product.countDocuments({ stock: { $gt: 5 } }),
+      Product.countDocuments({ stock: { $gt: 0, $lte: 5 } }),
+      Product.countDocuments({ stock: 0 }),
+      // 10-12. User stats
+      User.countDocuments({ isAdmin: false, role: { $ne: 'Admin' } }),
+      User.countDocuments({ $or: [{ isAdmin: true }, { role: 'Admin' }] }),
+      User.find({ isAdmin: false }).sort({ createdAt: -1 }).limit(5).select('name email avatar createdAt role'),
+      // 13. Monthly Revenue 2026 / YTD
+      Order.aggregate([
+        {
+          $match: {
+            ...paidFilter,
+            createdAt: { $gte: new Date(currentYear, 0, 1), $lte: new Date(currentYear, 11, 31, 23, 59, 59) }
+          }
+        },
+        {
+          $group: {
+            _id: { month: { $month: '$createdAt' } },
+            revenue: { $sum: '$totalPrice' },
+            ordersCount: { $sum: 1 }
+          }
+        },
+        { $sort: { '_id.month': 1 } }
+      ]),
+      // 14. Top categories by product count
+      Product.aggregate([
+        { $group: { _id: '$category', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 5 },
+        {
+          $lookup: {
+            from: 'categories',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'categoryDetails'
+          }
+        },
+        { $unwind: { path: '$categoryDetails', preserveNullAndEmptyArrays: true } }
+      ]),
+      // 15. Best selling products (by units sold in paid orders)
+      Order.aggregate([
+        { $match: paidFilter },
+        { $unwind: '$orderItems' },
+        {
+          $group: {
+            _id: '$orderItems.product',
+            totalSold: { $sum: '$orderItems.qty' },
+            totalRevenue: { $sum: { $multiply: ['$orderItems.qty', '$orderItems.price'] } }
+          }
+        },
+        { $sort: { totalSold: -1 } },
+        { $limit: 6 },
+        {
+          $lookup: {
+            from: 'products',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'productDetails'
+          }
+        },
+        { $unwind: { path: '$productDetails', preserveNullAndEmptyArrays: true } },
+        {
+          $lookup: {
+            from: 'categories',
+            localField: 'productDetails.category',
+            foreignField: '_id',
+            as: 'productCategory'
+          }
+        },
+        { $unwind: { path: '$productCategory', preserveNullAndEmptyArrays: true } }
+      ]),
+      // 16. Low Stock Products
+      Product.find({ stock: { $lte: 5 } }).populate('category', 'name').sort({ stock: 1 }).limit(8),
+      // 17. Recent Orders
+      Order.find().sort({ createdAt: -1 }).limit(6).populate('user', 'name email'),
+      // 18-19. Reviews
+      Review.countDocuments(),
+      Review.find().populate('product', 'title images').sort({ createdAt: -1 }).limit(5),
+      // 20. Contacts
+      contactRepository.findAll()
+    ]);
+
+    // Parse aggregates
+    const totalSales = overallSalesAgg[0]?.totalSales || 0;
+    const paidOrdersCount = overallSalesAgg[0]?.paidOrdersCount || 0;
+    const currentMonthSales = currentMonthSalesAgg[0]?.totalSales || 0;
+    const prevMonthSales = prevMonthSalesAgg[0]?.totalSales || 0;
+    const todaySales = todaySalesAgg[0]?.totalSales || 0;
+    const todayOrdersCount = todaySalesAgg[0]?.todayOrdersCount || 0;
+
+    // Monthly Growth %
+    let monthlyGrowthPct = 0;
+    if (prevMonthSales > 0) {
+      monthlyGrowthPct = Number((((currentMonthSales - prevMonthSales) / prevMonthSales) * 100).toFixed(1));
+    } else if (currentMonthSales > 0) {
+      monthlyGrowthPct = 100;
+    }
+
+    // AOV
+    const averageOrderValue = paidOrdersCount > 0 ? Math.round(totalSales / paidOrdersCount) : 0;
+
+    // Status map
+    const orderStatusMap = {
+      Total: 0,
+      Pending: 0,
+      Confirmed: 0,
+      Processing: 0,
+      Shipped: 0,
+      Delivered: 0,
+      Cancelled: 0
+    };
+
+    let totalOrdersCount = 0;
+    (orderStatusCountsAgg || []).forEach((item) => {
+      const status = item._id || 'Pending';
+      const count = item.count || 0;
+      totalOrdersCount += count;
+      if (status === 'Packed' || status === 'Processing') {
+        orderStatusMap.Processing += count;
+      } else if (status === 'Out For Delivery' || status === 'Shipped') {
+        orderStatusMap.Shipped += count;
+      } else if (orderStatusMap.hasOwnProperty(status)) {
+        orderStatusMap[status] += count;
+      } else {
+        orderStatusMap.Pending += count;
+      }
+    });
+    orderStatusMap.Total = totalOrdersCount;
+
+    // Pending deliveries count (anything not Delivered and not Cancelled)
+    const pendingDeliveriesCount = totalOrdersCount - orderStatusMap.Delivered - orderStatusMap.Cancelled;
+
+    // Build 12-month revenue analytics array for current year
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthlyMap = {};
+    (monthlyRevenueAgg || []).forEach((item) => {
+      const m = item._id?.month;
+      if (m && m >= 1 && m <= 12) {
+        monthlyMap[m] = item.revenue || 0;
+      }
+    });
+
+    let ytdTotal = 0;
+    const revenueAnalytics = monthNames.map((name, index) => {
+      const monthNum = index + 1;
+      const val = monthlyMap[monthNum] || 0;
+      ytdTotal += val;
+      return {
+        month: name,
+        monthIndex: monthNum,
+        revenue: val
+      };
+    });
+
+    // Process top categories
+    const topCategories = (topCategoriesAgg || []).map((cat) => {
+      const count = cat.count || 0;
+      const pct = totalProducts > 0 ? Math.round((count / totalProducts) * 100) : 0;
+      return {
+        id: cat._id,
+        name: cat.categoryDetails?.name || 'Uncategorized',
+        productCount: count,
+        percentage: pct
+      };
+    });
+
+    // Process best sellers (fallback to database bestSeller products if no orders yet)
+    let bestSellingProducts = [];
+    if (bestSellersAgg && bestSellersAgg.length > 0 && bestSellersAgg[0]?.productDetails) {
+      bestSellingProducts = bestSellersAgg
+        .filter((item) => item.productDetails && item.productDetails._id)
+        .map((item) => ({
+          ...item.productDetails,
+          category: item.productCategory ? item.productCategory : item.productDetails.category,
+          totalSold: item.totalSold,
+          totalRevenue: item.totalRevenue
+        }));
+    }
+
+    if (bestSellingProducts.length === 0) {
+      // Fallback query for bestSeller / top rated products
+      const fallbackProducts = await Product.find({ status: 'published' })
+        .populate('category', 'name')
+        .sort({ bestSeller: -1, ratings: -1, createdAt: -1 })
+        .limit(6);
+      bestSellingProducts = fallbackProducts;
+    }
 
     return {
       totalSales,
-      totalOrders: orders.length,
-      pendingOrders,
-      totalProducts: products.total,
-      totalUsers: users.length,
-      totalContacts: contacts.length,
+      currentMonthSales,
+      prevMonthSales,
+      monthlyGrowthPct,
+      todaySales,
+      todayOrdersCount,
+      averageOrderValue,
+      orders: {
+        total: totalOrdersCount,
+        pendingDeliveries: pendingDeliveriesCount,
+        breakdown: orderStatusMap
+      },
+      catalog: {
+        total: totalProducts,
+        inStock: inStockCount,
+        lowStock: lowStockCount,
+        outOfStock: outOfStockCount
+      },
+      customers: {
+        total: totalCustomers,
+        staffCount: staffCount,
+        recent: recentCustomers
+      },
+      revenueAnalytics: {
+        year: currentYear,
+        ytdTotal,
+        monthly: revenueAnalytics
+      },
+      topCategories,
+      bestSellingProducts,
+      lowStockProducts,
+      recentOrders,
+      reviews: {
+        total: pendingReviewsCount,
+        recent: recentReviews
+      },
+      totalContacts: contacts ? contacts.length : 0
     };
   }
 

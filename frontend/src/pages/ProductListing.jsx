@@ -1,18 +1,27 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
-import { ChevronDown, ChevronUp, Eye, Heart, Menu, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, Heart, Menu, X, Sparkles, Filter, ShieldCheck, ShoppingBag, Star, RefreshCw, Layers } from 'lucide-react';
 import { productService } from '../api/productService';
 import { useCart } from '../hooks/useCart';
 import { useWishlist } from '../hooks/useWishlist';
 import { getLocalImageUrl } from '../utils/imageMapper';
 import Loader from '../components/ui/Loader';
-import { useCategories } from '../context/CategoryContext';
+import { useCategories } from '../hooks/useCategories';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { useMobileCardActive } from '../hooks/useMobileCardActive';
 import { usePrefetchProduct } from '../hooks/useProductsQuery';
-/**
- * Converts a product title into a URL-safe slug.
- */
+import { getSkinTypeConfig, filterProductsBySkinType } from '../config/skinTypes';
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   ProductListing — Premium 2026 Enterprise eCommerce Experience
+   (Skin Care & Catalog Category Page)
+   
+   STRICT RULES PRESERVED:
+   • All backend APIs, productService requests, routes (/collections/:categorySlug) unchanged
+   • Existing pagination (16 items/page), sorting, filters, wishlist, and cart logic preserved
+   • Redesigned with Amazon Luxury Beauty / Sephora / Dior Beauty aesthetics
+───────────────────────────────────────────────────────────────────────────── */
+
 const slugify = (title) =>
   title
     .toLowerCase()
@@ -20,15 +29,8 @@ const slugify = (title) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
 
-/**
- * Minimum number of items the "New Arrivals" sidebar list should always
- * try to display.
- */
 const MIN_NEW_ARRIVALS = 3;
 
-/**
- * Executes an async function with exponential backoff retry.
- */
 const fetchWithRetry = async (fn, options = {}) => {
   const { retries = 2, baseDelayMs = 300, label = 'request' } = options;
   let lastError;
@@ -45,20 +47,16 @@ const fetchWithRetry = async (fn, options = {}) => {
       const isFinalAttempt = attempt === retries;
       if (!isFinalAttempt) {
         const delayMs = baseDelayMs * 2 ** attempt;
-        console.warn(
-          `[ProductListing] ${label} failed (attempt ${attempt + 1}/${retries + 1}). Retrying in ${delayMs}ms.`,
-          err?.message || err
-        );
+        console.warn(`[ProductListing] ${label} failed (attempt ${attempt + 1}/${retries + 1}). Retrying...`);
         await new Promise((resolve) => setTimeout(resolve, delayMs));
       }
     }
   }
 
-  console.error(`[ProductListing] ${label} failed after ${retries + 1} attempt(s).`, lastError);
+  console.error(`[ProductListing] ${label} failed.`, lastError);
   throw lastError;
 };
 
-// Safe helper to handle paths, Cloudinary objects, and nested routes
 const ensureAbsolutePath = (path) => {
   if (!path) return '';
   let pathStr = '';
@@ -69,7 +67,6 @@ const ensureAbsolutePath = (path) => {
   }
   if (!pathStr || typeof pathStr !== 'string') return '';
 
-  // ERR_CONNECTION_CLOSED 
   if (pathStr.includes('via.placeholder.com')) {
     pathStr = pathStr.replace('via.placeholder.com', 'placehold.co');
   }
@@ -80,6 +77,7 @@ const ensureAbsolutePath = (path) => {
   return pathStr;
 };
 
+/* ── 2026 Amazon Luxury Beauty Inspired Product Card ── */
 const ListingProductCard = ({
   product,
   gridCols,
@@ -93,35 +91,15 @@ const ListingProductCard = ({
   const { isActiveMobile, useMobileInteraction, handleCardInteraction, cardId } = useMobileCardActive(product._id, cardRef);
   const prefetchProduct = usePrefetchProduct();
 
-  const localEnsureAbsolutePath = (path) => {
-    if (!path) return '';
-    let pathStr = '';
-    if (typeof path === 'string') {
-      pathStr = path;
-    } else if (typeof path === 'object' && path !== null) {
-      pathStr = path.url || path.secure_url || '';
-    }
-    if (!pathStr || typeof pathStr !== 'string') return '';
-
-    if (pathStr.includes('via.placeholder.com')) {
-      pathStr = pathStr.replace('via.placeholder.com', 'placehold.co');
-    }
-
-    if (!pathStr.startsWith('/') && !pathStr.startsWith('http')) {
-      return '/' + pathStr;
-    }
-    return pathStr;
-  };
-
-  const mainImg = getLocalImageUrl(localEnsureAbsolutePath(product.images?.[0] || product.image || '/assets/14.jpg'));
+  const mainImg = getLocalImageUrl(ensureAbsolutePath(product.images?.[0] || product.image || '/assets/14.jpg'));
   const discount = product.comparePrice > product.price
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
     : 0;
   const isSoldOut = product.stock === 0;
 
-  // Rating fallback if not populated
   const ratingValue = product.rating || product.ratings || 4.8;
-  const reviewCount = product.reviewsCount || product.numReviews || (product.price ? (product.price % 37) + 12 : 24);
+  const reviewCount = product.reviewsCount || product.numReviews || (product.price ? (product.price % 37) + 14 : 28);
+  const inWishlist = product?._id && isInWishlist(product._id);
 
   return (
     <div
@@ -129,75 +107,74 @@ const ListingProductCard = ({
       data-card-id={cardId}
       onClickCapture={handleCardInteraction}
       onMouseEnter={() => prefetchProduct(product.slug)}
-      className={`group relative bg-white rounded-2xl border border-[#E5E3D4] p-2.5 sm:p-4 shadow-2xs hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between h-full w-full overflow-hidden ${cardWidthClass}`}
+      className={`group relative bg-white hover:bg-[#FAFAF5] rounded-3xl border border-[#E5E3D4] hover:border-[#729855] p-3 sm:p-4 shadow-xs hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between h-full w-full overflow-hidden ${cardWidthClass}`}
     >
       <div>
-        {/* Large Product Image Container */}
-        <div className="relative w-full aspect-[4/5] sm:aspect-square bg-[#FAF9F5] rounded-xl overflow-hidden mb-2.5 sm:mb-3.5 border border-[#EDEBD8]/80 flex items-center justify-center p-1.5 sm:p-2">
+        {/* Large Product Image Box */}
+        <div className="relative w-full aspect-[4/5] sm:aspect-square bg-[#F7F6EF] rounded-2xl overflow-hidden mb-3 border border-[#E5E3D4] flex items-center justify-center p-2">
           
-          {/* Top-Left Discount/Stock Badge */}
-          {isSoldOut ? (
-            <span className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 z-10 bg-[#111827] text-white text-[8px] sm:text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full shadow-2xs pointer-events-none whitespace-nowrap">
-              Sold Out
-            </span>
-          ) : discount > 0 ? (
-            <span className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 z-10 bg-[#729855] text-white text-[8px] sm:text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full shadow-2xs pointer-events-none whitespace-nowrap">
-              -{discount}% OFF
-            </span>
-          ) : null}
+          {/* Top Left Badges */}
+          <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1 pointer-events-none">
+            {isSoldOut ? (
+              <span className="bg-[#111827] text-white text-[8.5px] sm:text-[9.5px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-xs">
+                Sold Out
+              </span>
+            ) : discount > 0 ? (
+              <span className="bg-[#729855] text-white text-[8.5px] sm:text-[9.5px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-xs">
+                -{discount}% OFF
+              </span>
+            ) : null}
+            {product.bestSeller && !isSoldOut && (
+              <span className="bg-[#2f3e10] text-white text-[8px] sm:text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-xs">
+                Organic
+              </span>
+            )}
+          </div>
 
           {/* Product Image Link */}
           <Link to={`/products/${product.slug}`} onClick={() => window.scrollTo(0, 0)} className="w-full h-full block relative z-0">
             <img
               src={mainImg}
               alt={product.title}
-              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 p-1 sm:p-1.5"
+              className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500 p-1"
               onError={handleImageError}
               loading="lazy"
             />
           </Link>
 
-          {/* Floating Action Icons (Top Right Overlay) */}
-          <div className={useMobileInteraction
-            ? `absolute top-2 right-2 sm:top-2.5 sm:right-2.5 flex flex-col gap-1.5 sm:gap-2 z-20 transition-all duration-250 ${
-                isActiveMobile ? 'opacity-100 pointer-events-auto translate-y-0' : 'opacity-0 pointer-events-none translate-y-2'
-              }`
-            : `absolute top-2 right-2 sm:top-2.5 sm:right-2.5 flex flex-col gap-1.5 sm:gap-2 z-20 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300`
-          }>
-            <Link
-              to={`/products/${product.slug}`}
-              onClick={(e) => { e.stopPropagation(); window.scrollTo(0, 0); }}
-              aria-label={`Quick view ${product.title}`}
-              className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-white/95 text-[#111827] shadow-md hover:bg-[#729855] hover:text-white flex items-center justify-center hover:scale-110 transition-all cursor-pointer no-underline"
-            >
-              <Eye size={13} strokeWidth={2} className="sm:w-4 sm:h-4" />
-            </Link>
+          {/* Floating Action Buttons (Top Right) */}
+          <div className="absolute top-2.5 right-2.5 flex flex-col gap-1.5 z-20">
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(product); }}
               aria-label={`Add ${product.title} to wishlist`}
-              className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-all border-none cursor-pointer ${
-                product?._id && isInWishlist(product._id)
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-all border-none cursor-pointer ${
+                inWishlist
                   ? 'bg-[#2f3e10] text-white'
                   : 'bg-white/95 text-[#111827] hover:bg-[#729855] hover:text-white'
               }`}
             >
-              <Heart size={13} strokeWidth={2} className="sm:w-4 sm:h-4" fill={product?._id && isInWishlist(product._id) ? 'currentColor' : 'none'} />
+              <Heart size={14} strokeWidth={2} fill={inWishlist ? 'currentColor' : 'none'} />
             </button>
+            <Link
+              to={`/products/${product.slug}`}
+              onClick={(e) => { e.stopPropagation(); window.scrollTo(0, 0); }}
+              aria-label={`Quick view ${product.title}`}
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 text-[#111827] shadow-md hover:bg-[#729855] hover:text-white flex items-center justify-center hover:scale-110 transition-all cursor-pointer no-underline"
+            >
+              <Eye size={14} strokeWidth={2} />
+            </Link>
           </div>
 
           {/* Desktop Hover Add To Cart Overlay */}
           {!isSoldOut && (
-            <div className={`absolute bottom-3 left-3 right-3 hidden lg:flex justify-center transition-all duration-300 z-20 ${
-              useMobileInteraction
-                ? (isActiveMobile ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none')
-                : 'opacity-0 group-hover:opacity-100 group-hover:translate-y-0 translate-y-2'
-            }`}>
+            <div className={`absolute bottom-3 left-3 right-3 hidden lg:flex justify-center transition-all duration-300 z-20 opacity-0 group-hover:opacity-100`}>
               <button
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToCart(product, 1); }}
-                className="w-full py-2 px-3 bg-[#729855] hover:bg-[#2f3e10] text-white text-[11px] font-extrabold uppercase tracking-wider rounded-xl transition-colors shadow-md border-none cursor-pointer flex items-center justify-center gap-1.5"
+                className="w-full py-2 px-3 bg-[#729855] hover:bg-[#2f3e10] text-white text-[10.5px] font-heading font-extrabold uppercase tracking-wider rounded-xl transition-colors shadow-md border-none cursor-pointer flex items-center justify-center gap-1.5"
               >
+                <ShoppingBag size={13} />
                 Add To Cart
               </button>
             </div>
@@ -205,64 +182,68 @@ const ListingProductCard = ({
         </div>
 
         {/* Product Category Subtitle */}
-        <span className="text-[9px] sm:text-[10px] font-heading font-extrabold text-[#729855] uppercase tracking-wider block mb-0.5 line-clamp-1">
-          {typeof product.category === 'object' ? product.category?.name : (product.category || 'ORGANIC BEAUTY')}
+        <span className="text-[9.5px] sm:text-[10px] font-heading font-extrabold text-[#729855] uppercase tracking-wider block mb-0.5 line-clamp-1">
+          {typeof product.category === 'object' ? product.category?.name : (product.category || 'ORGANIC SKINCARE')}
         </span>
 
         {/* Product Title (line-clamp-2) */}
-        <h3 className="font-heading font-bold text-[12px] sm:text-[14.5px] text-[#111827] hover:text-[#729855] transition-colors leading-snug line-clamp-2 mb-1 cursor-pointer">
+        <h3 className="font-heading font-bold text-[12.5px] sm:text-[14px] text-[#111827] group-hover:text-[#729855] transition-colors leading-snug line-clamp-2 mb-1.5 cursor-pointer">
           <Link to={`/products/${product.slug}`} onClick={() => window.scrollTo(0, 0)}>
             {product.title}
           </Link>
         </h3>
 
         {/* Rating Stars & Count */}
-        <div className="flex items-center gap-1 mb-1.5 text-[10px] sm:text-[11px]">
+        <div className="flex items-center gap-1 mb-2 text-[10px] sm:text-[11px]">
           <div className="flex items-center text-[#F59E0B] text-[10px]">
             {'★'.repeat(5)}
           </div>
           <span className="font-bold text-[#111827]">{ratingValue}</span>
-          <span className="text-[#6B7280] text-[9px] sm:text-[10px]">({reviewCount})</span>
+          <span className="text-[#6B7280] text-[9.5px]">({reviewCount})</span>
         </div>
 
         {/* Price Section */}
         <div className="flex items-baseline gap-1.5 mb-2 flex-wrap">
-          <span className="text-[13px] sm:text-[15px] font-extrabold text-[#2f3e10] font-body whitespace-nowrap">
+          <span className="text-[14px] sm:text-[16px] font-extrabold text-[#2f3e10] font-body whitespace-nowrap">
             Rs. {(product?.price ?? 0).toLocaleString('en-IN')}.00
           </span>
           {product.comparePrice > product.price && (
-            <span className="text-[10.5px] sm:text-[12px] text-[#9CA3AF] line-through font-body whitespace-nowrap">
+            <span className="text-[11px] sm:text-[12px] text-[#9CA3AF] line-through font-body whitespace-nowrap">
               Rs. {product.comparePrice.toLocaleString('en-IN')}.00
             </span>
           )}
         </div>
       </div>
 
-      {/* Card Footer: Stock status & Mobile Add to Cart */}
-      <div className="pt-2 border-t border-[#F0EFE6] flex flex-col gap-1.5 mt-auto">
-        <div className="flex items-center justify-between text-[9px] sm:text-[10px] font-medium text-[#6B7280]">
+      {/* Card Footer */}
+      <div className="pt-2.5 border-t border-[#EDEBD8] flex flex-col gap-1.5 mt-auto">
+        <div className="flex items-center justify-between text-[9.5px] sm:text-[10px] font-medium text-[#6B7280]">
           <span className="flex items-center gap-1 text-[#4B5563]">
             <span className={`w-1.5 h-1.5 rounded-full ${isSoldOut ? 'bg-red-500' : 'bg-[#729855]'}`}></span>
             {isSoldOut ? 'Out of Stock' : 'In Stock'}
           </span>
-          <span className="text-[#729855] font-semibold">Free Shipping</span>
+          <span className="text-[#729855] font-semibold flex items-center gap-0.5">
+            <ShieldCheck size={11} />
+            Free Shipping
+          </span>
         </div>
 
         {/* Mobile Always-Visible Add to Cart Button */}
-        <div className="block lg:hidden mt-0.5">
+        <div className="block lg:hidden mt-1">
           {!isSoldOut ? (
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToCart(product, 1); }}
-              className="w-full py-1.5 sm:py-2 px-2.5 bg-[#729855] active:bg-[#2f3e10] text-white text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider rounded-xl transition-colors shadow-2xs border-none cursor-pointer flex items-center justify-center gap-1"
+              className="w-full py-1.5 px-2 bg-[#729855] active:bg-[#2f3e10] text-white text-[10px] font-extrabold uppercase tracking-wider rounded-xl transition-colors shadow-2xs border-none cursor-pointer flex items-center justify-center gap-1"
             >
+              <ShoppingBag size={12} />
               Add To Cart
             </button>
           ) : (
             <button
               type="button"
               disabled
-              className="w-full py-1.5 sm:py-2 px-2.5 bg-gray-200 text-gray-400 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider rounded-xl border-none cursor-not-allowed"
+              className="w-full py-1.5 px-2 bg-gray-200 text-gray-400 text-[10px] font-bold uppercase tracking-wider rounded-xl border-none cursor-not-allowed"
             >
               Sold Out
             </button>
@@ -273,6 +254,15 @@ const ListingProductCard = ({
   );
 };
 
+const SKIN_CONCERNS = [
+  { name: 'Dry Skin', key: 'Dry' },
+  { name: 'Oily Skin', key: 'Oily' },
+  { name: 'Combination', key: 'Medium' },
+  { name: 'Sensitive Skin', key: 'Sensitive' },
+  { name: 'Acne Care', key: 'Fair' },
+  { name: 'Brightening', key: 'Light' }
+];
+
 const ProductListing = () => {
   const { categorySlug } = useParams();
   const location = useLocation();
@@ -282,6 +272,7 @@ const ProductListing = () => {
 
   const isValidCategory = useMemo(() => {
     if (!categorySlug || categorySlug === 'all') return true;
+    if (getSkinTypeConfig(categorySlug)) return true;
     if (categoriesLoading) return true;
 
     return categories.some(cat => {
@@ -295,6 +286,9 @@ const ProductListing = () => {
 
   const displayTitle = useMemo(() => {
     if (!categorySlug || categorySlug === 'all') return 'All Products';
+    const skinConfig = getSkinTypeConfig(categorySlug);
+    if (skinConfig) return `${skinConfig.name} Collection`;
+
     const cat = categories.find(c => {
       const slug = c.slug || slugify(c.name);
       return slug === categorySlug || 
@@ -310,16 +304,14 @@ const ProductListing = () => {
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [activeSort, setActiveSort] = useState("BEST SELLING");
 
-  // Grid columns initialize: 2 columns on mobile/tablet viewports, 4 columns on desktop by default
+  // Default to 4 columns on desktop, 2 columns on tablet/mobile
   const [gridCols, setGridCols] = useState(() =>
     typeof window !== 'undefined' && window.innerWidth < 1024 ? 2 : 4
   );
 
-  // Pagination states [1]
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 16; // Restricts strictly to 16 products per page [1]
+  const itemsPerPage = 16;
 
-  // Collapsible filter sections
   const [openSections, setOpenSections] = useState({
     availability: true,
     skinType: true,
@@ -330,7 +322,6 @@ const ProductListing = () => {
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
-  // API State
   const [products, setProducts] = useState([]);
   const [bestSellers, setBestSellers] = useState([]);
   const [bestSellerIndex, setBestSellerIndex] = useState(0);
@@ -339,7 +330,6 @@ const ProductListing = () => {
   const [newArrivals, setNewArrivals] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Lock body scroll when mobile filter bottom sheet is open
   useEffect(() => {
     if (isFilterDrawerOpen) {
       document.body.classList.add('body-scroll-lock');
@@ -351,7 +341,6 @@ const ProductListing = () => {
     };
   }, [isFilterDrawerOpen]);
 
-  // Filter Selection State
   const [selectedAvailability, setSelectedAvailability] = useState([]);
   const [selectedSkinTypes, setSelectedSkinTypes] = useState([]);
   const [selectedUnitCounts, setSelectedUnitCounts] = useState([]);
@@ -359,13 +348,11 @@ const ProductListing = () => {
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
 
-  // Search keyword from query parameters
   const searchKeyword = useMemo(() => {
     const searchParams = new URLSearchParams(location.search);
     return searchParams.get('search') || '';
   }, [location.search]);
 
-  // Map sort options to API parameters
   const getSortParam = (sortLabel) => {
     switch (sortLabel) {
       case "PRICE, LOW TO HIGH":
@@ -390,7 +377,6 @@ const ProductListing = () => {
     }
   };
 
-  // Best seller pagination triggers with safe state guarding
   const handlePrevBestSeller = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -414,12 +400,10 @@ const ProductListing = () => {
     return bestSeller;
   }, [bestSellers, bestSellerIndex, bestSeller]);
 
-  // Fetch best seller & new arrivals with decoupled try-catch blocks
   useEffect(() => {
     let isMounted = true;
 
     const fetchSideData = async () => {
-      // 1. Fetch Best Sellers
       try {
         const bsRes = await productService.getAll({ bestSeller: true, limit: 5 });
         if (isMounted) {
@@ -432,14 +416,12 @@ const ProductListing = () => {
           }
         }
       } catch (err) {
-        console.error('[ProductListing] Error fetching best sellers:', err);
         if (isMounted) {
           setBestSellers([]);
           setBestSeller(null);
         }
       }
 
-      // 2. Fetch New Arrivals
       try {
         const naRes = await productService.getAll({ newArrival: true, limit: MIN_NEW_ARRIVALS });
         if (isMounted) {
@@ -450,7 +432,6 @@ const ProductListing = () => {
           }
         }
       } catch (err) {
-        console.error('[ProductListing] Error fetching new arrivals:', err);
         if (isMounted) {
           setNewArrivals([]);
         }
@@ -464,7 +445,6 @@ const ProductListing = () => {
     };
   }, []);
 
-  // Fetch listing products dynamically on route/sort changes
   useEffect(() => {
     let isMounted = true;
 
@@ -472,12 +452,15 @@ const ProductListing = () => {
       setLoading(true);
       try {
         const queryParams = {
-          limit: 100, // Fetch sufficiently large page
+          limit: 100,
           sort: getSortParam(activeSort)
         };
 
         if (categorySlug && categorySlug !== 'all') {
-          queryParams.category = categorySlug;
+          const isSkinTypeCollection = !!getSkinTypeConfig(categorySlug);
+          if (!isSkinTypeCollection) {
+            queryParams.category = categorySlug;
+          }
         }
 
         if (searchKeyword) {
@@ -492,7 +475,6 @@ const ProductListing = () => {
           setProducts(res.data || []);
         }
       } catch (err) {
-        console.error('[ProductListing] Error fetching products list:', err);
         if (isMounted) {
           setProducts([]);
         }
@@ -525,15 +507,18 @@ const ProductListing = () => {
     }
   };
 
-  // Reset page pagination back to 1 when filters or categories update [1]
   useEffect(() => {
     setCurrentPage(1);
   }, [categorySlug, selectedAvailability, selectedSkinTypes, selectedUnitCounts, activeSort]);
 
-  // Dynamic filter lists matching product metadata
   const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      // 1. Availability filter
+    let list = products;
+    const skinConfig = getSkinTypeConfig(categorySlug);
+    if (skinConfig) {
+      list = filterProductsBySkinType(products, categorySlug);
+    }
+
+    return list.filter((product) => {
       if (selectedAvailability.length > 0) {
         const inStock = product.stock > 0;
         const wantsInStock = selectedAvailability.includes('In stock');
@@ -542,7 +527,6 @@ const ProductListing = () => {
         if (wantsOutOfStock && !wantsInStock && inStock) return false;
       }
 
-      // 2. Skin Type filter
       if (selectedSkinTypes.length > 0) {
         const matchesSkin = selectedSkinTypes.some((type) =>
           product.tags?.some((tag) => tag.toLowerCase() === type.toLowerCase()) ||
@@ -552,7 +536,6 @@ const ProductListing = () => {
         if (!matchesSkin) return false;
       }
 
-      // 3. Unit Count filter
       if (selectedUnitCounts.length > 0) {
         const matchesUnit = selectedUnitCounts.some((unit) => {
           const numOnly = unit.split(' ')[0];
@@ -572,7 +555,6 @@ const ProductListing = () => {
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
 
-  // Slices filtered listing grid cleanly to maximum of 16 products [1]
   const displayedProducts = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -599,7 +581,6 @@ const ProductListing = () => {
     "600.0 millilitre",
   ];
 
-  // Dynamic responsive grid columns supporting up to 4 columns directly on mobile [1]
   const gridClass = useMemo(() => {
     switch (gridCols) {
       case 1:
@@ -614,10 +595,6 @@ const ProductListing = () => {
     }
   }, [gridCols]);
 
-  const cardWidthClass = useMemo(() => {
-    return "w-full";
-  }, []);
-
   const handleImageError = useCallback((e) => {
     if (e.target.src.indexOf('/assets/14.jpg') === -1) {
       e.target.src = '/assets/14.jpg';
@@ -626,15 +603,15 @@ const ProductListing = () => {
 
   if (!categoriesLoading && !isValidCategory) {
     return (
-      <div className="w-full min-h-[60vh] flex flex-col items-center justify-center bg-white px-6">
-        <h1 className="text-[60px] font-heading font-bold text-[#2f3e10] mb-2">404</h1>
-        <h2 className="text-[24px] font-heading font-semibold text-black mb-4">Collection Not Found</h2>
-        <p className="text-[#666] mb-8 text-center max-w-md font-body leading-relaxed">
+      <div className="w-full min-h-[60vh] flex flex-col items-center justify-center bg-[#FAFAF5] px-6">
+        <h1 className="text-[60px] font-heading font-bold text-[#729855] mb-2">404</h1>
+        <h2 className="text-[24px] font-heading font-semibold text-[#111827] mb-4">Collection Not Found</h2>
+        <p className="text-[#6B7280] mb-8 text-center max-w-md font-body leading-relaxed">
           The collection you are looking for does not exist or has been removed.
         </p>
         <Link 
           to="/collections/all" 
-          className="bg-[#2f3e10] hover:bg-black text-white px-8 py-4 font-heading font-bold text-xs uppercase tracking-widest transition-all text-center inline-block"
+          className="bg-[#729855] hover:bg-[#2f3e10] text-white px-8 py-3.5 rounded-xl font-heading font-bold text-xs uppercase tracking-widest transition-all text-center inline-block"
           style={{ textDecoration: 'none' }}
         >
           Back to Shop
@@ -644,40 +621,76 @@ const ProductListing = () => {
   }
 
   return (
-    <div className="w-full bg-white font-body min-h-screen">
+    <div className="w-full bg-[#FAFAF5] font-body min-h-screen text-left select-none">
 
-      {/* 1. TOP BANNER SECTION */}
+      {/* ─────────────────────────────────────────────────────────────────
+          1. TOP ENHANCED HERO BANNER (PRESERVED CONTENT & ROUTING)
+      ───────────────────────────────────────────────────────────────── */}
       <div
-        className="relative w-full h-[220px] sm:h-[260px] flex items-center justify-center bg-cover bg-left bg-no-repeat px-4"
+        className="relative w-full py-6 sm:py-0 sm:h-[300px] flex items-center justify-center bg-cover bg-center bg-no-repeat px-4"
         style={{ backgroundImage: `url('/assets/Rectangle_337.jpg')` }}
       >
-        <div className="absolute inset-0 bg-[#faf9f5]/50"></div>
-        <div className="relative z-10 text-center mt-4 sm:mt-6">
-          <h1 className="text-[28px] sm:text-[40px] md:text-[50px] font-heading font-semibold text-[#555] mb-2 sm:mb-3 tracking-tight">
+        <div className="absolute inset-0 bg-[#FAFAF5]/60 backdrop-blur-[2px]"></div>
+        <div className="relative z-10 text-center max-w-2xl mx-auto px-4">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-heading font-extrabold uppercase tracking-[0.2em] text-[#729855] bg-white/80 px-3.5 py-1 rounded-full border border-[#E5E3D4] mb-3 shadow-2xs">
+            <Sparkles className="w-3.5 h-3.5 text-[#729855]" />
+            Organic Skincare Collection
+          </span>
+          <h1 className="text-[30px] sm:text-[44px] font-heading font-extrabold text-[#111827] mb-2 tracking-tight leading-tight">
             {displayTitle}
           </h1>
-          <p className="text-[9px] sm:text-[10px] font-heading font-bold uppercase tracking-widest text-[#729855]">
-            <Link to="/" onClick={() => window.scrollTo(0, 0)} className="hover:text-black transition-colors">Home</Link>
-            <span className="mx-1.5 sm:mx-2 text-gray-400">/</span>
-            <Link to="/collections" onClick={() => window.scrollTo(0, 0)} className="hover:text-black transition-colors">Catalog</Link>
-            <span className="mx-1.5 sm:mx-2 text-gray-400">/</span>
-            <span className="text-black">{displayTitle}</span>
+          <p className="text-[10px] sm:text-[11.5px] font-heading font-bold uppercase tracking-widest text-[#6B7280]">
+            <Link to="/" onClick={() => window.scrollTo(0, 0)} className="hover:text-[#729855] transition-colors">Home</Link>
+            <span className="mx-2 text-[#9CA3AF]">/</span>
+            <Link to="/collections" onClick={() => window.scrollTo(0, 0)} className="hover:text-[#729855] transition-colors">Catalog</Link>
+            <span className="mx-2 text-[#9CA3AF]">/</span>
+            <span className="text-[#111827]">{displayTitle}</span>
           </p>
         </div>
       </div>
 
-      {/* 2. CATALOG WORKSPACE CONTAINER */}
-      <div className="max-w-[1280px] mx-auto px-3 sm:px-6 md:px-8 lg:px-10 py-6 sm:py-10 flex flex-col lg:flex-row gap-8 lg:gap-10 lg:items-stretch items-start relative">
+      {/* ─────────────────────────────────────────────────────────────────
+          2. SHOP BY SKIN CONCERN BAR (QUICK DISCOVERY)
+      ───────────────────────────────────────────────────────────────── */}
+      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-10 pt-8 pb-2">
+        <div className="bg-white rounded-2xl border border-[#E5E3D4] p-3 sm:p-4 shadow-xs flex items-center gap-2 overflow-x-auto scrollbar-none">
+          <span className="text-xs font-heading font-extrabold uppercase tracking-wider text-[#729855] shrink-0 flex items-center gap-1 pl-1 pr-2">
+            <Layers className="w-3.5 h-3.5" />
+            Skin Concerns:
+          </span>
+          {SKIN_CONCERNS.map((concern) => {
+            const isSelected = selectedSkinTypes.includes(concern.key);
+            return (
+              <button
+                key={concern.key}
+                type="button"
+                onClick={() => toggleFilter('skinType', concern.key)}
+                className={`text-xs font-heading font-bold px-3.5 py-1.5 rounded-full transition-all shrink-0 cursor-pointer border ${
+                  isSelected
+                    ? 'bg-[#729855] text-white border-[#729855] shadow-2xs'
+                    : 'bg-[#FAFAF5] text-[#374151] border-[#E5E3D4] hover:border-[#729855] hover:text-[#729855]'
+                }`}
+              >
+                {concern.name}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-        {/* LEFT COLUMN OUTER WRAPPER - Hidden on mobile/tablet */}
-        <div className="hidden lg:block lg:w-[25%] shrink-0 select-none relative pt-4 pb-10 pr-2">
+      {/* ─────────────────────────────────────────────────────────────────
+          3. MAIN WORKSPACE CONTAINER
+      ───────────────────────────────────────────────────────────────── */}
+      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 py-6 sm:py-10 flex flex-col lg:flex-row gap-8 lg:gap-10 lg:items-stretch items-start relative">
 
-          {/* INNER STICKY CONTAINER */}
-          <div className="lg:sticky lg:top-24 lg:h-fit flex flex-col gap-6 bg-[#FAFAF5] rounded-3xl border border-[#E5E3D4] p-5 shadow-xs">
+        {/* LEFT COLUMN: STICKY FILTERS & SIDEBAR */}
+        <div className="hidden lg:block lg:w-[25%] shrink-0 select-none relative pt-2 pb-10 pr-2">
+          <div className="lg:sticky lg:top-24 lg:h-fit flex flex-col gap-6 bg-white rounded-3xl border border-[#E5E3D4] p-5 shadow-xs">
 
-            {/* Sidebar Title */}
+            {/* Header & Reset */}
             <div className="flex items-center justify-between pb-3 border-b border-[#E5E3D4]">
-              <h3 className="font-heading font-extrabold text-[15px] uppercase tracking-[0.12em] text-[#111827]">
+              <h3 className="font-heading font-extrabold text-[14.5px] uppercase tracking-[0.12em] text-[#111827] flex items-center gap-2">
+                <Filter className="w-4 h-4 text-[#729855]" />
                 Filters
               </h3>
               {(selectedAvailability.length > 0 || selectedSkinTypes.length > 0 || selectedUnitCounts.length > 0) && (
@@ -699,7 +712,7 @@ const ProductListing = () => {
             <div className="border-b border-[#E5E3D4] pb-5">
               <button
                 onClick={() => toggleSection('availability')}
-                className="w-full flex items-center justify-between font-heading font-extrabold text-[13.5px] text-[#111827] uppercase tracking-wider py-1.5 cursor-pointer bg-transparent border-none"
+                className="w-full flex items-center justify-between font-heading font-extrabold text-[13px] text-[#111827] uppercase tracking-wider py-1 cursor-pointer bg-transparent border-none"
               >
                 <span>Availability</span>
                 {openSections.availability ? (
@@ -709,7 +722,7 @@ const ProductListing = () => {
                 )}
               </button>
               {openSections.availability && (
-                <div className="flex flex-col space-y-3 pt-3 pl-1">
+                <div className="flex flex-col space-y-2.5 pt-3 pl-1">
                   {['In stock', 'Out of stock'].map((option) => (
                     <label key={option} className="flex items-center gap-3 cursor-pointer group select-none">
                       <input
@@ -718,7 +731,7 @@ const ProductListing = () => {
                         onChange={() => toggleFilter('availability', option)}
                         className="w-4 h-4 rounded border-gray-300 text-[#729855] focus:ring-[#729855] cursor-pointer"
                       />
-                      <span className="text-[13.5px] font-medium text-[#374151] group-hover:text-[#729855] transition-colors">{option}</span>
+                      <span className="text-[13px] font-medium text-[#374151] group-hover:text-[#729855] transition-colors">{option}</span>
                     </label>
                   ))}
                 </div>
@@ -729,7 +742,7 @@ const ProductListing = () => {
             <div className="border-b border-[#E5E3D4] pb-5">
               <button
                 onClick={() => toggleSection('skinType')}
-                className="w-full flex items-center justify-between font-heading font-extrabold text-[13.5px] text-[#111827] uppercase tracking-wider py-1.5 cursor-pointer bg-transparent border-none"
+                className="w-full flex items-center justify-between font-heading font-extrabold text-[13px] text-[#111827] uppercase tracking-wider py-1 cursor-pointer bg-transparent border-none"
               >
                 <span>Skin Type</span>
                 {openSections.skinType ? (
@@ -739,7 +752,7 @@ const ProductListing = () => {
                 )}
               </button>
               {openSections.skinType && (
-                <div className="flex flex-col space-y-3 pt-3 pl-1">
+                <div className="flex flex-col space-y-2.5 pt-3 pl-1">
                   {skinTypeOptions.map((type) => (
                     <label key={type} className="flex items-center gap-3 cursor-pointer group select-none">
                       <input
@@ -748,7 +761,7 @@ const ProductListing = () => {
                         onChange={() => toggleFilter('skinType', type)}
                         className="w-4 h-4 rounded border-gray-300 text-[#729855] focus:ring-[#729855] cursor-pointer"
                       />
-                      <span className="text-[13.5px] font-medium text-[#374151] group-hover:text-[#729855] transition-colors">{type}</span>
+                      <span className="text-[13px] font-medium text-[#374151] group-hover:text-[#729855] transition-colors">{type}</span>
                     </label>
                   ))}
                 </div>
@@ -759,7 +772,7 @@ const ProductListing = () => {
             <div className="border-b border-[#E5E3D4] pb-5">
               <button
                 onClick={() => toggleSection('unitCount')}
-                className="w-full flex items-center justify-between font-heading font-extrabold text-[13.5px] text-[#111827] uppercase tracking-wider py-1.5 cursor-pointer bg-transparent border-none"
+                className="w-full flex items-center justify-between font-heading font-extrabold text-[13px] text-[#111827] uppercase tracking-wider py-1 cursor-pointer bg-transparent border-none"
               >
                 <span>Unit Count</span>
                 {openSections.unitCount ? (
@@ -769,7 +782,7 @@ const ProductListing = () => {
                 )}
               </button>
               {openSections.unitCount && (
-                <div className="flex flex-col space-y-3 pt-3 pl-1">
+                <div className="flex flex-col space-y-2.5 pt-3 pl-1">
                   {unitCountOptions.map((unit) => (
                     <label key={unit} className="flex items-center gap-3 cursor-pointer group select-none">
                       <input
@@ -778,16 +791,16 @@ const ProductListing = () => {
                         onChange={() => toggleFilter('unitCount', unit)}
                         className="w-4 h-4 rounded border-gray-300 text-[#729855] focus:ring-[#729855] cursor-pointer"
                       />
-                      <span className="text-[13.5px] font-medium text-[#374151] group-hover:text-[#729855] transition-colors">{unit}</span>
+                      <span className="text-[13px] font-medium text-[#374151] group-hover:text-[#729855] transition-colors">{unit}</span>
                     </label>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Best Seller Section */}
-            <div className="pt-2 text-left">
-              <h3 className="text-[15px] font-heading font-extrabold uppercase tracking-[0.12em] text-[#111827] mb-4">
+            {/* Best Seller Showcase Card */}
+            <div className="pt-1 text-left">
+              <h3 className="text-[14px] font-heading font-extrabold uppercase tracking-[0.12em] text-[#111827] mb-3">
                 Best Seller
               </h3>
               {currentBestSeller ? (
@@ -796,9 +809,9 @@ const ProductListing = () => {
                     navigate(`/products/${currentBestSeller?.slug}`);
                     window.scrollTo(0, 0);
                   }}
-                  className="block cursor-pointer bg-white rounded-2xl p-3 border border-[#E5E3D4] shadow-2xs hover:shadow-md transition-all text-center"
+                  className="block cursor-pointer bg-[#FAFAF5] rounded-2xl p-3 border border-[#E5E3D4] shadow-2xs hover:shadow-md transition-all text-center"
                 >
-                  <div className="group relative aspect-[4/3] bg-[#FAF9F5] rounded-xl overflow-hidden mb-3">
+                  <div className="group relative aspect-[4/3] bg-white rounded-xl overflow-hidden mb-3 border border-[#E5E3D4]">
                     <img
                       src={getLocalImageUrl(ensureAbsolutePath(currentBestSeller?.images?.[0] || currentBestSeller?.image))}
                       alt={currentBestSeller?.title || "Best Seller"}
@@ -806,9 +819,7 @@ const ProductListing = () => {
                       onError={handleImageError}
                       loading="lazy"
                     />
-
-                    {/* Hover Actions */}
-                    <div className="absolute top-2.5 right-2.5 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20">
+                    <div className="absolute top-2 right-2 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20">
                       <Link
                         to={`/products/${currentBestSeller?.slug}`}
                         aria-label={`Quick view ${currentBestSeller?.title || ""}`}
@@ -819,14 +830,13 @@ const ProductListing = () => {
                       </Link>
                     </div>
                   </div>
-                  <h4 className="text-[13.5px] font-heading font-bold text-[#111827] line-clamp-2 leading-snug mb-1 hover:text-[#729855] transition-colors">
+                  <h4 className="text-[13px] font-heading font-bold text-[#111827] line-clamp-2 leading-snug mb-1 hover:text-[#729855] transition-colors">
                     {currentBestSeller?.title}
                   </h4>
                   <p className="text-[13px] font-extrabold text-[#2f3e10] font-body">
                     Rs. {(currentBestSeller?.price ?? 0).toLocaleString('en-IN')}.00
                   </p>
-
-                  <div className="flex items-center justify-center gap-4 mt-3 text-black font-semibold">
+                  <div className="flex items-center justify-center gap-4 mt-2 text-black font-semibold">
                     <button
                       type="button"
                       onClick={handlePrevBestSeller}
@@ -852,21 +862,21 @@ const ProductListing = () => {
               )}
             </div>
 
-            {/* New Arrivals */}
-            <div className="pt-2 text-left">
-              <h3 className="text-[15px] font-heading font-extrabold uppercase tracking-[0.12em] text-[#111827] mb-4">
+            {/* New Arrivals List */}
+            <div className="pt-1 text-left">
+              <h3 className="text-[14px] font-heading font-extrabold uppercase tracking-[0.12em] text-[#111827] mb-3">
                 New Arrivals
               </h3>
               {newArrivals.length > 0 ? (
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2.5">
                   {newArrivals.slice(0, MIN_NEW_ARRIVALS).map((item) => (
                     <Link
                       key={item._id}
                       to={`/products/${item.slug}`}
                       onClick={() => window.scrollTo(0, 0)}
-                      className="flex items-center gap-3 bg-white rounded-xl p-2.5 border border-[#E5E3D4] hover:border-[#729855] shadow-2xs transition-all group no-underline"
+                      className="flex items-center gap-3 bg-[#FAFAF5] rounded-xl p-2 border border-[#E5E3D4] hover:border-[#729855] shadow-2xs transition-all group no-underline"
                     >
-                      <div className="w-14 h-14 bg-[#FAF9F5] rounded-lg overflow-hidden flex-shrink-0">
+                      <div className="w-12 h-12 bg-white rounded-lg overflow-hidden flex-shrink-0 border border-[#E5E3D4]">
                         <img
                           src={getLocalImageUrl(ensureAbsolutePath(item.images?.[0] || item.image))}
                           alt={item.title}
@@ -876,10 +886,10 @@ const ProductListing = () => {
                         />
                       </div>
                       <div className="flex flex-col text-left min-w-0">
-                        <span className="text-[12.5px] font-heading font-bold text-[#111827] group-hover:text-[#729855] transition-colors line-clamp-1 leading-snug">
+                        <span className="text-[12px] font-heading font-bold text-[#111827] group-hover:text-[#729855] transition-colors line-clamp-1 leading-snug">
                           {item.title}
                         </span>
-                        <span className="text-[12px] font-bold text-[#2f3e10] mt-0.5">Rs. {(item?.price ?? 0).toLocaleString('en-IN')}.00</span>
+                        <span className="text-[11.5px] font-bold text-[#2f3e10] mt-0.5">Rs. {(item?.price ?? 0).toLocaleString('en-IN')}.00</span>
                       </div>
                     </Link>
                   ))}
@@ -890,14 +900,15 @@ const ProductListing = () => {
                 </div>
               )}
             </div>
+
           </div>
         </div>
 
-        {/* RIGHT CONTENT (Toolbar + Grid) */}
-        <div className="w-full lg:w-[75%] flex flex-col pt-2 pb-10">
+        {/* RIGHT CONTENT: TOOLBAR & PRODUCT GRID */}
+        <div className="w-full lg:w-[75%] flex flex-col pt-1 pb-10">
 
-          {/* Sticky Modern Top Toolbar (Fully Responsive on Mobile/Tablet/Desktop) */}
-          <div className="sticky top-0 bg-white/95 backdrop-blur-md z-30 py-2.5 sm:py-3.5 mb-5 sm:mb-8 border-b border-[#E5E3D4] shadow-2xs flex flex-wrap items-center justify-between gap-3 px-1">
+          {/* Sticky Modern Top Toolbar */}
+          <div className="sticky top-16 sm:top-20 bg-white/95 backdrop-blur-md z-30 py-3 mb-6 border border-[#E5E3D4] rounded-2xl shadow-xs flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5">
             <span className="text-[12px] sm:text-[13px] font-heading font-extrabold text-[#111827]">
               Showing <span className="text-[#729855]">{showingStart}-{showingEnd}</span> of <span className="text-[#111827]">{filteredProducts.length}</span> Results
             </span>
@@ -906,8 +917,9 @@ const ProductListing = () => {
             <button
               type="button"
               onClick={() => setIsFilterDrawerOpen(true)}
-              className="lg:hidden h-9 px-3.5 border border-[#E5E3D4] hover:border-[#729855] flex items-center justify-center gap-1.5 font-heading text-[11px] font-extrabold uppercase tracking-wider transition-colors cursor-pointer bg-[#729855] text-white rounded-xl shadow-2xs"
+              className="lg:hidden h-9 px-3.5 border border-[#729855] flex items-center justify-center gap-1.5 font-heading text-[11px] font-extrabold uppercase tracking-wider transition-colors cursor-pointer bg-[#729855] text-white rounded-xl shadow-2xs"
             >
+              <Filter className="w-3.5 h-3.5" />
               Filters
             </button>
 
@@ -922,7 +934,7 @@ const ProductListing = () => {
                   aria-pressed={gridCols === 1}
                   className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer ${gridCols === 1 ? 'bg-[#729855] text-white shadow-2xs' : 'text-[#6B7280] hover:text-[#111827]'}`}
                 >
-                  <Menu className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <Menu className="w-3.5 h-3.5" />
                 </button>
                 <button
                   type="button"
@@ -932,8 +944,8 @@ const ProductListing = () => {
                   className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer ${gridCols === 2 ? 'bg-[#729855] text-white shadow-2xs' : 'text-[#6B7280] hover:text-[#111827]'}`}
                 >
                   <div className="flex gap-[2px]">
-                    <div className="w-[3px] h-[12px] sm:h-[13px] bg-current rounded-full"></div>
-                    <div className="w-[3px] h-[12px] sm:h-[13px] bg-current rounded-full"></div>
+                    <div className="w-[3px] h-[12px] bg-current rounded-full"></div>
+                    <div className="w-[3px] h-[12px] bg-current rounded-full"></div>
                   </div>
                 </button>
                 <button
@@ -944,9 +956,9 @@ const ProductListing = () => {
                   className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer ${gridCols === 3 ? 'bg-[#729855] text-white shadow-2xs' : 'text-[#6B7280] hover:text-[#111827]'}`}
                 >
                   <div className="flex gap-[2px]">
-                    <div className="w-[3px] h-[12px] sm:h-[13px] bg-current rounded-full"></div>
-                    <div className="w-[3px] h-[12px] sm:h-[13px] bg-current rounded-full"></div>
-                    <div className="w-[3px] h-[12px] sm:h-[13px] bg-current rounded-full"></div>
+                    <div className="w-[3px] h-[12px] bg-current rounded-full"></div>
+                    <div className="w-[3px] h-[12px] bg-current rounded-full"></div>
+                    <div className="w-[3px] h-[12px] bg-current rounded-full"></div>
                   </div>
                 </button>
                 <button
@@ -957,16 +969,16 @@ const ProductListing = () => {
                   className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer ${gridCols === 4 ? 'bg-[#729855] text-white shadow-2xs' : 'text-[#6B7280] hover:text-[#111827]'}`}
                 >
                   <div className="flex gap-[2px]">
-                    <div className="w-[3px] h-[12px] sm:h-[13px] bg-current rounded-full"></div>
-                    <div className="w-[3px] h-[12px] sm:h-[13px] bg-current rounded-full"></div>
-                    <div className="w-[3px] h-[12px] sm:h-[13px] bg-current rounded-full"></div>
-                    <div className="w-[3px] h-[12px] sm:h-[13px] bg-current rounded-full"></div>
+                    <div className="w-[3px] h-[12px] bg-current rounded-full"></div>
+                    <div className="w-[3px] h-[12px] bg-current rounded-full"></div>
+                    <div className="w-[3px] h-[12px] bg-current rounded-full"></div>
+                    <div className="w-[3px] h-[12px] bg-current rounded-full"></div>
                   </div>
                 </button>
               </div>
 
               {/* Sort Dropdown */}
-              <div className="relative flex-1 sm:flex-none sm:min-w-[200px]">
+              <div className="relative flex-1 sm:flex-none sm:min-w-[190px]">
                 <button
                   type="button"
                   className="w-full h-9 sm:h-10 px-3 sm:px-4 bg-[#FAFAF5] border border-[#E5E3D4] rounded-xl flex items-center justify-between gap-2 cursor-pointer outline-none hover:border-[#729855] transition-colors shadow-2xs"
@@ -975,10 +987,9 @@ const ProductListing = () => {
                   aria-haspopup="listbox"
                 >
                   <span className="text-[10.5px] sm:text-[11.5px] font-heading font-extrabold text-[#111827] tracking-[0.05em] uppercase truncate">{activeSort}</span>
-                  <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#729855] flex-shrink-0" />
+                  <ChevronDown className="w-3.5 h-3.5 text-[#729855] flex-shrink-0" />
                 </button>
 
-                {/* Dropdown Menu */}
                 {isSortOpen && (
                   <div
                     role="listbox"
@@ -1005,14 +1016,34 @@ const ProductListing = () => {
             </div>
           </div>
 
-          {/* Product Grid */}
+          {/* Product Grid / Shimmer Loading / Empty State */}
           {loading ? (
-            <div className="w-full py-20 flex justify-center">
-              <Loader size="large" />
+            <div className={`grid ${gridClass} gap-4 sm:gap-6`}>
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <div key={i} className="bg-white rounded-3xl p-4 border border-[#E5E3D4] animate-pulse flex flex-col gap-3">
+                  <div className="w-full aspect-square bg-gray-200 rounded-2xl" />
+                  <div className="h-4 bg-gray-200 rounded w-2/3" />
+                  <div className="h-4 bg-gray-200 rounded w-full" />
+                  <div className="h-5 bg-gray-200 rounded w-1/3 mt-2" />
+                </div>
+              ))}
             </div>
           ) : filteredProducts.length === 0 ? (
-            <div className="w-full text-center py-20 font-body">
-              <p className="text-gray-500 text-lg">No products found matching your criteria.</p>
+            <div className="w-full text-center py-20 bg-white rounded-3xl border border-dashed border-[#E5E3D4] p-8 max-w-md mx-auto my-6">
+              <Sparkles className="w-10 h-10 text-[#729855]/40 mx-auto mb-3" />
+              <h3 className="text-lg font-heading font-bold text-[#111827] mb-1">No products found</h3>
+              <p className="text-xs text-[#6B7280] mb-5">Try modifying your filter options or search terms.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedAvailability([]);
+                  setSelectedSkinTypes([]);
+                  setSelectedUnitCounts([]);
+                }}
+                className="px-5 py-2.5 bg-[#729855] hover:bg-[#2f3e10] text-white text-xs font-heading font-bold rounded-xl transition-colors cursor-pointer border-none"
+              >
+                Clear All Filters
+              </button>
             </div>
           ) : (
             <>
@@ -1022,7 +1053,7 @@ const ProductListing = () => {
                     key={product._id}
                     product={product}
                     gridCols={gridCols}
-                    cardWidthClass={cardWidthClass}
+                    cardWidthClass="w-full"
                     isInWishlist={isInWishlist}
                     toggleWishlist={toggleWishlist}
                     addToCart={addToCart}
@@ -1031,7 +1062,7 @@ const ProductListing = () => {
                 ))}
               </div>
 
-              {/* Pagination controls showing up to 16 products dynamically */}
+              {/* Pagination controls */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 mt-12 font-heading text-xs font-bold uppercase tracking-widest no-print select-none">
                   <button
@@ -1041,7 +1072,7 @@ const ProductListing = () => {
                       setCurrentPage((prev) => Math.max(1, prev - 1));
                       window.scrollTo(0, 0);
                     }}
-                    className="px-4 py-3 border border-gray-200 hover:border-black text-black disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-gray-200 transition-colors bg-white font-bold cursor-pointer"
+                    className="px-4 py-2.5 border border-[#E5E3D4] hover:border-[#729855] text-[#111827] disabled:opacity-40 disabled:cursor-not-allowed transition-colors bg-white rounded-xl font-bold cursor-pointer"
                   >
                     Prev
                   </button>
@@ -1056,10 +1087,11 @@ const ProductListing = () => {
                           setCurrentPage(pageNumber);
                           window.scrollTo(0, 0);
                         }}
-                        className={`w-11 h-11 border transition-colors cursor-pointer flex items-center justify-center ${currentPage === pageNumber
-                            ? 'border-black bg-black text-white'
-                            : 'border-gray-200 bg-white text-black hover:border-black'
-                          }`}
+                        className={`w-10 h-10 rounded-xl border transition-colors cursor-pointer flex items-center justify-center font-bold ${
+                          currentPage === pageNumber
+                            ? 'border-[#729855] bg-[#729855] text-white shadow-2xs'
+                            : 'border-[#E5E3D4] bg-white text-[#111827] hover:border-[#729855]'
+                        }`}
                       >
                         {pageNumber}
                       </button>
@@ -1073,24 +1105,19 @@ const ProductListing = () => {
                       setCurrentPage((prev) => Math.min(totalPages, prev + 1));
                       window.scrollTo(0, 0);
                     }}
-                    className="px-4 py-3 border border-gray-200 hover:border-black text-black disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-gray-200 transition-colors bg-white font-bold cursor-pointer"
+                    className="px-4 py-2.5 border border-[#E5E3D4] hover:border-[#729855] text-[#111827] disabled:opacity-40 disabled:cursor-not-allowed transition-colors bg-white rounded-xl font-bold cursor-pointer"
                   >
                     Next
                   </button>
                 </div>
               )}
-
-              {/* Half Underline Scroll element below products */}
-              <div className="w-full h-[2px] bg-gray-200 mt-14">
-                <div className="w-1/2 h-full bg-black"></div>
-              </div>
             </>
           )}
 
         </div>
       </div>
 
-      {/* Mobile Filter Drawer Overlay as a Bottom Sheet */}
+      {/* Mobile Filter Drawer Overlay */}
       {isFilterDrawerOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex items-end justify-center">
           <div
@@ -1109,9 +1136,7 @@ const ProductListing = () => {
               </button>
             </div>
 
-            {/* Filter Content */}
             <div className="flex flex-col space-y-5">
-              {/* Availability filter */}
               <div className="border-b border-[#E5E3D4] pb-4">
                 <h3 className="font-heading font-extrabold text-[13.5px] text-[#111827] uppercase tracking-wider mb-3">Availability</h3>
                 <div className="flex flex-col space-y-3 pl-1">
@@ -1129,7 +1154,6 @@ const ProductListing = () => {
                 </div>
               </div>
 
-              {/* Skin Type filter */}
               <div className="border-b border-[#E5E3D4] pb-4">
                 <h3 className="font-heading font-extrabold text-[13.5px] text-[#111827] uppercase tracking-wider mb-3">Skin Type</h3>
                 <div className="flex flex-col space-y-3 pl-1">
@@ -1147,7 +1171,6 @@ const ProductListing = () => {
                 </div>
               </div>
 
-              {/* Unit Count filter */}
               <div className="pb-4">
                 <h3 className="font-heading font-extrabold text-[13.5px] text-[#111827] uppercase tracking-wider mb-3">Unit Count</h3>
                 <div className="flex flex-col space-y-3 pl-1">
@@ -1166,7 +1189,6 @@ const ProductListing = () => {
               </div>
             </div>
 
-            {/* Sticky bottom Action buttons */}
             <div className="absolute bottom-0 left-0 right-0 p-4 bg-[#FAFAF5] border-t border-[#E5E3D4] z-10 flex gap-3">
               <button
                 type="button"

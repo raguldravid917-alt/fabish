@@ -10,7 +10,17 @@
     scroll-behavior: smooth;
     -webkit-tap-highlight-color: transparent;
     height: 100%;
-    overflow-x: clip;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  #root::-webkit-scrollbar,
+  *::-webkit-scrollbar {
+    width: 0px !important;
+    height: 0px !important;
+    display: none !important;
   }
 
   body {
@@ -19,8 +29,15 @@
     line-height: 1.5;
     color: #212b36;
     background-color: #f7f6f0;
-    overflow-x: clip;
     min-height: 100%;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  #root {
+    min-height: 100%;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
   h1,
@@ -428,7 +445,7 @@
 /* Body scroll lock */
 .body-scroll-lock {
   overflow: hidden !important;
-  height: 100% !important;
+  touch-action: none;
 }
 
 /* Premium bottom sheet animations and utilities */

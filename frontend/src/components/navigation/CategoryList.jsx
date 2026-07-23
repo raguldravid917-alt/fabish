@@ -3,57 +3,186 @@ import CategoryItem from './CategoryItem';
 import { RefreshCw, Grid, AlertCircle, ChevronRight, Sparkles, Tag, ArrowRight } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { getLocalImageUrl } from '../../utils/imageMapper';
+import { useProductsQuery } from '../../hooks/queries/useProductsQuery';
 
 /* ─────────────────────────────────────────────────────────────────────────────
    CategoryList — Premium 2026 Catalog Mega Menu
-   Desktop (≥1024px): Full-width, equal columns, large thumbnails, polished
-   Tablet (768–1023px): 3-column condensed view
-   Mobile (<768px): Accordion-style stacked single column
    
-   RULES:
-   • productCount is shown ONLY when count > 0 (never shows 0, 1-dummy or any
-     placeholder; comes 100% from backend API)
-   • All data is dynamic (collections, thumbnails, routes, subcategories)
-   • Mobile list is preserved exactly as original
+   STRICT RULES & FIXES:
+   • Reuses identical category matching & normalization logic as CollectionPage & ProductListing
+   • Every category (Shampoo, Conditioner, Hair Serum, Toners, Serums, Cleansers, etc.)
+     instantly displays its matching products on hover
+   • ZERO internal scrollbars (no vertical/horizontal scrollbars on left or right panels)
+   • Automatic responsive 2-column category grid on the left & 3-column product grid on the right
+   • All existing APIs, React Query caching, routing, Zustand, and styling preserved
 ───────────────────────────────────────────────────────────────────────────── */
 
-/* ── Inline CSS for compact medium-scale 25% / 75% mega menu ── */
+/* ── Shared helper to normalize category strings (slugs, names, IDs) ── */
+export const normalizeCategorySlug = (val) => {
+  if (!val) return '';
+  let str = '';
+  if (typeof val === 'object' && val !== null) {
+    str = val.slug || val.name || val._id || '';
+  } else {
+    str = String(val);
+  }
+  return str
+    .toLowerCase()
+    .trim()
+    .replace(/_/g, '-')
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/(^-|-$)/g, '');
+};
+
+/* ── Shared helper to filter products by category matching CollectionPage / ProductListing logic ── */
+export const getProductsByCategory = (category, products = [], allCategories = []) => {
+  if (!category || !Array.isArray(products) || products.length === 0) {
+    return [];
+  }
+
+  const catIdStr = category._id ? String(category._id) : null;
+  const catNormSlug = normalizeCategorySlug(category.slug || category.name || category);
+  const catNormName = normalizeCategorySlug(category.name || category.slug || category);
+
+  // Collect child category IDs / Slugs if parent category
+  const childCatIds = new Set();
+  const childNormSlugs = new Set();
+
+  if (Array.isArray(allCategories) && allCategories.length > 0 && catIdStr) {
+    allCategories.forEach((c) => {
+      if (!c) return;
+      const pId = c.parentCategory
+        ? typeof c.parentCategory === 'object'
+          ? String(c.parentCategory._id)
+          : String(c.parentCategory)
+        : null;
+
+      if (pId === catIdStr) {
+        if (c._id) childCatIds.add(String(c._id));
+        if (c.slug) childNormSlugs.add(normalizeCategorySlug(c.slug));
+        if (c.name) childNormSlugs.add(normalizeCategorySlug(c.name));
+      }
+    });
+  }
+
+  return products.filter((p) => {
+    if (!p) return false;
+
+    // Extract product category attributes
+    let pCatIdStr = null;
+    let pCatNormSlug = '';
+
+    if (typeof p.category === 'object' && p.category !== null) {
+      pCatIdStr = p.category._id ? String(p.category._id) : null;
+      pCatNormSlug = normalizeCategorySlug(p.category.slug || p.category.name);
+    } else if (typeof p.category === 'string') {
+      pCatIdStr = p.category;
+      pCatNormSlug = normalizeCategorySlug(p.category);
+    }
+
+    // A. Match by ObjectId
+    if (catIdStr) {
+      if (pCatIdStr === catIdStr) return true;
+      if (childCatIds.has(pCatIdStr)) return true;
+    }
+
+    // B. Match by Normalized Slug / Name
+    if (catNormSlug) {
+      if (pCatNormSlug === catNormSlug) return true;
+      if (childNormSlugs.has(pCatNormSlug)) return true;
+
+      // Singular / Plural tolerance (e.g. serums vs serum, cleansers vs cleanser)
+      if (catNormSlug.endsWith('s') && pCatNormSlug === catNormSlug.slice(0, -1)) return true;
+      if (pCatNormSlug.endsWith('s') && pCatNormSlug.slice(0, -1) === catNormSlug) return true;
+    }
+
+    if (catNormName && pCatNormSlug === catNormName) return true;
+
+    // C. Match by product.subcategory
+    if (p.subcategory) {
+      const subNorm = normalizeCategorySlug(p.subcategory);
+      if (subNorm === catNormSlug || subNorm === catNormName) return true;
+    }
+
+    // D. Match by product.tags array
+    if (Array.isArray(p.tags)) {
+      for (const tag of p.tags) {
+        const tagNorm = normalizeCategorySlug(tag);
+        if (tagNorm === catNormSlug || tagNorm === catNormName) return true;
+      }
+    }
+
+    // E. Match by product.title fuzzy keyword
+    if (p.title && (catNormSlug || catNormName)) {
+      const pTitleNorm = normalizeCategorySlug(p.title);
+      const keySlug = catNormSlug.replace(/-/g, '');
+      const keyName = catNormName.replace(/-/g, '');
+      const pTitleClean = pTitleNorm.replace(/-/g, '');
+
+      if (keySlug.length >= 4 && pTitleClean.includes(keySlug)) return true;
+      if (keyName.length >= 4 && pTitleClean.includes(keyName)) return true;
+    }
+
+    return false;
+  });
+};
+
+/* ── Inline CSS for compact 25% / 75% mega menu without ANY internal scrollbars ── */
 const MEGA_MENU_STYLES = `
   .mega-split-container {
     display: flex;
-    min-height: 290px;
     width: 100%;
     box-sizing: border-box;
+    overflow: visible;
   }
 
-  /* ── Left Side (Compact Category Navigation ~260px) ── */
+  /* Hide scrollbars globally inside mega menu */
+  .mega-split-left::-webkit-scrollbar,
+  .mega-split-right::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  .mega-split-left,
+  .mega-split-right {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+  }
+
+  /* ── Left Side (Responsive 2-Column Compact Navigation ~360px wide) ── */
   .mega-split-left {
-    width: 260px;
-    min-width: 230px;
-    max-width: 280px;
+    width: 380px;
+    min-width: 340px;
     background-color: #F7F6EF;
     border-right: 1.5px solid #EDEBD8;
-    padding: 12px 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
+    padding: 14px 12px;
     box-sizing: border-box;
     flex-shrink: 0;
+    overflow: visible;
+  }
+
+  .mega-left-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 3px 6px;
+    width: 100%;
   }
 
   .mega-left-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 12px;
-    border-radius: 9px;
+    padding: 6px 9px;
+    border-radius: 8px;
     cursor: pointer;
-    transition: all 180ms ease;
+    transition: all 160ms ease;
     background-color: transparent;
     color: #1F2937;
     font-family: var(--font-heading, 'Outfit', sans-serif);
     font-weight: 600;
-    font-size: 13.5px;
+    font-size: 12.5px;
     text-decoration: none;
     user-select: none;
     border: 1px solid transparent;
@@ -62,28 +191,28 @@ const MEGA_MENU_STYLES = `
   .mega-left-item:hover {
     background-color: rgba(114, 152, 85, 0.10);
     color: #729855;
-    transform: translateX(3px);
+    transform: translateX(2px);
   }
 
   /* ── Active Category (Green Background + White Text) ── */
   .mega-left-item.active {
     background-color: #729855 !important;
     color: #FFFFFF !important;
-    box-shadow: 0 3px 10px rgba(114, 152, 85, 0.30);
+    box-shadow: 0 2.5px 8px rgba(114, 152, 85, 0.28);
     font-weight: 700;
   }
 
   .mega-left-icon {
-    width: 26px;
-    height: 26px;
-    border-radius: 7px;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
     overflow: hidden;
     background-color: #EEF3E8;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    transition: all 180ms ease;
+    transition: all 160ms ease;
   }
 
   .mega-left-item.active .mega-left-icon {
@@ -98,10 +227,10 @@ const MEGA_MENU_STYLES = `
   }
 
   .mega-left-arrow {
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
     color: #9CA3AF;
-    transition: transform 180ms ease, color 180ms ease;
+    transition: transform 160ms ease, color 160ms ease;
   }
 
   .mega-left-item:hover .mega-left-arrow {
@@ -111,36 +240,37 @@ const MEGA_MENU_STYLES = `
 
   .mega-left-item.active .mega-left-arrow {
     color: #FFFFFF !important;
-    transform: translateX(3px);
+    transform: translateX(2px);
   }
 
-  /* ── Right Side (Compact 75% Area) ── */
+  /* ── Right Side (Full Preview Area - Completely Visible without Scrollbar) ── */
   .mega-split-right {
     flex: 1;
-    padding: 20px 28px;
+    padding: 16px 24px;
     background-color: #FAFAF5;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
     box-sizing: border-box;
+    overflow: visible;
   }
 
   .mega-right-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-bottom: 12px;
+    padding-bottom: 10px;
     border-bottom: 1.5px solid #EDEBD8;
   }
 
   .mega-right-title {
     font-family: var(--font-heading, 'Outfit', sans-serif);
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 800;
-    color: #729855; /* BRAND GREEN TITLE */
+    color: #729855;
     display: flex;
     align-items: center;
-    gap: 9px;
+    gap: 8px;
     letter-spacing: -0.01em;
   }
 
@@ -155,7 +285,7 @@ const MEGA_MENU_STYLES = `
     text-decoration: none;
     text-transform: uppercase;
     letter-spacing: 0.07em;
-    transition: all 180ms ease;
+    transition: all 160ms ease;
   }
 
   .mega-right-view-all:hover {
@@ -167,60 +297,44 @@ const MEGA_MENU_STYLES = `
   .mega-chips-wrapper {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px 12px;
+    gap: 6px 8px;
     width: 100%;
-    padding-top: 2px;
   }
 
   .mega-chip {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    border-radius: 9999px; /* Modern Pill Shape */
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 9999px;
     background-color: #FFFFFF;
     border: 1.5px solid #E2E0D0;
     color: #1F2937;
     font-family: var(--font-body, 'Work Sans', sans-serif);
     font-weight: 600;
-    font-size: 13px;
+    font-size: 11.5px;
     text-decoration: none;
     cursor: pointer;
-    transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 1.5px 4px rgba(0, 0, 0, 0.02);
+    transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
     white-space: nowrap;
     user-select: none;
   }
 
   .mega-chip:hover {
-    background-color: #729855; /* Brand green background on hover */
+    background-color: #729855;
     color: #FFFFFF;
     border-color: #729855;
-    box-shadow: 0 4px 14px rgba(114, 152, 85, 0.28);
-    transform: translateY(-1.5px);
+    box-shadow: 0 3px 10px rgba(114, 152, 85, 0.25);
+    transform: translateY(-1px);
   }
 
   .mega-chip-thumb {
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
-  }
-
-  .mega-chip-badge {
-    font-size: 9px;
-    font-weight: 700;
-    padding: 1px 6px;
-    border-radius: 100px;
-    background-color: rgba(114, 152, 85, 0.12);
-    color: #4a7c35;
-    transition: all 180ms ease;
-  }
-
-  .mega-chip:hover .mega-chip-badge {
-    background-color: rgba(255, 255, 255, 0.25);
-    color: #FFFFFF;
   }
 
   /* ── Skeleton loading animation ── */
@@ -243,12 +357,12 @@ const MEGA_MENU_STYLES = `
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: 14px 16px;
+    padding: 12px 14px;
     background: transparent;
     border: none;
     cursor: pointer;
     text-align: left;
-    gap: 12px;
+    gap: 10px;
     transition: background-color 150ms ease;
   }
   .mega-mobile-accordion-trigger:hover {
@@ -258,8 +372,8 @@ const MEGA_MENU_STYLES = `
     background-color: rgba(114, 152, 85, 0.07);
   }
   .mega-mobile-chevron {
-    width: 16px;
-    height: 16px;
+    width: 15px;
+    height: 15px;
     color: #729855;
     flex-shrink: 0;
     transition: transform 250ms ease;
@@ -280,150 +394,14 @@ const MEGA_MENU_STYLES = `
 `;
 
 /* ─────────────────────────────────────
-   Sub-component: Single column cell
-───────────────────────────────────── */
-const MegaColumn = React.memo(({ parent, subs, colIdx, isFirst, isLast, onCategorySelect, location }) => {
-  const pSlug = parent.slug || parent.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  const isParentActive = location.pathname === `/collections/${pSlug}`;
-  const parentImg = parent.image ? getLocalImageUrl(parent.image) : null;
-
-  // Calculate total product count dynamically (parent direct count + sum of subcategory product counts)
-  const totalProductCount = useMemo(() => {
-    const parentCount = typeof parent.productCount === 'number' ? parent.productCount : 0;
-    const subSum = (subs || []).reduce((acc, sub) => acc + (typeof sub.productCount === 'number' ? sub.productCount : 0), 0);
-    return Math.max(parentCount, subSum);
-  }, [parent.productCount, subs]);
-
-  const showCount = totalProductCount > 0;
-
-  return (
-    <div
-      className={`mega-col ${isFirst ? 'mega-col-first' : ''} ${isLast ? 'mega-col-last' : ''}`}
-    >
-      {/* ── Category Header: Thumbnail + Title + Count + Divider ── */}
-      <Link
-        to={`/collections/${pSlug}`}
-        onClick={() => onCategorySelect && onCategorySelect(parent)}
-        style={{ textDecoration: 'none', display: 'block' }}
-        aria-label={`Browse ${parent.name} collection`}
-        className="mega-col-header"
-        tabIndex={0}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-          {/* Thumbnail */}
-          <div className="mega-thumb" role="img" aria-hidden="true">
-            {parentImg ? (
-              <img
-                src={parentImg}
-                alt=""
-                loading="lazy"
-                onError={(e) => { e.target.style.display = 'none'; }}
-              />
-            ) : (
-              <Tag style={{ width: '20px', height: '20px', color: '#729855' }} />
-            )}
-          </div>
-
-          {/* Title & Count */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap' }}>
-              <span
-                className="mega-cat-title"
-                style={{ color: isParentActive ? '#729855' : undefined }}
-              >
-                {parent.name}
-              </span>
-              {showCount && (
-                <span className="mega-count-badge" aria-label={`${totalProductCount} products`}>
-                  {totalProductCount}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Divider */}
-        <div className="mega-divider" aria-hidden="true" />
-      </Link>
-
-      {/* ── Subcategories ── */}
-      {subs.length > 0 ? (
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '2px' }} role="menu">
-          {subs.map((sub, sIdx) => {
-            const subObj = typeof sub === 'string' ? { name: sub, slug: sub.toLowerCase().replace(/[^a-z0-9]+/g, '-') } : sub;
-            const subSlug = subObj.slug || subObj.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-            const isSubActive = location.pathname === `/collections/${subSlug}`;
-            const subImg = subObj.image ? getLocalImageUrl(subObj.image) : null;
-            const showSubCount = typeof subObj.productCount === 'number' && subObj.productCount > 0;
-
-            return (
-              <li key={subObj._id || subSlug || sIdx} role="none">
-                <Link
-                  to={`/collections/${subSlug}`}
-                  onClick={() => onCategorySelect && onCategorySelect(subObj)}
-                  className={`mega-sub-link ${isSubActive ? 'active-sub' : ''}`}
-                  role="menuitem"
-                  aria-current={isSubActive ? 'page' : undefined}
-                  tabIndex={0}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, overflow: 'hidden' }}>
-                    {subImg && (
-                      <img
-                        src={subImg}
-                        alt=""
-                        loading="lazy"
-                        style={{ width: '15px', height: '15px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0, opacity: 0.85 }}
-                        onError={(e) => { e.target.style.display = 'none'; }}
-                      />
-                    )}
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {subObj.name}
-                    </span>
-                    {showSubCount && (
-                      <span style={{ fontSize: '10px', color: '#9CA3AF', flexShrink: 0 }}>
-                        ({subObj.productCount})
-                      </span>
-                    )}
-                  </span>
-                  <ChevronRight className="mega-sub-arrow" aria-hidden="true" />
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      ) : (
-        /* Fallback: Explore link when no subcategories */
-        <div style={{ paddingTop: '4px' }}>
-          <Link
-            to={`/collections/${pSlug}`}
-            onClick={() => onCategorySelect && onCategorySelect(parent)}
-            className="mega-explore-link"
-            tabIndex={0}
-          >
-            <span>Explore Collection</span>
-            <ArrowRight style={{ width: '13px', height: '13px' }} aria-hidden="true" />
-          </Link>
-        </div>
-      )}
-    </div>
-  );
-});
-MegaColumn.displayName = 'MegaColumn';
-
-/* ─────────────────────────────────────
    Sub-component: Mobile accordion item
 ───────────────────────────────────── */
-const MobileAccordionItem = React.memo(({ cat, subs, onCategorySelect, location }) => {
+const MobileAccordionItem = React.memo(({ cat, subs, onCategorySelect, location, getCategoryProductCount }) => {
   const [open, setOpen] = useState(false);
   const slug = cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   const catImg = cat.image ? getLocalImageUrl(cat.image) : null;
 
-  const totalProductCount = useMemo(() => {
-    const catCount = typeof cat.productCount === 'number' ? cat.productCount : 0;
-    const subSum = (subs || []).reduce((acc, sub) => acc + (typeof sub.productCount === 'number' ? sub.productCount : 0), 0);
-    return Math.max(catCount, subSum);
-  }, [cat.productCount, subs]);
-
+  const totalProductCount = getCategoryProductCount(cat);
   const showCount = totalProductCount > 0;
   const hasSubs = subs.length > 0;
 
@@ -443,16 +421,16 @@ const MobileAccordionItem = React.memo(({ cat, subs, onCategorySelect, location 
                   src={catImg}
                   alt=""
                   loading="lazy"
-                  style={{ width: '28px', height: '28px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }}
+                  style={{ width: '26px', height: '26px', borderRadius: '7px', objectFit: 'cover', flexShrink: 0 }}
                   onError={(e) => { e.target.style.display = 'none'; }}
                 />
               )}
-              <span style={{ fontFamily: 'var(--font-heading, "Outfit", sans-serif)', fontWeight: 600, fontSize: '14px', color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ fontFamily: 'var(--font-heading, "Outfit", sans-serif)', fontWeight: 600, fontSize: '13.5px', color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {cat.name}
               </span>
               {showCount && (
                 <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '100px', backgroundColor: 'rgba(114,152,85,0.12)', color: '#4a7c35', flexShrink: 0 }}>
-                  {totalProductCount}
+                  ({totalProductCount})
                 </span>
               )}
             </span>
@@ -460,11 +438,11 @@ const MobileAccordionItem = React.memo(({ cat, subs, onCategorySelect, location 
               style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)' }} />
           </button>
           <div className={`mega-mobile-panel ${open ? 'open' : ''}`} role="region">
-            <div style={{ padding: '4px 16px 12px 56px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ padding: '4px 16px 12px 52px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
               <Link
                 to={`/collections/${slug}`}
                 onClick={() => { onCategorySelect && onCategorySelect(cat); }}
-                style={{ fontSize: '13px', fontWeight: 600, color: '#729855', textDecoration: 'none', padding: '5px 0', display: 'block' }}
+                style={{ fontSize: '12.5px', fontWeight: 600, color: '#729855', textDecoration: 'none', padding: '5px 0', display: 'block' }}
               >
                 View All {cat.name} →
               </Link>
@@ -477,11 +455,11 @@ const MobileAccordionItem = React.memo(({ cat, subs, onCategorySelect, location 
                     to={`/collections/${subSlug}`}
                     onClick={() => { onCategorySelect && onCategorySelect(sub); }}
                     style={{
-                      fontSize: '13px',
+                      fontSize: '12.5px',
                       fontWeight: isSubActive ? 600 : 500,
                       color: isSubActive ? '#2f3e10' : '#4B5563',
                       textDecoration: 'none',
-                      padding: '6px 10px',
+                      padding: '5px 8px',
                       borderRadius: '6px',
                       display: 'block',
                       backgroundColor: isSubActive ? 'rgba(114,152,85,0.10)' : 'transparent',
@@ -501,21 +479,21 @@ const MobileAccordionItem = React.memo(({ cat, subs, onCategorySelect, location 
         <Link
           to={`/collections/${slug}`}
           onClick={() => onCategorySelect && onCategorySelect(cat)}
-          style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 16px', transition: 'background-color 150ms ease' }}
+          style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', transition: 'background-color 150ms ease' }}
           onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(114,152,85,0.05)'; }}
           onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
         >
           {catImg && (
             <img src={catImg} alt="" loading="lazy"
-              style={{ width: '28px', height: '28px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }}
+              style={{ width: '26px', height: '26px', borderRadius: '7px', objectFit: 'cover', flexShrink: 0 }}
               onError={(e) => { e.target.style.display = 'none'; }} />
           )}
-          <span style={{ fontFamily: 'var(--font-heading, "Outfit", sans-serif)', fontWeight: 600, fontSize: '14px', color: '#111827', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span style={{ fontFamily: 'var(--font-heading, "Outfit", sans-serif)', fontWeight: 600, fontSize: '13.5px', color: '#111827', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {cat.name}
           </span>
           {showCount && (
             <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '100px', backgroundColor: 'rgba(114,152,85,0.12)', color: '#4a7c35', flexShrink: 0 }}>
-              {totalProductCount}
+              ({totalProductCount})
             </span>
           )}
           <ChevronRight style={{ width: '14px', height: '14px', color: '#9CA3AF', flexShrink: 0 }} aria-hidden="true" />
@@ -540,6 +518,9 @@ const CategoryList = React.memo(({
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const listRef = useRef(null);
 
+  // Fetch cached products via TanStack React Query (reuses existing cache - NO extra API calls)
+  const { data: productsData = [], isLoading: isProductsLoading } = useProductsQuery();
+
   useEffect(() => {
     setFocusedIndex(-1);
   }, [categories]);
@@ -555,8 +536,8 @@ const CategoryList = React.memo(({
     }
   }, [categories]);
 
-  /* ── Build parent → subcategory map ── */
-  const { parentCategories, subcategoryMap, standaloneCategories } = useMemo(() => {
+  /* ── Build parent categories map ── */
+  const { parentCategories, subcategoryMap } = useMemo(() => {
     const published = (categories || []).filter(c => c.status !== 'Hidden' && c.status !== 'Draft');
     const subMap = {};
     const parentIdSet = new Set();
@@ -589,111 +570,59 @@ const CategoryList = React.memo(({
     return {
       parentCategories: parents.length > 0 ? parents : published,
       subcategoryMap: subMap,
-      standaloneCategories: published,
     };
   }, [categories]);
 
-  /* ── Helper: get subs for a parent ── */
+  /* ── Helper: get subcategories for a category ── */
   const getSubsFor = useCallback((parent) => {
+    if (!parent) return [];
     const key = (parent._id || parent.slug || parent.name).toString();
     const subsFromMap = subcategoryMap[key] || (parent._id ? subcategoryMap[parent._id.toString()] : []) || [];
     const directSubs = Array.isArray(parent.subcategories) && parent.subcategories.length > 0 ? parent.subcategories : (Array.isArray(parent.children) ? parent.children : []);
-    const combined = subsFromMap.length > 0 ? subsFromMap : directSubs;
-
-    if (combined && combined.length > 0) {
-      return combined;
-    }
-
-    // Fallback subcategories matching Amazon-style beauty catalog hierarchy
-    const pName = (parent.name || '').toLowerCase();
-    if (pName.includes('hair')) {
-      return [
-        { name: 'Hair Mask', slug: 'hair-mask' },
-        { name: 'Hair Serum', slug: 'hair-serum' },
-        { name: 'Conditioner', slug: 'conditioner' },
-        { name: 'Hair Oil', slug: 'hair-oil' },
-        { name: 'Hair Spray', slug: 'hair-spray' },
-        { name: 'Shampoo', slug: 'shampoo' },
-      ];
-    }
-    if (pName.includes('skin')) {
-      return [
-        { name: 'Cleanser', slug: 'cleansers' },
-        { name: 'Moisturizer', slug: 'moisturizers' },
-        { name: 'Sunscreen', slug: 'sunscreen' },
-        { name: 'Face Cream', slug: 'face-cream' },
-        { name: 'Serum', slug: 'serums' },
-        { name: 'Toner', slug: 'toners' },
-        { name: 'Night Cream', slug: 'night-cream' },
-        { name: 'Day Cream', slug: 'day-cream' },
-      ];
-    }
-    if (pName.includes('makeup')) {
-      return [
-        { name: 'Lipstick', slug: 'lipstick' },
-        { name: 'Foundation', slug: 'foundation' },
-        { name: 'Mascara', slug: 'mascara' },
-        { name: 'Blush', slug: 'blush' },
-        { name: 'Eyeliner', slug: 'eyeliner' },
-        { name: 'Primer', slug: 'primer' },
-      ];
-    }
-    if (pName.includes('body')) {
-      return [
-        { name: 'Body Wash', slug: 'body-wash' },
-        { name: 'Body Lotion', slug: 'body-lotion' },
-        { name: 'Body Scrub', slug: 'body-scrub' },
-        { name: 'Hand Cream', slug: 'hand-cream' },
-        { name: 'Body Butter', slug: 'body-butter' },
-      ];
-    }
-    if (pName.includes('fragrance') || pName.includes('perfume')) {
-      return [
-        { name: 'Eau de Parfum', slug: 'eau-de-parfum' },
-        { name: 'Body Mist', slug: 'body-mist' },
-        { name: 'Perfume Oil', slug: 'perfume-oil' },
-        { name: 'Aromatherapy', slug: 'aromatherapy' },
-      ];
-    }
-    if (pName.includes('men')) {
-      return [
-        { name: 'Beard Oil', slug: 'beard-oil' },
-        { name: 'Face Wash', slug: 'mens-face-wash' },
-        { name: 'Shaving Cream', slug: 'shaving-cream' },
-        { name: 'Hair Styling', slug: 'mens-hair-styling' },
-      ];
-    }
-
-    return [];
+    return subsFromMap.length > 0 ? subsFromMap : directSubs;
   }, [subcategoryMap]);
 
-  /* ── Active category state for 25% / 75% split ── */
+  /* ── Active hovered category state ── */
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
 
   useEffect(() => {
-    setActiveCategoryIndex(0);
-  }, [categories]);
+    if (parentCategories.length > 0 && activeCategoryIndex >= parentCategories.length) {
+      setActiveCategoryIndex(0);
+    }
+  }, [parentCategories, activeCategoryIndex]);
 
   const activeCategory = parentCategories[activeCategoryIndex] || parentCategories[0] || null;
   const activeSubs = activeCategory ? getSubsFor(activeCategory) : [];
 
+  /* ── Dynamic product count calculator per category ── */
+  const getCategoryProductCount = useCallback((cat) => {
+    if (!cat || !Array.isArray(productsData)) return 0;
+    const matchedCount = getProductsByCategory(cat, productsData, categories).length;
+    return matchedCount > 0 ? matchedCount : (typeof cat.productCount === 'number' ? cat.productCount : 0);
+  }, [productsData, categories]);
+
+  /* ── Filter products belonging to activeCategory using shared getProductsByCategory ── */
+  const activeCategoryProducts = useMemo(() => {
+    return getProductsByCategory(activeCategory, productsData, categories);
+  }, [productsData, categories, activeCategory]);
+
   /* ────────────────────────────── Loading ── */
-  if (loading) {
+  if (loading && (!categories || categories.length === 0)) {
     return (
       <>
         <style>{MEGA_MENU_STYLES}</style>
-        <div style={{ padding: '28px 32px 24px', boxSizing: 'border-box' }}>
+        <div style={{ padding: '24px 28px', boxSizing: 'border-box' }}>
           <div className="hidden md:flex mega-split-container">
             <div className="mega-split-left space-y-3">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="mega-skeleton" style={{ height: '44px', borderRadius: '12px' }} />
+                <div key={i} className="mega-skeleton" style={{ height: '40px', borderRadius: '10px' }} />
               ))}
             </div>
             <div className="mega-split-right space-y-4">
-              <div className="mega-skeleton" style={{ height: '32px', width: '220px' }} />
-              <div className="flex flex-wrap gap-3">
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((j) => (
-                  <div key={j} className="mega-skeleton" style={{ height: '42px', width: '120px', borderRadius: '9999px' }} />
+              <div className="mega-skeleton" style={{ height: '30px', width: '200px' }} />
+              <div className="grid grid-cols-3 gap-3">
+                {[1, 2, 3, 4, 5, 6].map((j) => (
+                  <div key={j} className="mega-skeleton" style={{ height: '140px', borderRadius: '12px' }} />
                 ))}
               </div>
             </div>
@@ -701,8 +630,8 @@ const CategoryList = React.memo(({
           {/* Mobile skeleton */}
           <div className="block md:hidden space-y-2">
             {[1, 2, 3, 4].map((idx) => (
-              <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderRadius: '8px' }}>
-                <div className="mega-skeleton" style={{ width: '28px', height: '28px', borderRadius: '8px' }} />
+              <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: '8px' }}>
+                <div className="mega-skeleton" style={{ width: '26px', height: '26px', borderRadius: '8px' }} />
                 <div className="mega-skeleton" style={{ height: '14px', width: '40%', marginLeft: '12px', flex: 1 }} />
                 <div className="mega-skeleton" style={{ width: '20px', height: '14px', marginLeft: '12px' }} />
               </div>
@@ -718,7 +647,7 @@ const CategoryList = React.memo(({
     return (
       <>
         <style>{MEGA_MENU_STYLES}</style>
-        <div style={{ padding: '48px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ padding: '40px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <AlertCircle style={{ width: '32px', height: '32px', color: '#F59E0B', marginBottom: '10px' }} />
           <p style={{ fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '12px' }}>{error}</p>
           {onRetry && (
@@ -742,7 +671,7 @@ const CategoryList = React.memo(({
     return (
       <>
         <style>{MEGA_MENU_STYLES}</style>
-        <div style={{ padding: '48px', textAlign: 'center' }}>
+        <div style={{ padding: '40px', textAlign: 'center' }}>
           <p style={{ fontSize: '13px', color: '#6B7280', marginBottom: '8px', fontFamily: 'var(--font-body, "Work Sans", sans-serif)' }}>
             No categories available.
           </p>
@@ -768,8 +697,8 @@ const CategoryList = React.memo(({
 
         {/* ═══════════════════════════════════════════════════════════════════
             DESKTOP / TABLET 2-SECTION SPLIT MEGA MENU (≥ 768px)
-            LEFT (25%): Vertical Categories with green active state
-            RIGHT (75%): Active Category Products/Subcategories as Horizontal Chips (Flows L➔R, Wraps)
+            LEFT (25%): 2-Column Responsive Categories with green active state (NO Scrollbars)
+            RIGHT (75%): Active Category Products & Chips in 3-Column Grid (NO Scrollbars)
         ═══════════════════════════════════════════════════════════════════ */}
         <div
           className="hidden md:block w-full"
@@ -777,56 +706,77 @@ const CategoryList = React.memo(({
           aria-label="Browse product categories"
         >
           <div className="mega-split-container">
-            {/* ── LEFT SIDE (25% Width): Department Vertical Navigation ── */}
+            {/* ── LEFT SIDE (380px Width): 2-Column Compact Category Navigation ── */}
             <div className="mega-split-left" role="menu">
-              <div style={{ fontSize: '11px', fontFamily: 'var(--font-heading, "Outfit", sans-serif)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#888', padding: '4px 12px 10px' }}>
-                Categories
+              <div style={{ fontSize: '10.5px', fontFamily: 'var(--font-heading, "Outfit", sans-serif)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#888', padding: '2px 8px 8px' }}>
+                Categories ({parentCategories.length})
               </div>
-              {parentCategories.map((parent, idx) => {
-                const isActive = idx === activeCategoryIndex;
-                const pSlug = parent.slug || parent.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-                const parentImg = parent.image ? getLocalImageUrl(parent.image) : null;
+              <div className="mega-left-grid">
+                {parentCategories.map((parent, idx) => {
+                  const isActive = idx === activeCategoryIndex;
+                  const pSlug = parent.slug || parent.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                  const parentImg = parent.image ? getLocalImageUrl(parent.image) : null;
+                  const count = getCategoryProductCount(parent);
 
-                return (
-                  <Link
-                    key={parent._id || pSlug || idx}
-                    to={`/collections/${pSlug}`}
-                    onMouseEnter={() => setActiveCategoryIndex(idx)}
-                    onClick={() => onCategorySelect && onCategorySelect(parent)}
-                    className={`mega-left-item ${isActive ? 'active' : ''}`}
-                    role="menuitem"
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                      <div className="mega-left-icon">
-                        {parentImg ? (
-                          <img
-                            src={parentImg}
-                            alt=""
-                            onError={(e) => { e.target.style.display = 'none'; }}
-                          />
-                        ) : (
-                          <Tag style={{ width: '14px', height: '14px', color: isActive ? '#729855' : '#729855' }} />
-                        )}
+                  return (
+                    <Link
+                      key={parent._id || pSlug || idx}
+                      to={`/collections/${pSlug}`}
+                      onMouseEnter={() => setActiveCategoryIndex(idx)}
+                      onClick={() => onCategorySelect && onCategorySelect(parent)}
+                      className={`mega-left-item ${isActive ? 'active' : ''}`}
+                      role="menuitem"
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0 }}>
+                        <div className="mega-left-icon">
+                          {parentImg ? (
+                            <img
+                              src={parentImg}
+                              alt=""
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                          ) : (
+                            <Tag style={{ width: '12px', height: '12px', color: isActive ? '#729855' : '#729855' }} />
+                          )}
+                        </div>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {parent.name}
+                        </span>
                       </div>
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {parent.name}
-                      </span>
-                    </div>
-                    <ChevronRight className="mega-left-arrow" aria-hidden="true" />
-                  </Link>
-                );
-              })}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                        {count > 0 && (
+                          <span style={{
+                            fontSize: '9.5px',
+                            fontWeight: '700',
+                            padding: '1px 5px',
+                            borderRadius: '100px',
+                            backgroundColor: isActive ? 'rgba(255,255,255,0.25)' : 'rgba(114,152,85,0.12)',
+                            color: isActive ? '#FFFFFF' : '#4a7c35',
+                            transition: 'all 160ms ease'
+                          }}>
+                            ({count})
+                          </span>
+                        )}
+                        <ChevronRight className="mega-left-arrow" aria-hidden="true" />
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* ── RIGHT SIDE (75% Width): Active Category's Horizontal Products & Chips ── */}
+            {/* ── RIGHT SIDE (75% Width): Active Category's Products & Subcategory Chips ── */}
             <div className="mega-split-right">
               {activeCategory && (
                 <>
                   {/* Active Category Header */}
                   <div className="mega-right-header">
                     <div className="mega-right-title">
-                      <Sparkles style={{ width: '18px', height: '18px', color: '#729855' }} aria-hidden="true" />
+                      <Sparkles style={{ width: '17px', height: '17px', color: '#729855' }} aria-hidden="true" />
                       <span>{activeCategory.name}</span>
+                      <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '100px', backgroundColor: 'rgba(114,152,85,0.12)', color: '#4a7c35' }}>
+                        ({activeCategoryProducts.length})
+                      </span>
                     </div>
                     <Link
                       to={`/collections/${activeCategory.slug || activeCategory.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
@@ -838,38 +788,143 @@ const CategoryList = React.memo(({
                     </Link>
                   </div>
 
-                  {/* Horizontal Chips Layout (Flows Left ➜ Right & Wraps Automatically) */}
-                  <div className="mega-chips-wrapper" role="menu">
-                    {activeSubs.map((sub, sIdx) => {
-                      const subObj = typeof sub === 'string' ? { name: sub, slug: sub.toLowerCase().replace(/[^a-z0-9]+/g, '-') } : sub;
-                      const subSlug = subObj.slug || subObj.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-                      const subImg = subObj.image ? getLocalImageUrl(subObj.image) : null;
-                      const showSubCount = typeof subObj.productCount === 'number' && subObj.productCount > 0;
+                  {/* Horizontal Subcategory Chips (If available) */}
+                  {activeSubs.length > 0 && (
+                    <div className="mega-chips-wrapper" role="menu">
+                      {activeSubs.map((sub, sIdx) => {
+                        const subObj = typeof sub === 'string' ? { name: sub, slug: sub.toLowerCase().replace(/[^a-z0-9]+/g, '-') } : sub;
+                        const subSlug = subObj.slug || subObj.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                        const subImg = subObj.image ? getLocalImageUrl(subObj.image) : null;
+                        const subCount = getCategoryProductCount(subObj);
 
-                      return (
-                        <Link
-                          key={subObj._id || subSlug || sIdx}
-                          to={`/collections/${subSlug}`}
-                          onClick={() => onCategorySelect && onCategorySelect(subObj)}
-                          className="mega-chip"
-                          role="menuitem"
-                        >
-                          {subImg && (
-                            <img
-                              src={subImg}
-                              alt=""
-                              className="mega-chip-thumb"
-                              onError={(e) => { e.target.style.display = 'none'; }}
-                            />
-                          )}
-                          <span>{subObj.name}</span>
-                          {showSubCount && (
-                            <span className="mega-chip-badge">({subObj.productCount})</span>
-                          )}
-                        </Link>
-                      );
-                    })}
-                  </div>
+                        return (
+                          <Link
+                            key={subObj._id || subSlug || sIdx}
+                            to={`/collections/${subSlug}`}
+                            onClick={() => onCategorySelect && onCategorySelect(subObj)}
+                            className="mega-chip"
+                            role="menuitem"
+                          >
+                            {subImg && (
+                              <img
+                                src={subImg}
+                                alt=""
+                                className="mega-chip-thumb"
+                                onError={(e) => { e.target.style.display = 'none'; }}
+                              />
+                            )}
+                            <span>{subObj.name}</span>
+                            {subCount > 0 && (
+                              <span className="mega-chip-badge">({subCount})</span>
+                            )}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Active Category Product Cards (3-Column Grid, Zero Scrollbars) */}
+                  {activeCategoryProducts.length > 0 ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', paddingTop: '2px' }}>
+                      {activeCategoryProducts.slice(0, 6).map((prod) => {
+                        const pImg = getLocalImageUrl(prod.images?.[0]?.secure_url || prod.images?.[0] || prod.thumbnail);
+                        const pSlug = prod.slug || prod._id;
+                        const price = prod.price || prod.salePrice || 0;
+                        const comparePrice = prod.comparePrice || prod.mrp;
+                        const discount = comparePrice > price ? Math.round(((comparePrice - price) / comparePrice) * 100) : 0;
+
+                        return (
+                          <Link
+                            key={prod._id || pSlug}
+                            to={`/products/${pSlug}`}
+                            onClick={() => onCategorySelect && onCategorySelect(activeCategory)}
+                            style={{ textDecoration: 'none', color: 'inherit' }}
+                          >
+                            <div style={{
+                              backgroundColor: '#FFFFFF',
+                              border: '1.5px solid #E2E0D0',
+                              borderRadius: '11px',
+                              padding: '9px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              height: '100%',
+                              transition: 'all 160ms ease',
+                              boxSizing: 'border-box'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.borderColor = '#729855';
+                              e.currentTarget.style.boxShadow = '0 5px 14px rgba(0,0,0,0.06)';
+                              e.currentTarget.style.transform = 'translateY(-2px)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.borderColor = '#E2E0D0';
+                              e.currentTarget.style.boxShadow = 'none';
+                              e.currentTarget.style.transform = 'none';
+                            }}
+                            >
+                              {/* Product Image Thumbnail */}
+                              <div style={{ width: '100%', height: '90px', borderRadius: '7px', backgroundColor: '#F7F6EF', overflow: 'hidden', marginBottom: '6px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <img
+                                  src={pImg}
+                                  alt={prod.title}
+                                  loading="lazy"
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                  onError={(e) => {
+                                    e.target.src = '/assets/homepage/P1.jpg';
+                                  }}
+                                />
+                                {prod.bestSeller ? (
+                                  <span style={{ position: 'absolute', top: '5px', left: '5px', backgroundColor: '#729855', color: '#FFFFFF', fontSize: '8.5px', fontWeight: '700', padding: '1.5px 5px', borderRadius: '100px', textTransform: 'uppercase' }}>
+                                    Bestseller
+                                  </span>
+                                ) : discount > 0 ? (
+                                  <span style={{ position: 'absolute', top: '5px', left: '5px', backgroundColor: '#2f3e10', color: '#FFFFFF', fontSize: '8.5px', fontWeight: '700', padding: '1.5px 5px', borderRadius: '100px' }}>
+                                    -{discount}%
+                                  </span>
+                                ) : null}
+                              </div>
+
+                              {/* Product Title & Pricing */}
+                              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
+                                <h4 style={{ fontSize: '11.5px', fontWeight: '700', color: '#1F2937', margin: '0 0 4px 0', lineHeight: '1.3', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                  {prod.title}
+                                </h4>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                  <span style={{ fontSize: '12.5px', fontWeight: '800', color: '#729855' }}>
+                                    ₹{price.toLocaleString('en-IN')}
+                                  </span>
+                                  {comparePrice && comparePrice > price && (
+                                    <span style={{ fontSize: '9.5px', color: '#9CA3AF', textDecoration: 'line-through' }}>
+                                      ₹{comparePrice.toLocaleString('en-IN')}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    /* Genuine empty state: displayed ONLY if database contains 0 matching products */
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '28px', backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1.5px dashed #E2E0D0', textAlign: 'center', margin: 'auto 0' }}>
+                      <Tag style={{ width: '28px', height: '28px', color: 'rgba(114,152,85,0.4)', marginBottom: '6px' }} />
+                      <p style={{ fontSize: '12.5px', fontWeight: '700', color: '#374151', margin: '0 0 3px 0' }}>
+                        Explore {activeCategory.name} Collection
+                      </p>
+                      <p style={{ fontSize: '11px', color: '#9CA3AF', margin: '0 0 10px 0', maxWidth: '220px' }}>
+                        Browse all bio-active organic skincare items in this collection.
+                      </p>
+                      <Link
+                        to={`/collections/${activeCategory.slug || activeCategory.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                        onClick={() => onCategorySelect && onCategorySelect(activeCategory)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11.5px', fontWeight: '700', color: '#729855', textDecoration: 'none' }}
+                      >
+                        <span>View All {activeCategory.name}</span>
+                        <ArrowRight style={{ width: '12px', height: '12px' }} />
+                      </Link>
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -878,12 +933,11 @@ const CategoryList = React.memo(({
 
         {/* ═══════════════════════════════════════════════════════════════════
             MOBILE ACCORDION (< 768px)
-            Touch-friendly accordion, 2-col sub grid where space allows
-            ⚠️ Original mobile list structure is preserved & extended
+            Touch-friendly accordion
         ═══════════════════════════════════════════════════════════════════ */}
         <div className="block md:hidden">
           {/* "All Collections" quick link */}
-          <div style={{ padding: '6px 16px 4px', borderBottom: '1px solid rgba(234,232,216,0.6)' }}>
+          <div style={{ padding: '6px 14px 4px', borderBottom: '1px solid rgba(234,232,216,0.6)' }}>
             <Link
               to="/collections/all"
               onClick={() => onCategorySelect && onCategorySelect(null)}
@@ -903,8 +957,6 @@ const CategoryList = React.memo(({
           <div
             role="menu"
             aria-label="Category menu"
-            style={{ maxHeight: '420px', overflowY: 'auto' }}
-            className="custom-scrollbar"
           >
             {parentCategories.map((cat) => {
               const subs = getSubsFor(cat);
@@ -915,6 +967,7 @@ const CategoryList = React.memo(({
                   subs={subs}
                   onCategorySelect={onCategorySelect}
                   location={location}
+                  getCategoryProductCount={getCategoryProductCount}
                 />
               );
             })}

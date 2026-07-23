@@ -277,6 +277,22 @@ class AuthService {
     await user.save();
     return true;
   }
+
+  async getProfile(userId) {
+    const user = await userRepository.findById(userId);
+    if (!user) return null;
+    return {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone || '',
+      avatar: user.avatar || '',
+      role: user.role,
+      isAdmin: user.isAdmin,
+      rewardPoints: user.rewardPoints || 0,
+      createdAt: user.createdAt,
+    };
+  }
 }
 
 module.exports = new AuthService();

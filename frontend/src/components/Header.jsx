@@ -1,11 +1,12 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, Search, Heart, ShoppingBag, User as UserIcon, Trash2, ArrowRight, Eye, Home as HomeIcon, ChevronDown } from 'lucide-react';
-import { AuthContext } from '../context/AuthContext';
-import { CartContext } from '../context/CartContext';
-import { WishlistContext } from '../context/WishlistContext';
+import { useAuth } from '../hooks/useAuth';
+import { useCart } from '../hooks/useCart';
+import { useWishlist } from '../hooks/useWishlist';
 import { useToast } from '../context/ToastContext';
-import { useCategories } from '../context/CategoryContext';
+import { useCategories } from '../hooks/useCategories';
+import { usePrefetch } from '../hooks/usePrefetch';
 import { getLocalImageUrl } from '../utils/imageMapper';
 import { api } from '../api/client'; // Added API import for fetching real products
 import { productService } from '../api/productService';
@@ -14,11 +15,12 @@ import Navigation from './navigation/Navigation';
 const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useContext(AuthContext);
-  const { cartItems, itemsCount, addToCart, removeFromCart, updateQty, totalPrice } = useContext(CartContext);
-  const { wishlistItems, toggleWishlist, removeFromWishlist, isInWishlist } = useContext(WishlistContext);
+  const { user, logout } = useAuth();
+  const { cartItems, itemsCount, addToCart, removeFromCart, updateQty, totalPrice } = useCart();
+  const { wishlistItems, toggleWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { showToast } = useToast();
   const { categories, loading: categoriesLoading } = useCategories();
+  const { prefetchCart, prefetchProfile } = usePrefetch();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCatalogAccordionOpen, setIsCatalogAccordionOpen] = useState(false);
@@ -172,17 +174,14 @@ const Header = () => {
   return (
     <>
       <header
-        className={`sticky top-0 w-full z-50 transition-all duration-300 ${
-          isScrolled
-            ? 'bg-[#faf9f5]/90 backdrop-blur-xl border-b border-[#e8e6d9] shadow-md py-1'
-            : 'bg-[#faf9f5]/80 backdrop-blur-md border-b border-[#e8e6d9]/60 shadow-xs py-2'
+        className={`sticky top-0 w-full z-50 bg-[#faf9f5]/95 backdrop-blur-xl border-b border-[#e8e6d9] transition-shadow duration-300 ${
+          isScrolled ? 'shadow-md' : 'shadow-xs'
         }`}
       >
         <div
-          className="mx-auto flex items-center justify-between transition-all duration-300 px-4 sm:px-8"
+          className="mx-auto flex items-center justify-between px-4 sm:px-8 h-16 sm:h-20"
           style={{
             maxWidth: '1360px',
-            height: isScrolled ? '68px' : '78px',
           }}
         >
           {/* Left: Logo and Mobile Menu Button */}
@@ -265,6 +264,7 @@ const Header = () => {
             {/* Cart Icon */}
             <button
               onClick={() => setIsCartOpen(true)}
+              onMouseEnter={prefetchCart}
               className="hidden lg:flex w-10 h-10 rounded-full items-center justify-center text-[#1c2415] hover:bg-[#eef3e8] hover:text-[#3a4d23] hover:scale-105 transition-all bg-transparent border-none cursor-pointer relative"
               aria-label="Cart"
             >
@@ -282,6 +282,7 @@ const Header = () => {
             <div className="relative h-full hidden lg:flex items-center" ref={accountDropdownRef}>
               <button
                 onClick={() => setIsAccountOpen(!isAccountOpen)}
+                onMouseEnter={prefetchProfile}
                 className="w-10 h-10 rounded-full flex items-center justify-center text-[#1c2415] hover:bg-[#eef3e8] hover:text-[#3a4d23] hover:scale-105 transition-all bg-transparent border-none cursor-pointer relative"
                 aria-label="Account"
               >

@@ -162,6 +162,9 @@ app.use('/api/support', supportTicketRoutes);
 app.use('/api/team', teamRoutes);
 app.use('/api/partnerships', partnerRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/notifications', require('./src/routes/notificationRoutes'));
+app.use('/api/recently-viewed', require('./src/routes/recentlyViewedRoutes'));
+app.use('/api/rewards', require('./src/routes/rewardRoutes'));
 
 // Footer Pages CMS — public storefront
 app.use('/api/footer-pages', footerPageRoutes);

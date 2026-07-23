@@ -39,6 +39,9 @@ const AdminDashboardPage = () => {
   const [users, setUsers] = useState([]);
   const [categories, setCategories] = useState([]);
   const [contacts, setContacts] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState(null);
 
   // Auto-protect admin route (only after auth state is fully resolved)
   useEffect(() => {
@@ -54,12 +57,15 @@ const AdminDashboardPage = () => {
    * Fetch all dashboard data.
    */
   const fetchDashboardData = useCallback(async () => {
-    const [pRes, oRes, uRes, cRes, conRes] = await Promise.allSettled([
+    setStatsLoading(true);
+    setStatsError(null);
+    const [pRes, oRes, uRes, cRes, conRes, statsRes] = await Promise.allSettled([
       productService.getAll({ limit: 100 }),
       orderService.getAll(),
       userService.getAll(),
       categoryService.getAll(),
       contactService.getAll(),
+      orderService.getStats(),
     ]);
 
     if (pRes.status === 'fulfilled' && pRes.value.success) {
@@ -77,6 +83,12 @@ const AdminDashboardPage = () => {
     if (conRes.status === 'fulfilled' && conRes.value.success) {
       setContacts(conRes.value.data || []);
     }
+    if (statsRes.status === 'fulfilled' && statsRes.value.success) {
+      setStats(statsRes.value.data);
+    } else if (statsRes.status === 'rejected') {
+      setStatsError(statsRes.reason?.message || 'Failed to load dashboard statistics');
+    }
+    setStatsLoading(false);
   }, []);
 
   useEffect(() => {
@@ -134,7 +146,18 @@ const AdminDashboardPage = () => {
   }
 
   // Default: Stats Overview
-  return <AdminStats products={products} orders={orders} users={users} />;
+  return (
+    <AdminStats
+      stats={stats}
+      products={products}
+      orders={orders}
+      users={users}
+      categories={categories}
+      loading={statsLoading}
+      error={statsError}
+      onRefresh={fetchDashboardData}
+    />
+  );
 };
 
 export default AdminDashboardPage;

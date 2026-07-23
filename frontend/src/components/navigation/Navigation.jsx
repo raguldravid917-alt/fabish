@@ -54,7 +54,7 @@ const Navigation = ({ bestSellers = [], toggleWishlist, addToCart, isInWishlist,
         </Link>
 
         {/* ── Skin Care Luxury 2026 Dropdown ── */}
-        <div className="absolute left-1/2 -translate-x-1/2 w-[100vw] bg-[#FAFAF5] shadow-[0_24px_60px_-12px_rgba(0,0,0,0.12)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 border-t border-[#E5E3D4] cursor-default py-10 top-[66px]">
+        <div className="absolute left-1/2 -translate-x-1/2 w-[calc(100vw-32px)] max-w-[1440px] bg-[#FAFAF5] shadow-[0_24px_60px_-12px_rgba(0,0,0,0.12)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 border-t border-[#E5E3D4] cursor-default py-10 top-[66px]">
           <div className="max-w-[1440px] w-full mx-auto px-8 lg:px-12 grid grid-cols-12 gap-8">
             
             {/* Column 1: Cleansers (2 cols) */}

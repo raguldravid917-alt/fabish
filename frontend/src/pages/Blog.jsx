@@ -1,13 +1,59 @@
-import React, { useState, useEffect, useMemo, useContext } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { Search, Heart, Eye } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Search,
+  Heart,
+  Eye,
+  BookOpen,
+  Clock,
+  User,
+  Calendar,
+  Tag,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  Share2,
+  Bookmark,
+  MessageSquare,
+  Sparkles,
+  Leaf,
+  Check,
+  Facebook,
+  Instagram,
+  Twitter,
+  Linkedin,
+  Copy,
+  CheckCircle2,
+  Mail,
+  Send,
+  ShoppingBag
+} from 'lucide-react';
 import { api } from '../api/client';
 import { productService } from '../api/productService';
-import Loader from '../components/ui/Loader';
 import { getLocalImageUrl } from '../utils/imageMapper';
-import { WishlistContext } from '../context/WishlistContext'; // Ensure this path matches your folder structure
+import { useWishlist } from '../hooks/useWishlist';
+import { useCart } from '../hooks/useCart';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { useBlogsQuery, useBlogDetailQuery } from '../hooks/queries/useBlogsQuery';
+import { useProductsQuery } from '../hooks/queries/useProductsQuery';
+import ProductCard from '../components/ProductCard';
 
-// Enhanced path helper
+// Framer Motion Animation Variants
+const fadeInUp = {
+  hidden: { opacity: 0, y: 25 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } }
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08, delayChildren: 0.05 }
+  }
+};
+
+// Path Helper for images
 const ensureAbsolutePath = (path) => {
   if (!path) return '';
   let pathStr = '';
@@ -17,513 +63,740 @@ const ensureAbsolutePath = (path) => {
     pathStr = path.url || path.secure_url || '';
   }
   if (!pathStr || typeof pathStr !== 'string') return '';
-
   if (pathStr.includes('via.placeholder.com')) {
     pathStr = pathStr.replace('via.placeholder.com', 'placehold.co');
   }
-
   if (!pathStr.startsWith('/') && !pathStr.startsWith('http')) {
     return '/' + pathStr;
   }
   return pathStr;
 };
 
+// Shimmer Skeleton Loader Component
+const BlogSkeleton = () => (
+  <div className="bg-white border border-[#e2dfce] rounded-[24px] overflow-hidden shadow-sm animate-pulse flex flex-col justify-between">
+    <div className="w-full aspect-[4/3] bg-gray-200/80" />
+    <div className="p-6 space-y-3">
+      <div className="h-3 bg-gray-200 rounded w-1/3" />
+      <div className="h-5 bg-gray-300 rounded w-5/6" />
+      <div className="h-3 bg-gray-200 rounded w-full" />
+      <div className="h-3 bg-gray-200 rounded w-2/3" />
+      <div className="pt-4 flex justify-between items-center border-t border-gray-100">
+        <div className="h-4 bg-gray-200 rounded w-20" />
+        <div className="h-4 bg-gray-200 rounded w-16" />
+      </div>
+    </div>
+  </div>
+);
+
+const CATEGORY_CHIPS = ['All', 'Skincare', 'Hair Care', 'Organic', 'Ingredients', 'Tips', 'Lifestyle', 'Beauty'];
+
 const Blog = () => {
+  useDocumentTitle('News & Insights — Fabish Luxury Journal');
   const { slug } = useParams();
   const navigate = useNavigate();
 
-  // Global Wishlist Context
-  const { toggleWishlist, isInWishlist } = useContext(WishlistContext);
+  // Wishlist and Cart hooks
+  const { toggleWishlist, isInWishlist } = useWishlist();
+  const { addToCart } = useCart();
 
+  // Server state queries
+  const { data: fetchedBlogs = [], isLoading: blogsLoading } = useBlogsQuery();
+  const { data: blogDetailRes } = useBlogDetailQuery(slug);
+  const { data: recommendedProducts = [], isLoading: productsLoading } = useProductsQuery({ limit: 4 });
+
+  // Local state
   const [blogs, setBlogs] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-
-  // To track the currently clicked tag
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedTag, setSelectedTag] = useState(null);
+  const [bookmarkedSlugs, setBookmarkedSlugs] = useState(new Set());
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
 
-  // Products and New Arrivals States
-  const [products, setProducts] = useState([]);
-  const [newArrivals, setNewArrivals] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  // Carousel controls
-  const nextProduct = () => {
-    if (newArrivals.length === 0) return;
-    setCurrentIndex((prev) => (prev >= newArrivals.length - 1 ? 0 : prev + 1));
-  };
-
-  const prevProduct = () => {
-    if (newArrivals.length === 0) return;
-    setCurrentIndex((prev) => (prev <= 0 ? newArrivals.length - 1 : prev - 1));
-  };
-
-  const fetchBlogs = async () => {
-    try {
-      const res = await api.get('/blogs');
-      if (res.success) {
-        const blogData = Array.isArray(res.data) ? res.data : (res.data?.blogs || []);
-        setBlogs(blogData);
-      }
-    } catch (err) {
-      console.error('Error fetching blogs:', err);
-    } finally {
-      setLoading(false);
+  // Fallback static blogs if backend returned empty array
+  const staticBlogs = [
+    {
+      _id: 'b1',
+      slug: 'best-cleansers-for-sensitive-skin',
+      title: 'The Ultimate Guide to Calming Sensitive Skin with Botanical Actives',
+      category: 'Skincare',
+      author: 'Dr. Dafni Sen',
+      date: '2026-03-25',
+      readTime: 5,
+      views: 1420,
+      commentsCount: 8,
+      tags: ['Sensitive Skin', 'Aloe Vera', 'Clean Beauty'],
+      image: '/assets/Blog08.jpg',
+      content: '<p>Sensitive skin requires biocompatible botanicals that calm inflammation without compromising the moisture barrier...</p>'
+    },
+    {
+      _id: 'b2',
+      slug: 'how-to-treat-an-infected-pimple',
+      title: 'How Bio-Fermented Extracts Target Blemishes Without Drying Skin',
+      category: 'Ingredients',
+      author: 'Stefania Kapoor',
+      date: '2026-03-24',
+      readTime: 4,
+      views: 980,
+      commentsCount: 3,
+      tags: ['Acne Care', 'Niacinamide', 'Organic'],
+      image: '/assets/Blog03.jpg',
+      content: '<p>Discover how bio-fermented tea tree and cold-pressed neem soothe acne while maintaining barrier hydration...</p>'
+    },
+    {
+      _id: 'b3',
+      slug: 'best-sunscreens-for-everyday-wear',
+      title: 'Why Non-Nano Mineral Sunscreen is the 2026 Skincare Gold Standard',
+      category: 'Tips',
+      author: 'Emilia D\'Souza',
+      date: '2026-03-22',
+      readTime: 6,
+      views: 2150,
+      commentsCount: 12,
+      tags: ['Sun Care', 'Antioxidants', 'Lifestyle'],
+      image: '/assets/Blog07.jpg',
+      content: '<p>Protecting skin from UVA/UVB rays and high-energy blue light requires physical mineral shields enriched with matcha green tea...</p>'
     }
-  };
+  ];
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await productService.getAll({ newArrival: true, limit: 8 });
-        if (response.success && response.data) {
-          setProducts(response.data);
-          setNewArrivals(response.data);
-        } else {
-          setProducts([]);
-          setNewArrivals([]);
-        }
-      } catch (err) {
-        console.error('Error fetching recommended products:', err);
-        setProducts([]);
-        setNewArrivals([]);
-      }
-    };
-    fetchProducts();
-    fetchBlogs();
-  }, []);
+    if (Array.isArray(fetchedBlogs) && fetchedBlogs.length > 0) {
+      setBlogs(fetchedBlogs);
+    } else {
+      setBlogs(staticBlogs);
+    }
+  }, [fetchedBlogs]);
 
+  // Active single article detail
   const activePost = useMemo(() => {
-    if (!slug || !Array.isArray(blogs) || blogs.length === 0) return null;
-    return blogs.find((b) => b.slug === slug);
-  }, [slug, blogs]);
+    if (!slug) return null;
 
-  // Navigate to list view if searched inside a single post
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    if (slug) {
-      navigate('/blogs/news');
-      window.scrollTo(0, 0);
+    if (blogDetailRes?.blog) return blogDetailRes.blog;
+    if (blogDetailRes && !blogDetailRes.blog && typeof blogDetailRes === 'object' && blogDetailRes.title) {
+      return blogDetailRes;
     }
+
+    if (Array.isArray(blogs) && blogs.length > 0) {
+      const found = blogs.find((b) => b?.slug === slug);
+      if (found) return found;
+    }
+
+    return staticBlogs.find((b) => b?.slug === slug) || null;
+  }, [slug, blogDetailRes, blogs]);
+
+  // Filtered blogs matching search + category + tag
+  const filteredBlogs = useMemo(() => {
+    if (!Array.isArray(blogs)) return [];
+    return blogs.filter((blog) => {
+      const q = searchQuery.toLowerCase().trim();
+      const matchesSearch =
+        q === '' ||
+        blog?.title?.toLowerCase().includes(q) ||
+        (blog?.content && blog.content.toLowerCase().includes(q)) ||
+        (typeof blog?.author === 'string' && blog.author.toLowerCase().includes(q));
+
+      const matchesCategory =
+        selectedCategory === 'All' ||
+        (blog?.category && blog.category.toLowerCase() === selectedCategory.toLowerCase());
+
+      const matchesTag = selectedTag ? (blog?.tags && blog.tags.includes(selectedTag)) : true;
+
+      return matchesSearch && matchesCategory && matchesTag;
+    });
+  }, [blogs, searchQuery, selectedCategory, selectedTag]);
+
+  // Extract all unique tags
+  const allTags = useMemo(() => {
+    if (!Array.isArray(blogs)) return [];
+    const tagsSet = new Set(blogs.flatMap((b) => b?.tags || []));
+    if (tagsSet.size === 0) return ['Sensitive Skin', 'Clean Beauty', 'Antioxidants', 'Sun Care', 'Organic'];
+    return Array.from(tagsSet).slice(0, 10);
+  }, [blogs]);
+
+  // Featured story for main grid top
+  const featuredBlog = useMemo(() => {
+    if (filteredBlogs.length > 0) return filteredBlogs[0];
+    return blogs[0] || staticBlogs[0];
+  }, [filteredBlogs, blogs]);
+
+  const toggleBookmark = (blogSlug, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setBookmarkedSlugs((prev) => {
+      const next = new Set(prev);
+      if (next.has(blogSlug)) next.delete(blogSlug);
+      else next.add(blogSlug);
+      return next;
+    });
   };
 
-  // Toggle tag selection and navigate to list view if needed
-  const handleTagClick = (tag, e) => {
-    e.preventDefault();
-    setSelectedTag(prevTag => (prevTag === tag ? null : tag));
-    if (slug) {
-      navigate('/blogs/news');
-      window.scrollTo(0, 0);
-    }
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
   };
 
-  // Filter blogs by both Search Query AND Selected Tag
-  const filteredBlogs = Array.isArray(blogs) ? blogs.filter(blog => {
-    const query = searchQuery.toLowerCase();
-
-    const matchesSearch = query === '' ||
-      blog?.title?.toLowerCase().includes(query) ||
-      (blog?.content && blog.content.toLowerCase().includes(query)) ||
-      (blog?.author && blog.author.toLowerCase().includes(query));
-
-    const matchesTag = selectedTag ? (blog?.tags && blog.tags.includes(selectedTag)) : true;
-
-    return matchesSearch && matchesTag;
-  }) : [];
-
-  const allTags = Array.isArray(blogs) ? Array.from(
-    new Set(blogs.flatMap(blog => blog?.tags || []))
-  ).slice(0, 10) : [];
+  const handleSubscribe = (e) => {
+    e.preventDefault();
+    if (newsletterEmail.trim()) {
+      setSubscribed(true);
+      setNewsletterEmail('');
+      setTimeout(() => setSubscribed(false), 4000);
+    }
+  };
 
   const handleImageError = (e) => {
     e.target.onerror = null;
     e.target.src = '/assets/Blog07.jpg';
   };
 
-  const currentArrival = newArrivals[currentIndex] || {};
-
   return (
-    <div className="w-full bg-white font-body min-h-screen pb-24 select-none">
+    <div className="w-full bg-[#faf9f5] font-body text-[#1c2415] selection:bg-[#729855] selection:text-white min-h-screen overflow-x-hidden">
 
-      {/* 1. TOP BANNER */}
-      <div
-        className="relative w-full h-[300px] md:h-[250px] flex items-center justify-center bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url('/assets/Rectangle_337.jpg')` }}
-      >
-        <div className="absolute inset-0 bg-[#faf9f5]/50"></div>
-        <div className="relative z-10 text-center">
-          <h1 className="text-[40px] md:text-[50px] font-heading font-semibold text-[#555] mb-2 tracking-tight">
-            {activePost ? 'Article' : 'News'}
-          </h1>
-          <p className="text-[12px] font-bold text-[#666] tracking-[0.2em] uppercase">
-            <Link to="/" onClick={() => window.scrollTo(0, 0)} className="hover:text-black transition-colors">Home</Link>
-            <span className="mx-2">|</span>
-            <Link to="/blogs/news" onClick={() => window.scrollTo(0, 0)} className="hover:text-black transition-colors">News</Link>
+      {/* =========================================================
+         1. LUXURY EDITORIAL HERO SECTION
+         ========================================================= */}
+      <section className="relative w-full py-16 sm:py-20 lg:py-24 bg-gradient-to-b from-[#f4f2e6] via-[#edebe0] to-[#faf9f5] border-b border-[#e2dfce] px-4 sm:px-8 lg:px-16 overflow-hidden">
+        {/* Ambient Botanical Glow Elements */}
+        <div className="absolute top-10 left-10 w-96 h-96 bg-[#729855]/15 rounded-full blur-3xl pointer-events-none animate-pulse-glow" />
+        <div className="absolute bottom-10 right-10 w-[500px] h-[500px] bg-[#d2e2c5]/20 rounded-full blur-3xl pointer-events-none animate-pulse-glow" style={{ animationDelay: '2s' }} />
+
+        <div className="max-w-[1340px] w-full mx-auto relative z-10">
+
+          {/* Breadcrumb Path */}
+          <div className="flex items-center gap-2 text-[11px] font-heading font-bold uppercase tracking-[0.2em] text-[#729855] mb-4">
+            <Link to="/" className="hover:text-[#3a4d23] transition-colors">Home</Link>
+            <span className="text-gray-400">/</span>
+            <Link to="/blogs/news" onClick={() => { setSelectedCategory('All'); setSelectedTag(null); }} className="hover:text-[#3a4d23] transition-colors">News & Journal</Link>
             {activePost && (
               <>
-                <span className="mx-2">|</span>
-                <span className="text-black truncate max-w-[150px] inline-block align-bottom">{activePost?.title}</span>
+                <span className="text-gray-400">/</span>
+                <span className="text-[#1c2415] truncate max-w-[200px]">{activePost.title}</span>
               </>
-            )}
-          </p>
-        </div>
-      </div>
-
-      {/* 2. MAIN BLOG CONTENT SECTION */}
-      <div className="max-w-[1280px] mx-auto px-6 md:px-12 py-16 md:py-24">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-16 lg:items-stretch items-start relative">
-
-          {/* LEFT COLUMN */}
-          <div className="lg:col-span-2 text-left">
-            {loading ? (
-              <div className="flex justify-center py-24">
-                <Loader />
-              </div>
-            ) : activePost ? (
-              <div className="flex flex-col animate-fade-in text-left space-y-6">
-
-                <div>
-                  <Link
-                    to="/blogs/news"
-                    onClick={() => {
-                      setSelectedTag(null);
-                      window.scrollTo(0, 0);
-                    }}
-                    className="inline-flex items-center gap-2 border border-[#111] hover:bg-black hover:text-white px-5 py-2.5 font-heading font-bold text-xs uppercase tracking-widest transition-all rounded-none"
-                  >
-                    Back to News
-                  </Link>
-                </div>
-
-                <div className="w-full aspect-[16/10] overflow-hidden bg-gray-100 mb-6 shadow-sm">
-                  <img
-                    src={activePost.image ? `${getLocalImageUrl(activePost.image)}?t=${new Date(activePost.updatedAt || activePost.createdAt || Date.now()).getTime()}` : '/assets/Blog07.jpg'}
-                    alt={activePost.title}
-                    className="w-full h-full object-cover"
-                    onError={handleImageError}
-                  />
-                </div>
-
-                <div className="flex items-center gap-3 text-[11px] font-bold text-[#111] tracking-[0.15em] uppercase mb-2">
-                  <span>
-                    {(activePost.date || activePost.createdAt)
-                      ? new Date(activePost.date || activePost.createdAt).toLocaleDateString('en-GB', {
-                        day: '2-digit', month: 'short', year: 'numeric'
-                      }).toUpperCase()
-                      : 'DATE N/A'}
-                  </span>
-                  <span className="text-[#111]">|</span>
-                  <span>{typeof activePost.author === 'object' ? activePost.author?.name : (activePost.author || 'Admin')}</span>
-                </div>
-
-                <h2 className="text-[32px] md:text-[42px] font-heading font-semibold text-[#111] leading-tight mb-4 select-text">
-                  {activePost.title}
-                </h2>
-
-                <div
-                  className="text-[16px] text-[#444] font-body leading-[1.85] space-y-6 select-text pb-8"
-                  dangerouslySetInnerHTML={{ __html: activePost.content || '' }}
-                />
-
-                {Array.isArray(products) && products.length > 0 && (
-                  <div className="mt-12 pt-8 border-t border-gray-100">
-                    <h3 className="font-heading text-lg font-bold uppercase tracking-wider text-brand-charcoal mb-6">
-                      Recommended Products
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      {products.slice(0, 2).map((prod) => {
-                        const prodImg = getLocalImageUrl(ensureAbsolutePath(prod?.images?.[0] || prod?.image || '/assets/14.jpg'));
-                        return (
-                          <Link
-                            key={prod._id || Math.random()}
-                            to={`/products/${prod?.slug || '#'}`}
-                            onClick={() => window.scrollTo(0, 0)}
-                            className="flex gap-4 border border-gray-100 p-3 hover:border-[#729855] transition-colors"
-                          >
-                            <img src={prodImg} alt={prod?.title || 'Product'} className="w-16 h-20 object-cover bg-[#f4f5eb] shrink-0" onError={handleImageError} />
-                            <div className="text-left flex flex-col justify-between">
-                              <h4 className="font-heading font-semibold text-sm text-brand-charcoal line-clamp-2 leading-snug">{prod?.title || 'Product Name'}</h4>
-                              <span className="text-xs font-semibold text-[#729855]">Rs. {Number(prod?.price || 0).toLocaleString('en-IN')}.00</span>
-                            </div>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                <div className="mt-12 pt-8 border-t border-gray-100 space-y-4">
-                  <h3 className="font-heading text-lg font-bold uppercase tracking-wider text-brand-charcoal">
-                    Leave a Comment
-                  </h3>
-                  <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <input type="text" placeholder="Name *" required className="border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-[#729855] rounded-none w-full bg-white" />
-                      <input type="email" placeholder="Email *" required className="border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-[#729855] rounded-none w-full bg-white" />
-                    </div>
-                    <textarea placeholder="Comment *" rows={4} required className="border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-[#729855] rounded-none w-full bg-white"></textarea>
-                    <button type="submit" className="bg-[#2f3e10] hover:bg-black text-white px-6 py-3 font-heading font-bold text-xs uppercase tracking-widest transition-colors cursor-pointer border-none rounded-none">
-                      Post Comment
-                    </button>
-                  </form>
-                </div>
-
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-12">
-
-                {selectedTag && (
-                  <div className="col-span-1 md:col-span-2 mb-2 flex items-center justify-between bg-gray-50 p-4 border border-gray-100">
-                    <span className="text-sm font-semibold text-gray-700">Showing results for tag: <span className="text-[#729855]">"{selectedTag}"</span></span>
-                    <button onClick={() => setSelectedTag(null)} className="text-xs font-bold uppercase text-gray-500 hover:text-red-500 underline cursor-pointer bg-transparent border-none">Clear Filter</button>
-                  </div>
-                )}
-
-                {filteredBlogs.map((blog) => (
-                  <div key={blog._id || Math.random()} className="flex flex-col animate-fade-in text-left">
-                    <Link to={`/blogs/news/${blog.slug}`} onClick={() => window.scrollTo(0, 0)} className="w-full aspect-[4/3] overflow-hidden bg-gray-100 mb-6 block">
-                      <img
-                        src={blog.image ? `${getLocalImageUrl(blog.image)}?t=${new Date(blog.updatedAt || blog.createdAt || Date.now()).getTime()}` : '/assets/Blog07.jpg'}
-                        alt={blog.title}
-                        className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
-                        onError={handleImageError}
-                      />
-                    </Link>
-                    <div className="flex items-center gap-3 text-[11px] font-bold text-[#111] tracking-[0.15em] uppercase mb-4">
-                      <span>
-                        {(blog.date || blog.createdAt)
-                          ? new Date(blog.date || blog.createdAt).toLocaleDateString('en-GB', {
-                            day: '2-digit', month: 'short', year: 'numeric'
-                          }).toUpperCase()
-                          : 'DATE N/A'}
-                      </span>
-                      <span className="text-[#111]">|</span>
-                      <span>{typeof blog.author === 'object' ? blog.author?.name : (blog.author || 'Admin')}</span>
-                    </div>
-                    <Link to={`/blogs/news/${blog.slug}`} onClick={() => window.scrollTo(0, 0)} className="group block mb-4">
-                      <h3 className="text-[26px] md:text-[28px] font-heading font-semibold text-[#111] group-hover:text-[#729855] transition-colors duration-300 leading-[1.25]">
-                        {blog.title}
-                      </h3>
-                    </Link>
-                    <p
-                      className="text-[15px] text-[#444] font-body leading-[1.8] mb-8"
-                      dangerouslySetInnerHTML={{
-                        __html: blog.content
-                          ? blog.content.replace(/<[^>]*>/g, '').slice(0, 150) + (blog.content.length > 150 ? '...' : '')
-                          : ''
-                      }}
-                    />
-                    <div>
-                      <Link to={`/blogs/news/${blog.slug}`} onClick={() => window.scrollTo(0, 0)} className="inline-block text-[12px] font-bold text-[#111] tracking-[0.15em] uppercase border-b-[2px] border-[#111] pb-1 hover:text-[#729855] hover:border-[#729855] transition-colors duration-300">
-                        READ MORE
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-
-                {filteredBlogs.length === 0 && (
-                  <div className="col-span-1 md:col-span-2 text-center py-20 border border-dashed border-gray-200">
-                    <p className="text-gray-500 font-semibold mb-2">No articles found matching your criteria.</p>
-                    {(searchQuery || selectedTag) && (
-                      <button
-                        onClick={() => { setSearchQuery(''); setSelectedTag(null); }}
-                        className="text-[#729855] hover:underline font-bold text-sm cursor-pointer bg-transparent border-none"
-                      >
-                        Clear filters and see all articles
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
             )}
           </div>
 
-          {/* RIGHT COLUMN: Sidebar */}
-          <div className="lg:col-span-1 shrink-0 relative">
-            <div className="lg:sticky lg:top-6 lg:h-fit flex flex-col space-y-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
+            <div className="lg:col-span-8">
+              <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-[#e2dfce] text-[10px] font-heading font-bold uppercase tracking-widest text-[#3a4d23] shadow-sm mb-4">
+                <Sparkles size={12} className="text-[#729855]" />
+                Fabish Skincare Journal 2026
+              </span>
+              <h1 className="font-heading font-medium text-4xl sm:text-5xl lg:text-6xl text-[#1c2415] leading-[1.15] tracking-tight mb-4">
+                Beauty Tips, <span className="italic font-serif text-[#3a4d23]">Skincare Guides</span> & Latest Trends
+              </h1>
+              <p className="text-gray-600 font-body font-light text-base sm:text-lg max-w-2xl leading-relaxed">
+                Explore expert botanical formulation advice, clinical skincare science, ingredient breakdowns, and holistically radiant beauty insights.
+              </p>
+            </div>
 
-              <div className="w-full">
-                <form onSubmit={handleSearchSubmit} className="relative w-full">
-                  <input
-                    type="text"
-                    placeholder="Search blogs..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full border border-gray-200 bg-transparent px-5 py-4 font-body text-[15px] text-[#111] placeholder-[#888] focus:outline-none focus:border-black rounded-none pr-14"
-                  />
+            {/* Quick Filter Pill Chips in Hero Header */}
+            <div className="lg:col-span-4 flex flex-wrap gap-2 justify-start lg:justify-end">
+              {CATEGORY_CHIPS.map((cat) => {
+                const isActive = selectedCategory.toLowerCase() === cat.toLowerCase();
+                return (
                   <button
-                    type="submit"
-                    className="absolute right-0 top-0 bottom-0 px-5 flex items-center justify-center text-[#555] hover:text-black transition-colors cursor-pointer border-none bg-transparent"
+                    key={cat}
+                    onClick={() => {
+                      setSelectedCategory(cat);
+                      if (slug) navigate('/blogs/news');
+                    }}
+                    className={`px-4 py-2 rounded-full text-xs font-heading font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer ${isActive
+                        ? 'bg-[#3a4d23] text-white shadow-md'
+                        : 'bg-white/80 hover:bg-white text-[#1c2415] border border-[#e2dfce] shadow-sm'
+                      }`}
                   >
-                    <Search className="w-5 h-5 stroke-[1.5]" />
+                    {cat}
                   </button>
-                </form>
-              </div>
-
-              <div>
-                <h3 className="text-[24px] font-heading font-semibold text-[#111] mb-8">
-                  Recent Articles
-                </h3>
-                <div className="flex flex-col space-y-6">
-                  {loading ? (
-                    <div className="text-gray-400 italic text-xs">Loading recent articles...</div>
-                  ) : (
-                    Array.isArray(blogs) && blogs.slice(0, 3).map((blog) => (
-                      <Link key={blog._id || Math.random()} to={`/blogs/news/${blog.slug}`} onClick={() => window.scrollTo(0, 0)} className="group flex gap-5 items-center text-left">
-                        <div className="w-[85px] h-[85px] bg-gray-100 flex-shrink-0 overflow-hidden">
-                          <img
-                            src={blog.image ? `${getLocalImageUrl(blog.image)}?t=${new Date(blog.updatedAt || blog.createdAt || Date.now()).getTime()}` : '/assets/Blog07.jpg'}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            alt={blog.title}
-                            onError={handleImageError}
-                          />
-                        </div>
-                        <div className="flex-grow">
-                          <span className="block text-[10px] font-bold text-[#111] tracking-[0.15em] uppercase mb-1.5">
-                            {(blog.date || blog.createdAt)
-                              ? new Date(blog.date || blog.createdAt).toLocaleDateString('en-GB', {
-                                month: 'short', day: 'numeric'
-                              }).toUpperCase()
-                              : 'DATE N/A'}
-                          </span>
-                          <h4 className="text-[15px] font-heading font-semibold text-[#111] leading-snug group-hover:text-[#729855] transition-colors line-clamp-2">
-                            {blog.title}
-                          </h4>
-                        </div>
-                      </Link>
-                    ))
-                  )}
-                  {!loading && (!Array.isArray(blogs) || blogs.length === 0) && (
-                    <div className="text-gray-400 italic text-xs">No recent articles.</div>
-                  )}
-                </div>
-              </div>
-
-              {/* New Arrivals - Integrated with Global Context */}
-              <div className="text-left mt-8">
-                <h3 className="text-[24px] font-heading font-semibold text-[#111] mb-8">
-                  New Arrivals
-                </h3>
-                {Array.isArray(newArrivals) && newArrivals.length > 0 ? (
-                  <div className="flex flex-col items-center text-center">
-                    <div className="w-full aspect-square bg-[#f0f2eb] mb-6 relative flex items-center justify-center group cursor-pointer overflow-hidden">
-                      <img
-                        src={getLocalImageUrl(ensureAbsolutePath(currentArrival?.images?.[0] || currentArrival?.image || "/assets/14.jpg"))}
-                        alt={currentArrival?.title || currentArrival?.name || 'New Arrival'}
-                        className="w-full h-full object-cover mix-blend-multiply group-hover:scale-105 transition-transform duration-500"
-                        onError={handleImageError}
-                      />
-
-                      {/* Global Wishlist Context integration */}
-                      <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            toggleWishlist(currentArrival); // Passing the whole product object to context
-                          }}
-                          className={`w-[34px] h-[34px] rounded-full flex items-center justify-center shadow-sm transition-colors cursor-pointer border-none ${isInWishlist(currentArrival?._id)
-                              ? 'bg-black text-white'
-                              : 'bg-white text-[#111] hover:bg-black hover:text-white'
-                            }`}
-                        >
-                          <Heart
-                            className={`w-4 h-4 stroke-[1.5] ${isInWishlist(currentArrival?._id) ? 'fill-current' : 'fill-none'
-                              }`}
-                          />
-                        </button>
-                        <button 
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            navigate(`/products/${currentArrival?.slug || '#'}`);
-                          }}
-                          className="w-[34px] h-[34px] bg-white rounded-full flex items-center justify-center shadow-sm hover:bg-black hover:text-white transition-colors text-[#111] border-none cursor-pointer"
-                        >
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
-                        </button>
-                      </div>
-                    </div>
-
-                    <Link to={`/products/${currentArrival?.slug || '#'}`} onClick={() => window.scrollTo(0, 0)} className="group">
-                      <h4 className="text-[18px] font-heading font-semibold text-[#111] group-hover:text-[#729855] transition-colors mb-2">
-                        {currentArrival?.title || currentArrival?.name || 'Product'}
-                      </h4>
-                    </Link>
-
-                    <span className="text-[13px] text-[#555] font-body mb-6 block">
-                      Rs. {Number(currentArrival?.price || 0).toLocaleString('en-IN')}.00 INR
-                    </span>
-
-                    <div className="flex items-center justify-center gap-6">
-                      <button
-                        onClick={prevProduct}
-                        className="text-[#888] hover:text-[#111] transition-colors bg-transparent border-none cursor-pointer"
-                      >
-                        <svg width="24" height="10" viewBox="0 0 24 12" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6 1L1 6L6 11M1 6H23" /></svg>
-                      </button>
-                      <button
-                        onClick={nextProduct}
-                        className="text-[#888] hover:text-[#111] transition-colors bg-transparent border-none cursor-pointer"
-                      >
-                        <svg width="24" height="10" viewBox="0 0 24 12" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 1L23 6L18 11M23 6H1" /></svg>
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-6 text-xs text-gray-400 italic">
-                    No products available
-                  </div>
-                )}
-              </div>
-
-              {/* Tags Section */}
-              <div>
-                <h3 className="text-[24px] font-heading font-semibold text-[#111] mb-8">
-                  Tags
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {allTags.map((tag) => {
-                    const isActive = selectedTag === tag;
-                    return (
-                      <button
-                        key={tag}
-                        onClick={(e) => handleTagClick(tag, e)}
-                        className={`text-[11px] font-bold tracking-[0.15em] uppercase px-4 py-2 border transition-colors cursor-pointer ${isActive
-                            ? 'bg-[#729855] text-white border-[#729855]'
-                            : 'text-[#555] border-gray-200 hover:text-white hover:bg-[#729855] hover:border-[#729855] bg-transparent'
-                          }`}
-                      >
-                        {tag}
-                      </button>
-                    );
-                  })}
-
-                  {allTags.length === 0 && (
-                    ['DARK SPOT', 'SKIN', 'SUN PROTECTION'].map(tag => {
-                      const isActive = selectedTag === tag;
-                      return (
-                        <button
-                          key={tag}
-                          onClick={(e) => handleTagClick(tag, e)}
-                          className={`text-[11px] font-bold tracking-[0.15em] uppercase px-4 py-2 border transition-colors cursor-pointer ${isActive
-                              ? 'bg-[#729855] text-white border-[#729855]'
-                              : 'text-[#555] border-gray-200 hover:text-white hover:bg-[#729855] hover:border-[#729855] bg-transparent'
-                            }`}
-                        >
-                          {tag}
-                        </button>
-                      )
-                    })
-                  )}
-                </div>
-              </div>
-
+                );
+              })}
             </div>
           </div>
 
         </div>
+      </section>
+
+
+      {/* =========================================================
+         2. MAIN JOURNAL CONTENT & SIDEBAR WRAPPER
+         ========================================================= */}
+      <div className="max-w-[1340px] mx-auto px-4 sm:px-8 lg:px-16 py-12 lg:py-20">
+
+        {/* 3. STICKY SEARCH & CATEGORY BAR */}
+        <div className="sticky top-20 z-30 mb-12 bg-white/90 backdrop-blur-xl border border-[#e2dfce] rounded-[24px] p-4 shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+          
+          {/* Search Input Bar */}
+          <div className="relative w-full md:w-96">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search articles, ingredients, authors..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-[#faf9f5] border border-[#e8e6d9] rounded-full pl-11 pr-10 py-2.5 text-xs text-[#1c2415] focus:outline-none focus:border-[#729855] transition-all"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black text-xs font-bold bg-transparent border-none cursor-pointer"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* Tag / Category Filter Active Indicator */}
+          <div className="flex items-center gap-3 text-xs">
+            {(selectedTag || selectedCategory !== 'All' || searchQuery) && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedCategory('All');
+                  setSelectedTag(null);
+                }}
+                className="text-[11px] font-heading font-bold uppercase tracking-wider text-rose-600 hover:underline cursor-pointer bg-transparent border-none"
+              >
+                Clear All Filters ✕
+              </button>
+            )}
+            <span className="text-gray-500 font-body text-xs">
+              Showing <strong className="text-[#1c2415]">{filteredBlogs.length}</strong> Articles
+            </span>
+          </div>
+        </div>
+
+        {/* Main Grid: Left Column Content + Right Column Sidebar */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+
+          {/* LEFT MAIN AREA */}
+          <div className="lg:col-span-8 space-y-12">
+
+            {blogsLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <BlogSkeleton />
+                <BlogSkeleton />
+              </div>
+            ) : activePost ? (
+
+              /* =========================================================
+                 SINGLE ARTICLE DETAIL VIEW
+                 ========================================================= */
+              <motion.article
+                initial="hidden"
+                animate="visible"
+                variants={staggerContainer}
+                className="bg-white border border-[#e2dfce] rounded-[32px] p-6 sm:p-10 shadow-sm space-y-8"
+              >
+                {/* Back to List Button */}
+                <motion.div variants={fadeInUp}>
+                  <Link
+                    to="/blogs/news"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#faf9f5] border border-[#e2dfce] hover:bg-[#3a4d23] hover:text-white font-heading text-xs font-bold uppercase tracking-wider text-[#1c2415] transition-all"
+                  >
+                    <ChevronLeft size={16} /> Back to All Articles
+                  </Link>
+                </motion.div>
+
+                {/* Cover Image */}
+                <motion.div variants={fadeInUp} className="w-full aspect-[16/9] rounded-[24px] overflow-hidden bg-[#f4f2e6] relative">
+                  <img
+                    src={activePost.image ? `${getLocalImageUrl(activePost.image)}` : '/assets/Blog07.jpg'}
+                    alt={activePost.title}
+                    className="w-full h-full object-cover"
+                    onError={handleImageError}
+                  />
+                  <span className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3.5 py-1 rounded-full font-heading text-[10px] font-bold uppercase tracking-widest text-[#3a4d23] shadow-sm">
+                    {activePost.category || 'Skincare'}
+                  </span>
+                </motion.div>
+
+                {/* Article Meta Header */}
+                <motion.div variants={fadeInUp} className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-6 text-xs text-gray-500 font-body">
+                  <div className="flex items-center gap-4">
+                    <span className="flex items-center gap-1.5 text-[#1c2415] font-semibold">
+                      <User size={14} className="text-[#729855]" />
+                      {typeof activePost.author === 'object' ? activePost.author?.name : (activePost.author || 'Admin')}
+                    </span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1.5">
+                      <Calendar size={14} />
+                      {new Date(activePost.date || activePost.createdAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1.5">
+                      <Clock size={14} />
+                      {activePost.readTime || 5} min read
+                    </span>
+                  </div>
+
+                  {/* Social Share Buttons */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleCopyLink}
+                      className="p-2 rounded-full bg-[#faf9f5] border border-gray-200 hover:bg-[#729855] hover:text-white transition-colors cursor-pointer"
+                      title="Copy Link"
+                    >
+                      {copiedLink ? <Check size={14} /> : <Copy size={14} />}
+                    </button>
+                    <button
+                      onClick={() => toggleBookmark(activePost.slug, { preventDefault: () => {}, stopPropagation: () => {} })}
+                      className={`p-2 rounded-full border transition-colors cursor-pointer ${bookmarkedSlugs.has(activePost.slug) ? 'bg-amber-500 text-white border-amber-500' : 'bg-[#faf9f5] border-gray-200 hover:bg-amber-500 hover:text-white'}`}
+                      title="Bookmark Article"
+                    >
+                      <Bookmark size={14} fill={bookmarkedSlugs.has(activePost.slug) ? 'currentColor' : 'none'} />
+                    </button>
+                  </div>
+                </motion.div>
+
+                {/* Article Title */}
+                <motion.h1 variants={fadeInUp} className="font-heading text-3xl sm:text-4xl text-[#1c2415] leading-tight font-medium">
+                  {activePost.title}
+                </motion.h1>
+
+                {/* Article HTML Content Body */}
+                <motion.div
+                  variants={fadeInUp}
+                  className="prose prose-lg max-w-none text-gray-700 font-body leading-relaxed space-y-6 select-text border-b border-gray-100 pb-8"
+                  dangerouslySetInnerHTML={{ __html: activePost.content || '' }}
+                />
+
+                {/* Recommended Products Grid in Article View */}
+                {recommendedProducts.length > 0 && (
+                  <motion.div variants={fadeInUp} className="pt-6">
+                    <h3 className="font-heading font-bold text-xl text-[#1c2415] mb-6 flex items-center gap-2">
+                      <Sparkles size={18} className="text-[#729855]" /> Recommended Products for This Routine
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      {recommendedProducts.slice(0, 2).map((prod) => (
+                        <ProductCard key={prod._id || prod.id} product={prod} />
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Article Comment Form */}
+                <motion.div variants={fadeInUp} className="pt-8 border-t border-gray-100 space-y-6">
+                  <h3 className="font-heading font-bold text-xl text-[#1c2415] flex items-center gap-2">
+                    <MessageSquare size={18} className="text-[#729855]" /> Leave a Comment
+                  </h3>
+                  <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <input type="text" placeholder="Your Name *" required className="w-full bg-[#faf9f5] border border-gray-200 rounded-2xl px-4 py-3 text-xs focus:outline-none focus:border-[#729855]" />
+                      <input type="email" placeholder="Your Email *" required className="w-full bg-[#faf9f5] border border-gray-200 rounded-2xl px-4 py-3 text-xs focus:outline-none focus:border-[#729855]" />
+                    </div>
+                    <textarea placeholder="Share your thoughts or skin concerns..." rows={4} required className="w-full bg-[#faf9f5] border border-gray-200 rounded-2xl p-4 text-xs focus:outline-none focus:border-[#729855]" />
+                    <button type="submit" className="px-8 py-3 bg-[#3a4d23] hover:bg-[#1c2415] text-white font-heading text-xs font-bold uppercase tracking-wider rounded-full shadow-md transition-all cursor-pointer border-none">
+                      SUBMIT COMMENT
+                    </button>
+                  </form>
+                </motion.div>
+              </motion.article>
+
+            ) : (
+
+              /* =========================================================
+                 BLOG LISTING VIEW & FEATURED HERO CARD
+                 ========================================================= */
+              <div className="space-y-12">
+
+                {/* 2. FEATURED HERO ARTICLE CARD */}
+                {featuredBlog && !searchQuery && selectedCategory === 'All' && !selectedTag && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="bg-white border border-[#e2dfce] rounded-[32px] overflow-hidden shadow-md group hover:shadow-2xl transition-all duration-500"
+                  >
+                    <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch">
+                      <div className="lg:col-span-7 aspect-[16/10] lg:aspect-auto relative overflow-hidden bg-[#f4f2e6]">
+                        <img
+                          src={featuredBlog.image ? `${getLocalImageUrl(featuredBlog.image)}` : '/assets/Blog08.jpg'}
+                          alt={featuredBlog.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                          onError={handleImageError}
+                        />
+                        <span className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3.5 py-1 rounded-full font-heading text-[10px] font-bold uppercase tracking-widest text-[#3a4d23] shadow-sm">
+                          FEATURED STORY
+                        </span>
+                      </div>
+
+                      <div className="lg:col-span-5 p-8 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center gap-3 text-xs text-gray-400 mb-3">
+                            <span className="font-semibold text-[#729855]">{featuredBlog.category || 'Skincare'}</span>
+                            <span>•</span>
+                            <span>{featuredBlog.readTime || 5} min read</span>
+                          </div>
+                          <Link to={`/blogs/news/${featuredBlog.slug}`} className="block group">
+                            <h2 className="font-heading font-semibold text-2xl lg:text-3xl text-[#1c2415] group-hover:text-[#729855] transition-colors leading-tight mb-4">
+                              {featuredBlog.title}
+                            </h2>
+                          </Link>
+                          <p className="text-sm text-gray-600 font-body font-light line-clamp-3 leading-relaxed mb-6">
+                            {featuredBlog.content ? featuredBlog.content.replace(/<[^>]*>/g, '').slice(0, 160) + '...' : ''}
+                          </p>
+                        </div>
+
+                        <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
+                          <span className="text-xs text-gray-500 font-semibold">{featuredBlog.author || 'Dr. Dafni Sen'}</span>
+                          <Link
+                            to={`/blogs/news/${featuredBlog.slug}`}
+                            className="text-xs font-heading font-bold uppercase tracking-wider text-[#3a4d23] hover:text-[#729855] flex items-center gap-1 transition-colors"
+                          >
+                            READ STORY <ArrowRight size={14} />
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* 5. EDITORIAL BLOG GRID (3 Columns / 2 Columns) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-8">
+                  {filteredBlogs.map((blog, idx) => (
+                    <motion.div
+                      key={blog._id || blog.slug || idx}
+                      initial={{ opacity: 0, y: 25 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: idx * 0.08 }}
+                      className="bg-white border border-[#e2dfce] rounded-[28px] overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 group flex flex-col justify-between"
+                    >
+                      {/* Image Thumbnail Container */}
+                      <div className="relative aspect-[4/3] overflow-hidden bg-[#f4f2e6]">
+                        <Link to={`/blogs/news/${blog.slug}`}>
+                          <img
+                            src={blog.image ? `${getLocalImageUrl(blog.image)}` : '/assets/Blog07.jpg'}
+                            alt={blog.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                            onError={handleImageError}
+                          />
+                        </Link>
+                        <span className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full font-heading text-[10px] font-bold uppercase tracking-widest text-[#3a4d23] shadow-sm">
+                          {blog.category || 'Journal'}
+                        </span>
+                        <button
+                          onClick={(e) => toggleBookmark(blog.slug, e)}
+                          className={`absolute top-4 right-4 p-2 rounded-full shadow-md transition-colors cursor-pointer border-none ${bookmarkedSlugs.has(blog.slug) ? 'bg-amber-500 text-white' : 'bg-white/80 text-[#1c2415] hover:bg-amber-500 hover:text-white'}`}
+                        >
+                          <Bookmark size={14} fill={bookmarkedSlugs.has(blog.slug) ? 'currentColor' : 'none'} />
+                        </button>
+                      </div>
+
+                      {/* Card Content Body */}
+                      <div className="p-6 flex flex-col justify-between flex-grow">
+                        <div>
+                          <div className="flex items-center gap-3 text-[11px] text-gray-400 font-body mb-2">
+                            <span>{new Date(blog.date || blog.createdAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
+                            <span>•</span>
+                            <span>{blog.readTime || 4} min read</span>
+                          </div>
+                          <Link to={`/blogs/news/${blog.slug}`} className="block group">
+                            <h3 className="font-heading font-semibold text-xl text-[#1c2415] group-hover:text-[#729855] transition-colors leading-snug mb-3 line-clamp-2">
+                              {blog.title}
+                            </h3>
+                          </Link>
+                          <p className="text-xs text-gray-600 font-body font-light line-clamp-2 leading-relaxed mb-4">
+                            {blog.content ? blog.content.replace(/<[^>]*>/g, '').slice(0, 110) + '...' : ''}
+                          </p>
+                        </div>
+
+                        <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
+                          <span className="text-xs font-semibold text-[#1c2415]">{typeof blog.author === 'object' ? blog.author?.name : (blog.author || 'Admin')}</span>
+                          <Link
+                            to={`/blogs/news/${blog.slug}`}
+                            className="text-[11px] font-heading font-bold uppercase tracking-wider text-[#3a4d23] hover:text-[#729855] flex items-center gap-1 transition-colors"
+                          >
+                            READ MORE <ArrowRight size={13} />
+                          </Link>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* 15. EMPTY STATE */}
+                {filteredBlogs.length === 0 && (
+                  <div className="bg-white border border-dashed border-[#e2dfce] rounded-[32px] p-12 text-center space-y-4">
+                    <div className="w-16 h-16 rounded-full bg-[#f4f2e6] text-[#3a4d23] flex items-center justify-center mx-auto">
+                      <BookOpen size={28} />
+                    </div>
+                    <h3 className="font-heading font-semibold text-2xl text-[#1c2415]">No Articles Found</h3>
+                    <p className="text-sm text-gray-500 font-body max-w-md mx-auto">
+                      We couldn't find any journal articles matching your search query or active filter chips.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setSearchQuery('');
+                        setSelectedCategory('All');
+                        setSelectedTag(null);
+                      }}
+                      className="px-6 py-3 bg-[#3a4d23] text-white font-heading text-xs font-bold uppercase tracking-widest rounded-full hover:bg-[#1c2415] transition-colors cursor-pointer border-none"
+                    >
+                      BROWSE ALL CATEGORIES
+                    </button>
+                  </div>
+                )}
+
+              </div>
+            )}
+
+          </div>
+
+          {/* RIGHT COLUMN: LUXURY STICKY SIDEBAR */}
+          <div className="lg:col-span-4 space-y-8 sticky top-28">
+
+            {/* Sidebar Author Card */}
+            <div className="bg-white border border-[#e2dfce] rounded-[28px] p-6 shadow-sm text-center">
+              <img src="/assets/1_2.jpg" alt="Chief Editor" className="w-20 h-20 rounded-full object-cover mx-auto mb-4 border-2 border-[#729855]" onError={handleImageError} />
+              <h4 className="font-heading font-bold text-lg text-[#1c2415]">Dr. Dafni Sen</h4>
+              <p className="text-[11px] font-heading font-bold uppercase tracking-wider text-[#729855] mb-2">Chief Formulator & Editor</p>
+              <p className="text-xs text-gray-600 font-body font-light leading-relaxed mb-4">
+                Pioneering bio-fermented botanical actives and clean Scandinavian skincare design since 2022.
+              </p>
+            </div>
+
+            {/* Recent Articles Widget */}
+            <div className="bg-white border border-[#e2dfce] rounded-[28px] p-6 shadow-sm">
+              <h3 className="font-heading font-bold text-lg text-[#1c2415] mb-6 flex items-center gap-2">
+                <Clock size={16} className="text-[#729855]" /> Recent Stories
+              </h3>
+              <div className="space-y-4">
+                {blogs.slice(0, 3).map((b) => (
+                  <Link key={b._id || b.slug} to={`/blogs/news/${b.slug}`} className="flex items-center gap-4 group">
+                    <img
+                      src={b.image ? `${getLocalImageUrl(b.image)}` : '/assets/Blog07.jpg'}
+                      alt={b.title}
+                      className="w-16 h-16 rounded-xl object-cover bg-[#f4f2e6] flex-shrink-0 group-hover:scale-105 transition-transform"
+                      onError={handleImageError}
+                    />
+                    <div>
+                      <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold block mb-1">
+                        {new Date(b.date || b.createdAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                      </span>
+                      <h4 className="font-heading font-semibold text-xs text-[#1c2415] group-hover:text-[#729855] transition-colors line-clamp-2 leading-snug">
+                        {b.title}
+                      </h4>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Popular Tags Cloud */}
+            <div className="bg-white border border-[#e2dfce] rounded-[28px] p-6 shadow-sm">
+              <h3 className="font-heading font-bold text-lg text-[#1c2415] mb-4 flex items-center gap-2">
+                <Tag size={16} className="text-[#729855]" /> Popular Tags
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {allTags.map((tag) => {
+                  const isActive = selectedTag === tag;
+                  return (
+                    <button
+                      key={tag}
+                      onClick={() => setSelectedTag(isActive ? null : tag)}
+                      className={`px-3 py-1.5 rounded-full text-[10px] font-heading font-bold uppercase tracking-wider transition-all cursor-pointer ${isActive ? 'bg-[#729855] text-white' : 'bg-[#faf9f5] border border-gray-200 text-gray-700 hover:bg-[#729855] hover:text-white'}`}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Featured Product Ad Banner */}
+            <div className="bg-gradient-to-br from-[#3a4d23] to-[#1c2415] rounded-[28px] p-8 text-white text-center space-y-4 shadow-xl">
+              <span className="bg-white/20 px-3 py-1 rounded-full text-[9px] font-heading font-bold uppercase tracking-widest">SPOTLIGHT FORMULA</span>
+              <h3 className="font-heading text-xl font-medium leading-snug">Aloe Vera Freshness Serum</h3>
+              <p className="text-xs text-white/80 font-body font-light">100% bio-active cold-pressed hydration for barrier radiance.</p>
+              <Link
+                to="/collections/all"
+                className="inline-block px-6 py-3 bg-white text-[#1c2415] hover:bg-[#d2e2c5] font-heading text-xs font-bold uppercase tracking-wider rounded-full shadow-md transition-all"
+              >
+                SHOP NOW
+              </Link>
+            </div>
+
+          </div>
+
+        </div>
+
       </div>
+
+
+      {/* =========================================================
+         7. AMAZON STYLE RECOMMENDED PRODUCTS SECTION
+         ========================================================= */}
+      <section className="py-16 lg:py-24 px-4 sm:px-8 lg:px-16 bg-[#f4f2e6]/60 border-t border-[#e2dfce]">
+        <div className="max-w-[1340px] mx-auto">
+          <div className="flex items-center justify-between mb-10">
+            <div>
+              <span className="text-[11px] font-heading font-bold uppercase tracking-[0.2em] text-[#729855] block mb-1">
+                EDITORIAL CURATION
+              </span>
+              <h2 className="font-heading text-2xl sm:text-3xl font-medium text-[#1c2415]">
+                Curated Products Featured in Journal Stories
+              </h2>
+            </div>
+            <Link to="/collections/all" className="text-xs font-heading font-bold uppercase tracking-wider text-[#3a4d23] hover:text-[#729855] flex items-center gap-1">
+              VIEW ALL <ArrowRight size={14} />
+            </Link>
+          </div>
+
+          {/* Render Amazon-Inspired Product Cards using ProductCard */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {recommendedProducts.map((prod) => (
+              <ProductCard key={prod._id || prod.id} product={prod} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+
+      {/* =========================================================
+         10. LUXURY NEWSLETTER SECTION
+         ========================================================= */}
+      <section className="py-20 px-4 sm:px-8 lg:px-16 bg-gradient-to-r from-[#3a4d23] via-[#2a3818] to-[#1c2415] text-white relative overflow-hidden">
+        <div className="max-w-[900px] mx-auto text-center space-y-6 relative z-10">
+          <span className="bg-white/10 px-4 py-1.5 rounded-full text-[10px] font-heading font-bold uppercase tracking-[0.25em] text-[#d2e2c5]">
+            BEAUTY DISPATCH
+          </span>
+          <h2 className="font-heading text-3xl sm:text-5xl font-medium leading-tight">
+            Subscribe to Fabish Beauty Journal
+          </h2>
+          <p className="text-white/80 font-body font-light text-sm sm:text-base max-w-xl mx-auto">
+            Receive exclusive formulation insights, VIP product launches, and expert dermatologist skincare guides delivered weekly to your inbox.
+          </p>
+
+          <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
+            <input
+              type="email"
+              placeholder="Enter your email address..."
+              value={newsletterEmail}
+              onChange={(e) => setNewsletterEmail(e.target.value)}
+              required
+              className="w-full bg-white/90 backdrop-blur-md border-none rounded-full px-6 py-3.5 text-xs text-[#1c2415] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#729855]"
+            />
+            <button
+              type="submit"
+              className="w-full sm:w-auto px-8 py-3.5 bg-[#729855] hover:bg-white hover:text-[#1c2415] font-heading text-xs font-bold uppercase tracking-widest rounded-full transition-all duration-300 cursor-pointer border-none shadow-lg flex-shrink-0"
+            >
+              SUBSCRIBE
+            </button>
+          </form>
+
+          {subscribed && (
+            <p className="text-xs text-[#d2e2c5] font-bold uppercase tracking-wider animate-bounce">
+              ✓ Thank you for subscribing to Fabish Journal!
+            </p>
+          )}
+
+          <p className="text-[10px] text-white/50 font-body">We respect your privacy. Unsubscribe anytime with 1-click.</p>
+        </div>
+      </section>
+
     </div>
   );
 };

@@ -19,6 +19,10 @@ export const productService = {
     return api.get(endpoint);
   },
 
+  getAllProducts: (params = {}) => {
+    return productService.getAll(params);
+  },
+
   /**
    * Get a single product by its URL slug.
    * @param {string} slug
